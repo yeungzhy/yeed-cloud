@@ -1,0 +1,20 @@
+server:
+  port: 5562
+
+spring:
+  application:
+    name: yeed-admin
+  main:
+    banner-mode: off
+  profiles:
+    active: @spring.profiles.active@
+
+logging:
+  level:
+    root: INFO
+    # 业务代码默认 INFO 记录关键业务流和异常, 如果生产需要看 DEBUG 日志, 请在 Nacos 中修改
+    com.yeungzhy.yeed: INFO
+    # 框架日志减少噪音
+    com.alibaba.nacos.client: WARN
+  file:
+    path: ./log/${spring.application.name}
