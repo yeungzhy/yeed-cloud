@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common.util;
+package com.yeungzhy.yeed.common.support;
 
 import java.util.*;
 import java.util.function.BiConsumer;

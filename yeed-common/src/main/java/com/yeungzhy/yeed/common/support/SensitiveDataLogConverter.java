@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common;
+package com.yeungzhy.yeed.common.support;
 
 import ch.qos.logback.classic.pattern.MessageConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;

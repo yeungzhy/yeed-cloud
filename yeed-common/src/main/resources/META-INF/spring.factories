@@ -1,2 +1,2 @@
-# Register auto-configuration via SPI file in META-INF/ of the common module to enable automatic bean injection,
-# avoiding the need to copy classes repeatedly across each module.
+# src/main/resources/META-INF/spring.factories
+org.springframework.context.ApplicationListener=com.yeungzhy.yeed.common.listener.EnvCheckListener

@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common.util;
+package com.yeungzhy.yeed.common.crypto;
 
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
