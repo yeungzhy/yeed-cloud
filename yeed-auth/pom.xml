@@ -56,6 +56,11 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
+        <!-- Feign↔HttpClient5 桥接：使 OpenFeign 底层走 Apache HttpClient 5（hc5 默认启用需此类在 classpath） -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-hc5</artifactId>
+        </dependency>
         <!-- 负载均衡器 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

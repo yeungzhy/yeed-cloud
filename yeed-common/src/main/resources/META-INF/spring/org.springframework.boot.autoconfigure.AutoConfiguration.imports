@@ -9,3 +9,4 @@
 com.yeungzhy.yeed.common.config.CryptoConfig
 com.yeungzhy.yeed.common.config.GlobalExceptionConfig
 com.yeungzhy.yeed.common.config.JacksonConfig
+com.yeungzhy.yeed.common.config.RestClientConfig
