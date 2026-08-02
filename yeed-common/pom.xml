@@ -29,6 +29,14 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- Servlet API：GlobalExceptionHandler 引用了 spring-web 中依赖 servlet 的异常类，
+             而 spring-web 将 jakarta.servlet-api 声明为 provided 不向下传递，故此显式声明 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-annotation</artifactId>
