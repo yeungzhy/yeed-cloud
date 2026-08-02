@@ -1,0 +1,49 @@
+package ${voPackage};
+
+#foreach($pkg in ${importEntityJavaPackages})
+import ${pkg};
+#end
+import java.time.LocalDateTime;
+
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+/**
+ * $!{table.comment} VO（返回出参）
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Data
+@Accessors(chain = true)
+public class ${entity}VO {
+
+    // ================== 主键 ==================
+#foreach($field in ${table.commonFields})
+#if(${field.propertyName} == "id")
+#if("$!field.comment" != "")
+    /** ${field.comment} */
+#end
+    private ${field.propertyType} ${field.propertyName};
+#end
+#end
+
+    // ================== 业务字段 ==================
+#foreach($field in ${table.fields})
+#if("$!field.comment" != "")
+    /** ${field.comment} */
+#end
+    private ${field.propertyType} ${field.propertyName};
+#end
+
+    // ================== 审计字段 ==================
+#foreach($field in ${table.commonFields})
+#if(${field.propertyName} != "id")
+#if("$!field.comment" != "")
+    /** ${field.comment} */
+#end
+    private ${field.propertyType} ${field.propertyName};
+#end
+#end
+
+}

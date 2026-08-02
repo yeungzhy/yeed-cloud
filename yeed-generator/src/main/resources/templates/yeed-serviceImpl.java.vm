@@ -1,0 +1,26 @@
+package ${package.ServiceImpl};
+
+import ${package.Mapper}.${table.mapperName};
+#if(${generateService})
+import ${package.Service}.${table.serviceName};
+#end
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+ * $!{table.comment} 服务实现类
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Slf4j
+@Service
+public class ${table.serviceImplName}#if(${generateService}) implements ${table.serviceName}#end {
+
+    @Resource
+    private ${table.mapperName} ${table.entityPath}Mapper;
+
+
+
+}
