@@ -126,6 +126,16 @@ public class ApiResult<T> {
         FORBIDDEN(1003, "无操作权限"),
 
 
+
+        DATABASE_ERROR(1004, "数据库操作异常，请稍后重试"),
+        DUPLICATE_KEY_ERROR(1005, "数据已存在，请勿重复提交"),
+        DATA_INTEGRITY_ERROR(1006, "数据关联异常，无法执行当前操作"),
+
+        NETWORK_ERROR(1007, "网络连接异常，请检查网络后重试"),
+        REMOTE_SERVICE_ERROR(1008, "外部服务调用失败，请稍后重试"),
+        ILLEGAL_STATE_ERROR(1009, "系统状态异常，请刷新后重试"),
+
+
         ; // 所有错误码集中在 1000~9999 区间，与 HTTP 状态码彻底解耦
 
         private final int code;

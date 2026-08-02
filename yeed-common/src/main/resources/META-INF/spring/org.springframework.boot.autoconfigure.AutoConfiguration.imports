@@ -7,4 +7,5 @@
 # To register an ApplicationListener, use the dedicated SPI file: `src/main/resources/META-INF/spring.factories`, use key `org.springframework.context.ApplicationListener`, and add the fully‑qualified class name of the ApplicationListener implementation.
 
 com.yeungzhy.yeed.common.config.CryptoConfig
+com.yeungzhy.yeed.common.config.GlobalExceptionConfig
 com.yeungzhy.yeed.common.config.JacksonConfig
