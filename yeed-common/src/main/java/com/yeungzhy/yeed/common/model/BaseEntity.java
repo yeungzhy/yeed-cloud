@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.Version;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDateTime;
@@ -16,8 +17,10 @@ import java.util.Map;
  */
 @Data
 @Accessors(chain = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class BaseEntity {
 
+    @EqualsAndHashCode.Include
     private Long id;
 
     // ================== 审计字段 ==================
@@ -50,8 +53,5 @@ public class BaseEntity {
     // ================== 扩展字段 ==================
     /** 扩展字段 */
     private Map<String, Object> extra;
-
-
-
 
 }
