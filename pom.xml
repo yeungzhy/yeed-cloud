@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath/>
+    </parent>
+
+    <name>yeed-忆得</name>
+    <description>复盘开发问题, 沉淀可复用的最佳实践</description>
+    <url>https://github.com/yeungzhy/yeed-cloud</url>
+
+    <groupId>com.yeungzhy</groupId>
+    <artifactId>yeed-cloud</artifactId>
+    <version>20260501</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <!-- ==================== 通用层 ==================== -->
+        <!-- 基础公共包：工具类、全局异常、统一响应体、常量 -->
+        <module>yeed-common</module>
+        <!-- 内部契约包：存放 @FeignClient 接口，仅供内部微服务调用 -->
+        <module>yeed-api</module>
+
+        <!-- ================== 基础设施层 ================== -->
+        <!-- 网关模块（路由转发、统一鉴权、跨域） -->
+        <module>yeed-gateway</module>
+        <!-- 认证模块（登录/注销/Token校验） -->
+        <module>yeed-auth</module>
+
+        <!-- ================== 核心业务层 ================== -->
+        <!-- 后台管理核心 -->
+        <module>yeed-admin</module>
+        <!-- 任务调度模块（定时任务、分布式调度） -->
+        <module>yeed-job</module>
+        <!-- 文件存储模块（OSS 对象存储） -->
+        <module>yeed-oss</module>
+
+        <!-- ====== 对外接口层（供第三方/其他部门调用）====== -->
+        <module>yeed-openapi</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <resource.delimiter>@</resource.delimiter>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <druid.version>1.2.28</druid.version>
+        <spring-cloud.version>2025.0.3</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+        <nacos.client.version>3.2.3</nacos.client.version>
+        <jackson.version>2.21.4</jackson.version>
+        <sa-token.version>1.45.0</sa-token.version>
+        <common-lang3.version>3.20.0</common-lang3.version>
+        <commons-collections4.version>4.5.0</commons-collections4.version>
+        <commons-codec.version>1.22.0</commons-codec.version>
+        <commons-io.version>2.22.0</commons-io.version>
+        <commons-pool2.version>2.13.1</commons-pool2.version>
+        <guava.version>33.6.0-jre</guava.version>
+        <hutool.version>5.8.46</hutool.version>
+        <fastjson2.version>2.0.61</fastjson2.version>
+        <jsoup.version>1.22.2</jsoup.version>
+        <jasypt.version>4.0.4</jasypt.version>
+        <easyexcel.version>4.0.3</easyexcel.version>
+        <poi.version>5.4.0</poi.version>
+        <poi-ooxml.version>5.4.0</poi-ooxml.version>
+        <mockito.version>4.11.0</mockito.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Mybatis Plus Bom -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis-plus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <version>${druid.version}</version>
+                <scope>compile</scope>
+            </dependency>
+
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba BOM -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- 覆盖 nacos-client 版本 -->
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>${nacos.client.version}</version>
+            </dependency>
+
+            <!-- Jackson BOM：统一所有 Jackson 组件版本 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Sa-Token BOM -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-dependencies</artifactId>
+                <version>${sa-token.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- <dependency> -->
+            <!--     <groupId>com.github.ulisesbocchio</groupId> -->
+            <!--     <artifactId>jasypt-spring-boot-starter</artifactId> -->
+            <!--     <version>4.0.4</version> -->
+            <!--     <scope>compile</scope> -->
+            <!-- </dependency> -->
+
+            <!-- EasyExcel 4.0.3 修复 CVE -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>easyexcel</artifactId>
+                <version>${easyexcel.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-ooxml</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi-ooxml.version}</version>
+            </dependency>
+            <!-- EasyExcel 4.0.3 修复 CVE -->
+
+            <!-- 常用工具 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${common-lang3.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${commons-pool2.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- Hutool BOM -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-bom</artifactId>
+                <version>${hutool.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+                <scope>compile</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>dev</spring.profiles.active>
+            </properties>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <spring.profiles.active>test</spring.profiles.active>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <!-- 资源过滤（所有子模块共享） -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <!-- 所有子模块强制执行的插件：编译器配置 -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <configuration>
+                    <!-- 是否生成备份的pom.xml.versionsBackup文件，默认true -->
+                    <generateBackupPoms>false</generateBackupPoms>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <!-- 版本管理：子模块按需引用，不强制继承执行 -->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+
+</project>
