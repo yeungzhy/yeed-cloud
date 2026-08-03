@@ -37,7 +37,7 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
 
-        this.strictInsertFill(metaObject, BaseEntity.COL_UPDATE_TIME, LocalDateTime.class, LocalDateTime.now());
+        this.strictUpdateFill(metaObject, BaseEntity.COL_UPDATE_TIME, LocalDateTime.class, LocalDateTime.now());
 
         /*
          * 1、用户角色表、角色菜单表等关联表，没有这些通用字段
@@ -47,7 +47,7 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
          */
         boolean hasCreateByField = metaObject.hasGetter(BaseEntity.COL_UPDATE_BY);
         if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.COL_UPDATE_BY))) {
-            this.strictInsertFill(metaObject, BaseEntity.COL_UPDATE_BY, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
+            this.strictUpdateFill(metaObject, BaseEntity.COL_UPDATE_BY, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
         }
 
     }
