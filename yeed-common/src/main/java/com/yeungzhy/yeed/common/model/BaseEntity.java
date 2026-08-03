@@ -3,9 +3,13 @@ package com.yeungzhy.yeed.common.model;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.Version;
+import com.baomidou.mybatisplus.core.toolkit.LambdaUtils;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.apache.ibatis.reflection.property.PropertyNamer;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -18,7 +22,7 @@ import java.util.Map;
 @Data
 @Accessors(chain = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
-public class BaseEntity {
+public abstract class BaseEntity {
 
     @EqualsAndHashCode.Include
     private Long id;
@@ -38,11 +42,14 @@ public class BaseEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    // TODO 删除操作人 (未删除时为null) 如何定义填充策略，仅在逻辑删除时填充, 似乎是得包一层BaseService了
     /** 删除人 */
     @TableField(fill = FieldFill.UPDATE)
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /**
+     * 逻辑删除标识：0-未删，纳秒级时间戳-已删
+     * <p> 由 BaseService 在 Java 层生成（Instant 纳秒级），比数据库 UNIX_TIMESTAMP() 秒级精度高
+     * <p> 避免高并发下同一秒删除导致唯一约束冲突
+     */
     private Long deleteTime;
 
     // ================== 架构字段 ==================
@@ -53,5 +60,34 @@ public class BaseEntity {
     // ================== 扩展字段 ==================
     /** 扩展字段 */
     private Map<String, Object> extra;
+
+
+    /** 创建人对应的数据库列名: create_by */
+    public static final String COL_CREATE_BY = getCol(BaseEntity::getCreateBy);
+    /** 创建时间对应的数据库列名: create_time */
+    public static final String COL_CREATE_TIME = getCol(BaseEntity::getCreateTime);
+
+    /** 更新人对应的数据库列名: update_by */
+    public static final String COL_UPDATE_BY = getCol(BaseEntity::getUpdateBy);
+    /** 更新时间对应的数据库列名: update_time */
+    public static final String COL_UPDATE_TIME = getCol(BaseEntity::getUpdateTime);
+
+    /** 删除人对应的数据库列名: delete_by */
+    public static final String COL_DELETE_BY = getCol(BaseEntity::getDeleteBy);
+    /** 删除时间对应的数据库列名: delete_time */
+    public static final String COL_DELETE_TIME = getCol(BaseEntity::getDeleteTime);
+
+
+    /**
+     * 核心工具方法：通过 Lambda 方法引用获取数据库列名
+     * <p> 适用于：静态常量定义、SQL apply、XML 拼接等需要字符串列名的场景
+     */
+    public static <T> String getCol(SFunction<T, ?> fn) {
+        // 解析 Lambda 提取方法名 -> getCreateTime -> createTime
+        String property = PropertyNamer.methodToProperty(LambdaUtils.extract(fn).getImplMethodName());
+        // 驼峰转下划线 -> createTime -> create_time
+        return StringUtils.camelToHyphen(property);
+    }
+
 
 }
