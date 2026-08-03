@@ -93,36 +93,39 @@ public class GlobalExceptionHandler {
         return ApiResult.error("不支持的请求方法，请使用POST");
     }
 
-    /* ================================================= 数据库异常 ================================================ */
+    /* ================================================= 数据库异常 ================================================
+     * 安全原则：数据库异常的 message 通常含 SQL 语句、表名、字段名、约束名等敏感信息，
+     * 严禁透传到前端（只返回通用文案）；日志只打印异常类型与完整堆栈用于排查，不把 message 拼进日志正文，
+     * 避免敏感 SQL 随日志扩散到 ELK 等采集系统。
+     */
     /** 唯一键冲突 */
     @ExceptionHandler(DuplicateKeyException.class)
     public ApiResult<Void> handleDuplicateKey(DuplicateKeyException e) {
-        log.error("数据库唯一键冲突：{}", e.getMessage(), e);
+        log.error("数据库唯一键冲突 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.DUPLICATE_KEY_ERROR);
     }
 
     /** 数据完整性异常（如外键关联、非空字段为null） */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ApiResult<Void> handleDataIntegrity(DataIntegrityViolationException e) {
-        log.error("数据完整性异常：{}", e.getMessage(), e);
+        log.error("数据完整性异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.DATA_INTEGRITY_ERROR);
     }
 
     /** Spring 数据访问总异常（兜底所有DAO层异常）, 包含：连接池耗尽、SQL语法错误、超时等 */
     @ExceptionHandler(DataAccessException.class)
     public ApiResult<Void> handleDataAccess(DataAccessException e) {
-        log.error("数据访问异常（SQL/连接/事务）：{}", e.getMessage(), e);
+        log.error("数据访问异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.DATABASE_ERROR);
     }
 
     /** 原生SQL异常（兜底） */
     @ExceptionHandler(SQLException.class)
     public ApiResult<Void> handleSQL(SQLException e) {
-        log.error("原生SQL异常：{}", e.getMessage(), e);
+        log.error("原生SQL异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.DATABASE_ERROR);
     }
 
-    /* ========================================= 网络与远程调用异常 ========================================= */
     /** 空指针异常（属于系统BUG，必须记全栈，返回统一提示） */
     @ExceptionHandler(NullPointerException.class)
     public ApiResult<Void> handleNPE(NullPointerException e) {
@@ -133,16 +136,12 @@ public class GlobalExceptionHandler {
 
     /**
      * 非法参数异常（常见于工具类校验、枚举转换失败）
-     * 如果异常消息是业务友好的，可以透传；否则兜底
+     * 注意：不透传 e.getMessage()，因为工具类/框架内部抛出的 IAE 消息可能含内部字段名、
+     * SQL 片段等敏感信息，统一返回通用参数错误提示。详细原因见日志。
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ApiResult<Void> handleIllegalArg(IllegalArgumentException e) {
-        log.warn("非法参数异常：{}", e.getMessage());
-        // 如果消息已经是业务友好的（如"性别只能为0或1"），直接返回；否则用枚举
-        String msg = e.getMessage();
-        if (msg != null && !msg.isEmpty()) {
-            return ApiResult.error(msg);
-        }
+        log.warn("非法参数异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.PARAM_INVALID);
     }
 
@@ -153,66 +152,32 @@ public class GlobalExceptionHandler {
         return ApiResult.error(ApiResult.CommonCode.ILLEGAL_STATE_ERROR);
     }
 
-    /* ========================================= 网络与远程调用异常 ========================================= */
-    /**
-     * RestTemplate / Feign 远程调用超时、连接重置等
-     * ResourceAccessException 是 Spring 对网络超时的通用包装
+    /* ========================================= 网络与远程调用异常 =========================================
+     * 收敛为两类：
+     * 1. RestClientException（Spring 远程调用总异常）—— 覆盖 ResourceAccessException /
+     *    HttpClientErrorException / HttpServerErrorException，统一返回"外部服务调用失败"
+     * 2. 原生网络异常（ConnectException / SocketTimeoutException）—— 返回"网络连接异常"
+     * 两者均不透传 e.getMessage()，避免下游响应体或内部细节泄露给前端。
      */
-    @ExceptionHandler(org.springframework.web.client.ResourceAccessException.class)
-    public ApiResult<Void> handleResourceAccess(org.springframework.web.client.ResourceAccessException e) {
-        log.error("远程服务连接超时或网络不可达：{}", e.getMessage());
-        return ApiResult.error(ApiResult.CommonCode.NETWORK_ERROR);
-    }
-
     /**
-     * 处理 HttpClient 异常（如 404, 500 等来自下游的响应）
+     * RestClient / RestTemplate / Feign 远程调用异常总兜底
+     * （含连接超时、读写超时、404/500 等下游响应错误）
      */
-    @ExceptionHandler(org.springframework.web.client.HttpClientErrorException.class)
-    public ApiResult<Void> handleHttpClientError(org.springframework.web.client.HttpClientErrorException e) {
-        log.warn("下游服务返回客户端错误，状态码：{}，响应体：{}", e.getStatusCode(), e.getResponseBodyAsString());
-        return ApiResult.error(ApiResult.CommonCode.REMOTE_SERVICE_ERROR);
-    }
-
-    @ExceptionHandler(org.springframework.web.client.HttpServerErrorException.class)
-    public ApiResult<Void> handleHttpServerError(org.springframework.web.client.HttpServerErrorException e) {
-        log.error("下游服务内部错误，状态码：{}，响应体：{}", e.getStatusCode(), e.getResponseBodyAsString());
+    @ExceptionHandler(org.springframework.web.client.RestClientException.class)
+    public ApiResult<Void> handleRestClient(org.springframework.web.client.RestClientException e) {
+        log.error("远程服务调用失败 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.REMOTE_SERVICE_ERROR);
     }
 
     /**
-     * 原生网络连接异常（如 DNS 解析失败、拒绝连接）
+     * 原生网络异常（DNS 解析失败、拒绝连接、Socket 超时）
      */
-    @ExceptionHandler(java.net.ConnectException.class)
-    public ApiResult<Void> handleConnect(java.net.ConnectException e) {
-        log.error("网络连接失败：{}", e.getMessage());
+    @ExceptionHandler({java.net.ConnectException.class, java.net.SocketTimeoutException.class})
+    public ApiResult<Void> handleNetwork(java.net.SocketTimeoutException e) {
+        log.error("网络连接异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.NETWORK_ERROR);
     }
 
-    /**
-     * Socket 超时（读取超时或连接超时）
-     */
-    @ExceptionHandler(java.net.SocketTimeoutException.class)
-    public ApiResult<Void> handleSocketTimeout(java.net.SocketTimeoutException e) {
-        log.error("Socket 读写超时：{}", e.getMessage());
-        return ApiResult.error(ApiResult.CommonCode.NETWORK_ERROR);
-    }
-
-    /* ========================================= Spring 其他常见Web异常 ========================================= */
-    /** 不支持的媒体类型（如接口只接收 JSON，前端传了 XML） */
-    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
-    public ApiResult<Void> handleMediaType(org.springframework.web.HttpMediaTypeNotSupportedException e) {
-        log.warn("不支持的媒体类型：{}", e.getContentType());
-        return ApiResult.error("不支持的 Content-Type");
-    }
-
-    /**
-     * 异步请求超时（如果使用了 @Async 或 DeferredResult）
-     */
-    @ExceptionHandler(org.springframework.web.context.request.async.AsyncRequestTimeoutException.class)
-    public ApiResult<Void> handleAsyncTimeout(org.springframework.web.context.request.async.AsyncRequestTimeoutException e) {
-        log.warn("异步请求处理超时");
-        return ApiResult.error("请求处理超时，请稍后重试");
-    }
 
     /* ================================================= 兜底异常 ================================================ */
     /** 兜底 */

@@ -29,8 +29,11 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Servlet API：GlobalExceptionHandler 引用了 spring-web 中依赖 servlet 的异常类，
-             而 spring-web 将 jakarta.servlet-api 声明为 provided 不向下传递，故此显式声明 -->
+        <!-- Servlet API：spring-web 中的多个 Web 异常类（如 HttpRequestMethodNotSupportedException、
+             MissingServletRequestParameterException、HttpMediaTypeNotSupportedException）直接或间接继承自
+             jakarta.servlet.ServletException。GlobalExceptionHandler 通过 @ExceptionHandler 捕获这些异常时，
+             编译器需要解析其完整继承链（含 ServletException），而 spring-web 将 jakarta.servlet-api 声明为
+             provided 不向下传递，故此显式声明以保证 yeed-common 编译通过 -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
