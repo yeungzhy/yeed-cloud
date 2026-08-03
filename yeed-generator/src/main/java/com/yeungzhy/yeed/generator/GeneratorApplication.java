@@ -130,6 +130,7 @@ public class GeneratorApplication {
                         // ----- Mapper 策略 -----
                         .mapperBuilder()
                         .mapperTemplate("/templates/yeed-mapper.java.vm")   // 自定义 Mapper 模板
+                        .mapperXmlTemplate("/templates/yeed-mapper.xml.vm") // 自定义 Mapper XML 模板（为 extra 等 json 列生成 typeHandler）
                         .mapperAnnotation(Mapper.class)     // 开启 @Mapper 注解
                         .enableBaseResultMap()              // 启用 BaseResultMap（通用查询映射结果）
                         // 不启用 BaseColumnList：MyBatis-Plus BaseMapper 已提供通用列，XML 无需重复列清单

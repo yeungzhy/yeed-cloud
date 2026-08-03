@@ -4,6 +4,7 @@ package ${dtoPackage};
 import ${pkg};
 #end
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -37,12 +38,17 @@ public class ${entity}DTO {
 #end
 
     // ================== 审计字段 ==================
+## extra 为 BaseEntity 中的 Map<String,Object>（DB json 列），生成器默认推断为 String，此处显式覆盖以保证类型一致
 #foreach($field in ${table.commonFields})
 #if(${field.propertyName} != "id")
+#set($type = ${field.propertyType})
+#if(${field.propertyName} == "extra")
+#set($type = "Map<String, Object>")
+#end
 #if("$!field.comment" != "")
     /** ${field.comment} */
 #end
-    private ${field.propertyType} ${field.propertyName};
+    private ${type} ${field.propertyName};
 #end
 #end
 

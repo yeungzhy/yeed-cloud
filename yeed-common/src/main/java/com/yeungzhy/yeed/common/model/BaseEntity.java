@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.core.toolkit.LambdaUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -58,7 +59,12 @@ public abstract class BaseEntity {
     private Integer version;
 
     // ================== 扩展字段 ==================
-    /** 扩展字段 */
+    /**
+     * 扩展字段（DB 为 json 列）
+     * <p> 使用 JacksonTypeHandler 在 Map&lt;String,Object&gt; 与 JSON 之间互转；
+     * <p> 实体需配合 @TableName(autoResultMap = true) 才能在查询结果映射时生效
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, Object> extra;
 
 
