@@ -19,7 +19,7 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
 
-        this.strictInsertFill(metaObject, BaseEntity.COL_CREATE_TIME, LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, BaseEntity.Fields.createTime, LocalDateTime.class, LocalDateTime.now());
 
         /*
          * 1、用户角色表、角色菜单表等关联表，没有这些通用字段
@@ -27,9 +27,9 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
          * 于是把框架底层的判断拿来手动判断：「有字段 && 值为空」才设置值。
          * 此时获取登录信息再失败，那就该排查问题了
          */
-        boolean hasCreateByField = metaObject.hasGetter(BaseEntity.COL_CREATE_BY);
-        if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.COL_CREATE_BY))) {
-            this.strictInsertFill(metaObject, BaseEntity.COL_CREATE_BY, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
+        boolean hasCreateByField = metaObject.hasGetter(BaseEntity.Fields.createBy);
+        if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.createBy))) {
+            this.strictInsertFill(metaObject, BaseEntity.Fields.createBy, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
         }
 
     }
@@ -37,7 +37,7 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
 
-        this.strictUpdateFill(metaObject, BaseEntity.COL_UPDATE_TIME, LocalDateTime.class, LocalDateTime.now());
+        this.strictUpdateFill(metaObject, BaseEntity.Fields.updateTime, LocalDateTime.class, LocalDateTime.now());
 
         /*
          * 1、用户角色表、角色菜单表等关联表，没有这些通用字段
@@ -45,9 +45,9 @@ public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
          * 于是把框架底层的判断拿来手动判断：「有字段 && 值为空」才设置值。
          * 此时获取登录信息再失败，那就该排查问题了
          */
-        boolean hasCreateByField = metaObject.hasGetter(BaseEntity.COL_UPDATE_BY);
-        if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.COL_UPDATE_BY))) {
-            this.strictUpdateFill(metaObject, BaseEntity.COL_UPDATE_BY, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
+        boolean hasCreateByField = metaObject.hasGetter(BaseEntity.Fields.updateBy);
+        if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.updateBy))) {
+            this.strictUpdateFill(metaObject, BaseEntity.Fields.updateBy, Long.class, StpUtil.getLoginId(RandomUtil.randomLong()));
         }
 
     }

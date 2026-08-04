@@ -9,7 +9,10 @@ import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.apache.ibatis.reflection.property.PropertyNamer;
 
 import java.time.LocalDateTime;
@@ -21,6 +24,9 @@ import java.util.Map;
  * @author yeungzhy at 2026-07-30 22:38
  */
 @Data
+@SuperBuilder
+@NoArgsConstructor
+@FieldNameConstants()
 @Accessors(chain = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public abstract class BaseEntity {
@@ -68,31 +74,16 @@ public abstract class BaseEntity {
     private Map<String, Object> extra;
 
 
-    /** 创建人对应的数据库列名: create_by */
-    public static final String COL_CREATE_BY = getCol(BaseEntity::getCreateBy);
-    /** 创建时间对应的数据库列名: create_time */
-    public static final String COL_CREATE_TIME = getCol(BaseEntity::getCreateTime);
-
-    /** 更新人对应的数据库列名: update_by */
-    public static final String COL_UPDATE_BY = getCol(BaseEntity::getUpdateBy);
-    /** 更新时间对应的数据库列名: update_time */
-    public static final String COL_UPDATE_TIME = getCol(BaseEntity::getUpdateTime);
-
-    /** 删除人对应的数据库列名: delete_by */
-    public static final String COL_DELETE_BY = getCol(BaseEntity::getDeleteBy);
-    /** 删除时间对应的数据库列名: delete_time */
-    public static final String COL_DELETE_TIME = getCol(BaseEntity::getDeleteTime);
-
 
     /**
-     * 核心工具方法：通过 Lambda 方法引用获取数据库列名
+     * 通过 Lambda 方法引用获取数据库列名
      * <p> 适用于：静态常量定义、SQL apply、XML 拼接等需要字符串列名的场景
      */
     public static <T> String getCol(SFunction<T, ?> fn) {
         // 解析 Lambda 提取方法名 -> getCreateTime -> createTime
         String property = PropertyNamer.methodToProperty(LambdaUtils.extract(fn).getImplMethodName());
         // 驼峰转下划线 -> createTime -> create_time
-        return StringUtils.camelToHyphen(property);
+        return StringUtils.camelToUnderline(property);
     }
 
 
