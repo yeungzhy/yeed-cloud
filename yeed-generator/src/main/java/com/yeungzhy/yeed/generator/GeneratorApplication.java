@@ -20,7 +20,7 @@ public class GeneratorApplication {
     // ==================== 开发者配置区（请根据实际需求修改以下配置项） ====================
 
     // ---------- 数据库连接 ----------
-    private static final String DB_URL = "jdbc:mysql://192.168.22.155:3306/yeed?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
+    private static final String DB_URL = "jdbc:mysql://192.168.22.155:3306/yeed?useUnicode=true&characterEncoding=UTF-8&useSSL=false&tinyInt1isBit=false";
     private static final String DB_USERNAME = "yeed";
     private static final String DB_PASSWORD = "yeed123";
 

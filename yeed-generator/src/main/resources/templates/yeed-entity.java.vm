@@ -14,6 +14,8 @@ import lombok.experimental.Accessors;
 import lombok.EqualsAndHashCode;
 #end
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
  * $!{table.comment}
@@ -22,6 +24,8 @@ import lombok.Data;
  * @since ${date}
  */
 @Data
+@SuperBuilder
+@NoArgsConstructor
 #if(${chainModel})
 @Accessors(chain = true)
 #end
