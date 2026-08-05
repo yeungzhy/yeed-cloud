@@ -54,8 +54,8 @@ public class AesUtil {
     private static final String KDF_ALGORITHM = "PBKDF2WithHmacSHA256";
     /** Salt 长度 */
     private static final int SALT_LENGTH = 16;
-    /** 迭代次数 */
-    private static final int ITERATION_COUNT = 100000;
+    /** 迭代次数（OWASP 2023 推荐 PBKDF2-HmacSHA256 至少 600000 次） */
+    private static final int ITERATION_COUNT = 600000;
     /** 派生密钥长度 */
     private static final int DERIVED_KEY_LENGTH = 256;
 
@@ -69,7 +69,7 @@ public class AesUtil {
      */
     public static String encrypt(String keyBase64, String plainText) {
         if (plainText == null || plainText.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("plainText must not be null or empty");
         }
         try {
             SecretKey key = loadKey(keyBase64);
@@ -85,7 +85,7 @@ public class AesUtil {
             return Base64.getEncoder().encodeToString(buffer.array());
 
         } catch (Exception e) {
-            throw new RuntimeException("AES 加密失败 [transformation=" + TRANSFORMATION + "]", e);
+            throw new RuntimeException("AES encryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
     }
 
@@ -98,7 +98,7 @@ public class AesUtil {
      */
     public static String decrypt(String keyBase64, String cipherTextBase64) {
         if (cipherTextBase64 == null || cipherTextBase64.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("cipherTextBase64 must not be null or empty");
         }
         try {
             SecretKey key = loadKey(keyBase64);
@@ -118,7 +118,7 @@ public class AesUtil {
             return new String(decrypted, CHARSET);
 
         } catch (Exception e) {
-            throw new RuntimeException("AES 解密失败 [transformation=" + TRANSFORMATION + "]", e);
+            throw new RuntimeException("AES decryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
     }
 
@@ -134,10 +134,10 @@ public class AesUtil {
      */
     public static String encryptByPassword(String password, String plainText) {
         if (plainText == null || plainText.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("plainText must not be null or empty");
         }
         if (password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("密码不能为空");
+            throw new IllegalArgumentException("password must not be null or empty");
         }
         try {
             // 1. 随机生成 Salt
@@ -161,8 +161,7 @@ public class AesUtil {
             return Base64.getEncoder().encodeToString(buffer.array());
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "AES 加密失败 [kdf=" + KDF_ALGORITHM + ", iterations=" + ITERATION_COUNT + "]", e);
+            throw new RuntimeException("AES encryption failed [kdf=" + KDF_ALGORITHM + ", iterations=" + ITERATION_COUNT + "]", e);
         }
     }
 
@@ -176,10 +175,10 @@ public class AesUtil {
      */
     public static String decryptByPassword(String password, String cipherTextBase64) {
         if (cipherTextBase64 == null || cipherTextBase64.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("cipherTextBase64 must not be null or empty");
         }
         if (password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("密码不能为空");
+            throw new IllegalArgumentException("password must not be null or empty");
         }
         try {
             byte[] fullBytes = Base64.getDecoder().decode(cipherTextBase64);
@@ -205,8 +204,7 @@ public class AesUtil {
             return new String(decrypted, CHARSET);
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "AES 解密失败 [kdf=" + KDF_ALGORITHM + ", iterations=" + ITERATION_COUNT + "]", e);
+            throw new RuntimeException("AES decryption failed [kdf=" + KDF_ALGORITHM + ", iterations=" + ITERATION_COUNT + "]", e);
         }
     }
 
@@ -225,7 +223,7 @@ public class AesUtil {
             SecretKey key = generator.generateKey();
             return Base64.getEncoder().encodeToString(key.getEncoded());
         } catch (Exception e) {
-            throw new RuntimeException("生成 AES 密钥失败 [keySize=" + KEY_SIZE + "]", e);
+            throw new RuntimeException("Failed to generate AES key [keySize=" + KEY_SIZE + "]", e);
         }
     }
 

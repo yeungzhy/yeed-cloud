@@ -35,7 +35,7 @@ public class JacksonHelper {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             log.error("Jackson 序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON序列化失败", e);
+            throw new RuntimeException("JSON serialization failed", e);
         }
     }
 
@@ -47,7 +47,7 @@ public class JacksonHelper {
             return System.lineSeparator() + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             log.error("Jackson 序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON序列化失败", e);
+            throw new RuntimeException("JSON serialization failed", e);
         }
     }
 
@@ -62,7 +62,7 @@ public class JacksonHelper {
             return objectMapper.readValue(json, clazz);
         } catch (JsonProcessingException e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -75,7 +75,7 @@ public class JacksonHelper {
             return objectMapper.readValue(json, typeReference);
         } catch (JsonProcessingException e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -87,7 +87,7 @@ public class JacksonHelper {
             return objectMapper.readValue(bytes, clazz);
         } catch (Exception e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -100,7 +100,7 @@ public class JacksonHelper {
                     objectMapper.getTypeFactory().constructCollectionType(List.class, clazz));
         } catch (JsonProcessingException e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -127,7 +127,7 @@ public class JacksonHelper {
                     objectMapper.getTypeFactory().constructMapType(Map.class, keyClass, valueClass));
         } catch (JsonProcessingException e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -140,7 +140,7 @@ public class JacksonHelper {
             return objectMapper.readTree(json);
         } catch (JsonProcessingException e) {
             log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 
@@ -190,7 +190,7 @@ public class JacksonHelper {
             return objectMapper.treeToValue(node, clazz);
         } catch (JsonProcessingException e) {
             log.error("Jackson treeToValue 失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON反序列化失败", e);
+            throw new RuntimeException("JSON deserialization failed", e);
         }
     }
 

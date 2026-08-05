@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.common.config;
 
 import com.yeungzhy.yeed.common.crypto.BlindIndexProvider;
 import com.yeungzhy.yeed.common.crypto.CryptoProperties;
+import com.yeungzhy.yeed.common.crypto.CryptoPropertiesValidator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,11 @@ public class CryptoConfig {
     public CryptoProperties cryptoProperties() {
         // 返回一个空实例，Spring 会自动调用绑定器填充属性
         return new CryptoProperties();
+    }
+
+    @Bean
+    public CryptoPropertiesValidator cryptoPropertiesValidator() {
+        return new CryptoPropertiesValidator();
     }
 
     @Bean

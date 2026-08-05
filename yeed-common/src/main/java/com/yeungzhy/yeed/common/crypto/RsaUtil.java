@@ -1,8 +1,11 @@
 package com.yeungzhy.yeed.common.crypto;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -12,7 +15,7 @@ import java.util.Base64;
  * <ul>
  *     <li>Algorithm: RSA</li>
  *     <li>Mode: ECB (占位模式)</li>
- *     <li>Padding: OAEPWithSHA-256AndMGF1Padding</li>
+ *     <li>Padding: OAEPWithSHA-256AndMGF1Padding（MGF1 显式指定 SHA-256，避免 JDK 默认走 SHA-1 导致多端互通失败）</li>
  *     <li>Signature: SHA256withRSA</li>
  *     <li>Key Size: 2048 bit</li>
  *     <li>Key Format: X.509(SPKI)公钥 / PKCS#8私钥, Base64编码</li>
@@ -31,6 +34,16 @@ public class RsaUtil {
     private static final String PADDING = "OAEPWithSHA-256AndMGF1Padding";
     /** 完整 Transformation */
     private static final String TRANSFORMATION = KEY_ALGORITHM + "/" + MODE + "/" + PADDING;
+    /**
+     * OAEP 参数：主哈希 SHA-256 + MGF1 也用 SHA-256
+     * <p> JDK 默认 MGF1 走 SHA-1，会导致与前端 JS/WebCrypto 等多端互通解密失败，故显式指定</p>
+     */
+    private static final OAEPParameterSpec OAEP_SPEC = new OAEPParameterSpec(
+            "SHA-256",
+            "MGF1",
+            MGF1ParameterSpec.SHA256,
+            PSource.PSpecified.DEFAULT
+    );
     /** 签名算法 */
     private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
     /** 字符集 */
@@ -49,13 +62,13 @@ public class RsaUtil {
             PublicKey publicKey = loadPublicKey(publicKeyBase64);
 
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey, OAEP_SPEC);
 
             byte[] encryptedBytes = cipher.doFinal(plainText.getBytes(CHARSET));
             return Base64.getEncoder().encodeToString(encryptedBytes);
 
         } catch (Exception e) {
-            throw new RuntimeException("RSA 加密失败 [transformation=" + TRANSFORMATION + "]", e);
+            throw new RuntimeException("RSA encryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
     }
 
@@ -70,14 +83,14 @@ public class RsaUtil {
             PrivateKey privateKey = loadPrivateKey(privateKeyBase64);
 
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey, OAEP_SPEC);
 
             byte[] cipherBytes = Base64.getDecoder().decode(cipherTextBase64);
             byte[] decryptedBytes = cipher.doFinal(cipherBytes);
             return new String(decryptedBytes, CHARSET);
 
         } catch (Exception e) {
-            throw new RuntimeException("RSA 解密失败 [transformation=" + TRANSFORMATION + "]", e);
+            throw new RuntimeException("RSA decryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
     }
 
@@ -103,7 +116,7 @@ public class RsaUtil {
             return Base64.getEncoder().encodeToString(signed);
 
         } catch (Exception e) {
-            throw new RuntimeException("RSA 签名失败 [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
+            throw new RuntimeException("RSA signing failed [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
         }
     }
 
@@ -130,7 +143,7 @@ public class RsaUtil {
             return signature.verify(signBytes);
 
         } catch (Exception e) {
-            throw new RuntimeException("RSA 验签失败 [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
+            throw new RuntimeException("RSA signature verification failed [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
         }
     }
 
@@ -150,7 +163,7 @@ public class RsaUtil {
 
             return new String[]{publicKey, privateKey};
         } catch (Exception e) {
-            throw new RuntimeException("生成密钥对失败 [keySize=" + KEY_SIZE + "]", e);
+            throw new RuntimeException("Failed to generate key pair [keySize=" + KEY_SIZE + "]", e);
         }
     }
 

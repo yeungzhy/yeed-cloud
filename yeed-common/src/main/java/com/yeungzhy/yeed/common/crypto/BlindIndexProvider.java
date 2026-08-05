@@ -14,6 +14,8 @@ import java.util.HexFormat;
 public final class BlindIndexProvider {
 
     private static final String HMAC_ALGO = "HmacSHA256";
+    /** 输出长度（截断到 12 字节 / 96 bit，碰撞概率在 2^48 条记录才显著，足够绝大多数业务场景） */
+    private static final int OUTPUT_LENGTH = 12;
 
     private final byte[] masterKey;
     private final byte[] contextSalt;
@@ -38,7 +40,10 @@ public final class BlindIndexProvider {
      */
     public String generateHex(String plaintext) {
         byte[] hmac = computeHmac(plaintext);
-        return HexFormat.of().formatHex(hmac);
+        // 截断到 OUTPUT_LENGTH 字节，避免完整 32 字节作为索引过长影响存储/查询性能
+        byte[] truncated = new byte[OUTPUT_LENGTH];
+        System.arraycopy(hmac, 0, truncated, 0, OUTPUT_LENGTH);
+        return HexFormat.of().formatHex(truncated);
     }
 
     /**
@@ -49,7 +54,7 @@ public final class BlindIndexProvider {
      */
     private byte[] computeHmac(String plaintext) {
         if (plaintext == null) {
-            plaintext = "";
+            throw new IllegalArgumentException("plaintext must not be null, decide null handling at caller side");
         }
         byte[] plainBytes = plaintext.getBytes(StandardCharsets.UTF_8);
         // 1. 拼接盐和原始数据: salt || data
