@@ -10,21 +10,24 @@
 #if(${baseResultMap})
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="${package.Entity}.${entity}">
-#foreach($field in ${table.fields})
-#if(${field.keyFlag})##生成主键排在第一位
+## ---------- 主键 id（id 已声明为 BaseEntity 公共字段，从 commonFields 取，输出 <id> 标签保证主键语义） ----------
+#foreach($field in ${table.commonFields})
+#if(${field.propertyName} == "id")
         <id column="${field.name}" property="${field.propertyName}" />
 #end
 #end
-#foreach($field in ${table.commonFields})##生成公共字段
-#if(${field.propertyName} == "extra")## extra 为 BaseEntity 中的 Map<String,Object>，对应 DB json 列，需指定 typeHandler 否则解析 resultMap 报 No typehandler found
+## ---------- 业务字段（table.fields 已剔除 BaseEntity 公共字段，仅含表自身业务列） ----------
+#foreach($field in ${table.fields})
+        <result column="${field.name}" property="${field.propertyName}" />
+#end
+## ---------- 审计字段（commonFields 排除 id；extra 为 Map<String,Object> 对应 DB json 列，需指定 typeHandler 否则解析 resultMap 报 No typehandler found） ----------
+#foreach($field in ${table.commonFields})
+#if(${field.propertyName} != "id")
+#if(${field.propertyName} == "extra")
         <result column="${field.name}" property="${field.propertyName}" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler" />
 #else
         <result column="${field.name}" property="${field.propertyName}" />
 #end
-#end
-#foreach($field in ${table.fields})
-#if(!${field.keyFlag})##生成普通字段
-        <result column="${field.name}" property="${field.propertyName}" />
 #end
 #end
     </resultMap>
