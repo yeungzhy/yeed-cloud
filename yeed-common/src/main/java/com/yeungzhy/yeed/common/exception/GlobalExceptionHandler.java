@@ -8,14 +8,17 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.sql.SQLException;
 import java.util.stream.Collectors;
@@ -176,6 +179,19 @@ public class GlobalExceptionHandler {
     public ApiResult<Void> handleNetwork(java.net.SocketTimeoutException e) {
         log.error("网络连接异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.NETWORK_ERROR);
+    }
+
+
+    /* ================================================= 静态资源 ================================================ */
+    /**
+     * 静态资源找不到（如浏览器自动请求的 favicon.ico）
+     * <p>返回干净 404，不走兜底 handleAll —— 这类请求是浏览器正常行为，不是系统 bug，
+     * 不需要记 ERROR 日志，也不应返回 JSON 格式的 ApiResult。
+     */
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public void handleNoResourceFound(NoResourceFoundException e) {
+        // 无需日志：favicon.ico 等请求频繁，404 是正常 HTTP 语义
     }
 
 

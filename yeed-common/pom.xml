@@ -40,6 +40,17 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Spring WebMVC：GlobalExceptionHandler 通过 @ExceptionHandler 捕获的多个 Web 异常类
+             （如 MissingServletRequestParameterException、NoResourceFoundException）物理位于
+             spring-webmvc 模块（尽管包名为 org.springframework.web.bind / web.servlet.resource）。
+             spring-webmvc 由 spring-boot-starter-web 引入，但 yeed-common 不依赖 starter-web，
+             此处 provided scope 保证编译可用且不传递给下游（如 reactive Gateway 模块） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-annotation</artifactId>
