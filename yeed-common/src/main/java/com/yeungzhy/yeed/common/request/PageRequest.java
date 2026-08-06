@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.Range;
 
 @Data
 @Accessors(chain = true)
-public class PageQuery {
+public class PageRequest {
 
     /** 页码 */
     @NotNull(message = "页码不能为空")
