@@ -43,7 +43,7 @@ import com.baomidou.mybatisplus.core.incrementer.DefaultIdentifierGenerator;
  * @author yeungzhy
  * @since 2026-08-02
  */
-public class MybatisPlusCustomIdGenerator extends DefaultIdentifierGenerator {
+public class CustomIdGenerator extends DefaultIdentifierGenerator {
 
     /**
      * 构造自定义雪花 ID 生成器。
@@ -51,7 +51,7 @@ public class MybatisPlusCustomIdGenerator extends DefaultIdentifierGenerator {
      * @param workerId     机器 ID，取值范围 0 ~ 31，必须全局唯一
      * @param dataCenterId 数据中心 ID，取值范围 0 ~ 31，与 workerId 组合必须全局唯一
      */
-    public MybatisPlusCustomIdGenerator(long workerId, long dataCenterId) {
+    public CustomIdGenerator(long workerId, long dataCenterId) {
         super(workerId, dataCenterId);
     }
 

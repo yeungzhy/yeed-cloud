@@ -8,7 +8,7 @@ import lombok.Data;
  * @author yeungzhy at 2026-08-02 02:41
  */
 @Data
-public class MybatisPlusCustomIdProperties {
+public class CustomIdProperties {
 
     private Long workerId;
 

@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * @author yeungzhy at 2026-08-01 22:09
  */
-public class MybatisPlusAutoFillFieldHandler implements MetaObjectHandler {
+public class AutoFillFieldHandler implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {

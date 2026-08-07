@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
-import com.yeungzhy.yeed.common.mybatis.MybatisPlusAutoFillFieldHandler;
-import com.yeungzhy.yeed.common.mybatis.MybatisPlusCustomIdGenerator;
-import com.yeungzhy.yeed.common.mybatis.MybatisPlusCustomIdProperties;
+import com.yeungzhy.yeed.common.crypto.CryptoProperties;
+import com.yeungzhy.yeed.common.mybatis.AutoFillFieldHandler;
+import com.yeungzhy.yeed.common.mybatis.CustomIdGenerator;
+import com.yeungzhy.yeed.common.mybatis.CustomIdProperties;
+import com.yeungzhy.yeed.common.mybatis.FieldCryptoInterceptor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,24 +31,29 @@ public class MybatisPlusConfig {
 
 
     @Bean
+    public AutoFillFieldHandler autoFillFieldHandler() {
+        return new AutoFillFieldHandler();
+    }
+
+
+    @Bean
     @ConfigurationProperties(prefix = "mybatis-plus.global-config")
-    public MybatisPlusCustomIdProperties mybatisPlusCustomIdProperties() {
+    public CustomIdProperties customIdProperties() {
         // 返回一个空实例，Spring 会自动调用绑定器填充属性
-        return new MybatisPlusCustomIdProperties();
+        return new CustomIdProperties();
     }
 
 
     @Bean
-    public MybatisPlusCustomIdGenerator mybatisPlusCustomIdGenerator(MybatisPlusCustomIdProperties properties) {
-        return new MybatisPlusCustomIdGenerator(properties.getWorkerId(), properties.getDataCenterId());
+    public CustomIdGenerator customIdGenerator(CustomIdProperties properties) {
+        return new CustomIdGenerator(properties.getWorkerId(), properties.getDataCenterId());
     }
 
 
     @Bean
-    public MybatisPlusAutoFillFieldHandler mybatisPlusAutoFillFieldHandler() {
-        return new MybatisPlusAutoFillFieldHandler();
+    public FieldCryptoInterceptor fieldCryptoInterceptor(CryptoProperties cryptoProperties) {
+        return new FieldCryptoInterceptor(cryptoProperties);
     }
-
 
 
 }
