@@ -50,7 +50,6 @@ public abstract class BaseEntity {
     private LocalDateTime updateTime;
 
     /** 删除人 */
-    @TableField(fill = FieldFill.UPDATE)
     private Long deleteBy;
     /**
      * 逻辑删除标识：0-未删，纳秒级时间戳-已删
