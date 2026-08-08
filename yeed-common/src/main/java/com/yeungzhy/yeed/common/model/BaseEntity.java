@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.LambdaUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.yeungzhy.yeed.common.mybatis.BaseMapper;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,7 @@ import java.util.Map;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public abstract class BaseEntity {
 
+    /** 雪花ID主键 */
     @EqualsAndHashCode.Include
     private Long id;
 
@@ -53,8 +55,18 @@ public abstract class BaseEntity {
     private Long deleteBy;
     /**
      * 逻辑删除标识：0-未删，纳秒级时间戳-已删
-     * <p> 由 BaseService 在 Java 层生成（Instant 纳秒级），比数据库 UNIX_TIMESTAMP() 秒级精度高
      * <p> 避免高并发下同一秒删除导致唯一约束冲突
+     * <p> 由 {@link BaseMapper#deleteByIdAutoFill(Long)} 填充纳秒级时间戳，比 UNIX_TIMESTAMP() 秒级精度高
+     *
+     * <p> 已在配置中开启全局逻辑删除属性，保留 'UNIX_TIMESTAMP()' 兜底
+     * {@snippet lang="yaml":
+     * mybatis-plus:
+     *   global-config:
+     *     db-config:
+     *       logic-delete-field: deleteTime
+     *       logic-delete-value: 'UNIX_TIMESTAMP()'
+     *       logic-not-delete-value: 0
+     * }
      */
     private Long deleteTime;
 
