@@ -4,6 +4,7 @@ import ${package.Mapper}.${table.mapperName};
 #if(${generateService})
 import ${package.Service}.${table.serviceName};
 #end
+import ${sortsPackage}.${entity}Sorts;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ${table.serviceImplName}#if(${generateService}) implements ${table.serviceName}#end {
 
+    @Resource
+    private ${entity}Sorts ${table.entityPath}Sorts;
     @Resource
     private ${table.mapperName} ${table.entityPath}Mapper;
 
