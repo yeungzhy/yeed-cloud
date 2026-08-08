@@ -26,7 +26,7 @@ import java.util.Map;
 @Data
 @SuperBuilder
 @NoArgsConstructor
-@FieldNameConstants()
+@FieldNameConstants
 @Accessors(chain = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public abstract class BaseEntity {
