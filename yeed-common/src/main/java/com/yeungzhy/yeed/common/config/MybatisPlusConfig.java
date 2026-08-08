@@ -9,6 +9,7 @@ import com.yeungzhy.yeed.common.mybatis.AutoFillFieldHandler;
 import com.yeungzhy.yeed.common.mybatis.CustomIdGenerator;
 import com.yeungzhy.yeed.common.mybatis.CustomIdProperties;
 import com.yeungzhy.yeed.common.mybatis.FieldCryptoInterceptor;
+import com.yeungzhy.yeed.common.mybatis.CustomSqlInjector;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +54,12 @@ public class MybatisPlusConfig {
     @Bean
     public FieldCryptoInterceptor fieldCryptoInterceptor(CryptoProperties cryptoProperties) {
         return new FieldCryptoInterceptor(cryptoProperties);
+    }
+
+
+    @Bean
+    public CustomSqlInjector yeedSqlInjector() {
+        return new CustomSqlInjector();
     }
 
 
