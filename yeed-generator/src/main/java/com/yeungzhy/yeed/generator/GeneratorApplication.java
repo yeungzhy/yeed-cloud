@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
 import com.yeungzhy.yeed.common.model.BaseEntity;
+import com.yeungzhy.yeed.common.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.io.File;
@@ -131,6 +132,7 @@ public class GeneratorApplication {
                         .mapperBuilder()
                         .mapperTemplate("/templates/yeed-mapper.java.vm")   // 自定义 Mapper 模板
                         .mapperXmlTemplate("/templates/yeed-mapper.xml.vm") // 自定义 Mapper XML 模板（为 extra 等 json 列生成 typeHandler）
+                        .superClass(BaseMapper.class)   // 继承项目统一 Mapper（自带 existsByColumn 等 EXISTS 存在性判断、逻辑删除与逃逸能力）
                         .mapperAnnotation(Mapper.class)     // 开启 @Mapper 注解
                         .enableBaseResultMap()              // 启用 BaseResultMap（通用查询映射结果）
                         // 不启用 BaseColumnList：MyBatis-Plus BaseMapper 已提供通用列，XML 无需重复列清单
