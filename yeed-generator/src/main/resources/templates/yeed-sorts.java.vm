@@ -1,0 +1,23 @@
+package ${sortsPackage};
+
+import ${entityFullPackage}.${entity};
+import com.yeungzhy.yeed.common.model.BaseEntity;
+import com.yeungzhy.yeed.common.request.BaseSorts;
+import org.springframework.stereotype.Component;
+
+/**
+ * $!{table.comment} 排序字段白名单
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Component
+public class ${entity}Sorts extends BaseSorts<${entity}> {
+
+    protected ${entity}Sorts() {
+        super(${entity}.class, new BaseSorts.Builder<${entity}>()
+                .add(BaseEntity.Fields.createTime, ${entity}::getCreateTime)
+        );
+    }
+
+}

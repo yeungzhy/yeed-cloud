@@ -135,14 +135,16 @@ public class GeneratorApplication {
                         .enableBaseResultMap()              // 启用 BaseResultMap（通用查询映射结果）
                         // 不启用 BaseColumnList：MyBatis-Plus BaseMapper 已提供通用列，XML 无需重复列清单
                 )
-                // ========== 3.5 注入配置（自定义生成 DTO/VO） ==========
+                // ========== 3.5 注入配置（自定义生成 DTO/VO/Sorts） ==========
                 .injectionConfig(builder -> builder
-                        // 注入 dto/vo 包名，供模板 ${dtoPackage} / ${voPackage} 使用
+                        // 注入 dto/vo/sorts/entity 包名，供模板 ${dtoPackage} / ${voPackage} / ${sortsPackage} / ${entityFullPackage} 使用
                         .customMap(Map.of(
                                 "dtoPackage", fullPackage + ".dto",
-                                "voPackage", fullPackage + ".vo"
+                                "voPackage", fullPackage + ".vo",
+                                "sortsPackage", fullPackage + ".service",
+                                "entityFullPackage", fullPackage + ".entity"
                         ))
-                        // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxVO），packageName 决定输出子包
+                        // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxVO/XxxSorts），packageName 决定输出子包
                         .customFile(List.of(
                                 new CustomFile.Builder()
                                         .fileName("DTO.java")
@@ -153,6 +155,11 @@ public class GeneratorApplication {
                                         .fileName("VO.java")
                                         .templatePath("/templates/yeed-vo.java.vm")
                                         .packageName("vo")
+                                        .build(),
+                                new CustomFile.Builder()
+                                        .fileName("Sorts.java")
+                                        .templatePath("/templates/yeed-sorts.java.vm")
+                                        .packageName("service")
                                         .build()
                         ))
                 )
