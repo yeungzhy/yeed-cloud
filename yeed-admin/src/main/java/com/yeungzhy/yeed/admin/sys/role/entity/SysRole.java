@@ -2,11 +2,11 @@ package com.yeungzhy.yeed.admin.sys.role.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.yeungzhy.yeed.common.model.BaseEntity;
-
-import lombok.experimental.Accessors;
-import lombok.EqualsAndHashCode;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -18,6 +18,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
+@FieldNameConstants
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "yeed_sys_role", autoResultMap = true)

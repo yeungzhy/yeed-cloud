@@ -1,9 +1,16 @@
 package com.yeungzhy.yeed.admin.sys.user.controller;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
+import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.common.request.IdRequest;
+import com.yeungzhy.yeed.common.result.ApiResult;
+import com.yeungzhy.yeed.common.result.PageResult;
 import com.yeungzhy.yeed.common.support.IdenticonUtil;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -27,9 +34,80 @@ public class SysUserController {
 
     @Resource
     private SysUserService sysUserService;
-
     @Resource
     private Cache<String, String> identiconCache;
+
+
+    /**
+     * 新增
+     *
+     * @param dto 入参
+     * @return 新增记录的主键 ID
+     * @author yeungzhy
+     * @since 2026-08-09 16:28:25
+     */
+    @PostMapping("/save")
+    public ApiResult<Long> save(@Valid @RequestBody SysUserDTO dto) {
+        return ApiResult.ok(sysUserService.save(dto));
+    }
+
+
+    /**
+     * 详情
+     *
+     * @param id 主键 ID
+     * @return 详情数据
+     * @author yeungzhy
+     * @since 2026-08-09 16:28:25
+     */
+    @PostMapping("/detail")
+    public ApiResult<SysUserVO> detail(@Valid @RequestBody IdRequest id) {
+        return ApiResult.ok(sysUserService.detail(id.getId()));
+    }
+
+
+    /**
+     * 更新
+     *
+     * @param dto 入参
+     * @return 操作结果
+     * @author yeungzhy
+     * @since 2026-08-09 16:28:25
+     */
+    @PostMapping("/update")
+    public ApiResult<Boolean> update(@Valid @RequestBody SysUserDTO dto) {
+        sysUserService.update(dto);
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 分页查询
+     *
+     * @param dto 分页查询入参
+     * @return 分页结果
+     * @author yeungzhy
+     * @since 2026-08-09 16:28:25
+     */
+    @PostMapping("/page")
+    public ApiResult<PageResult<SysUserVO>> page(@Valid @RequestBody SysUserPageDTO dto) {
+        return ApiResult.ok(sysUserService.page(dto));
+    }
+
+
+    /**
+     * 删除（逻辑删除）
+     *
+     * @param id 主键 ID
+     * @return 操作结果
+     * @author yeungzhy
+     * @since 2026-08-09 16:28:25
+     */
+    @PostMapping("/delete")
+    public ApiResult<Boolean> delete(@Valid @RequestBody IdRequest id) {
+        sysUserService.delete(id.getId());
+        return ApiResult.ok();
+    }
 
 
     /**

@@ -1,10 +1,10 @@
 package com.yeungzhy.yeed.admin.sys.menu.dto;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-
 import lombok.Data;
 import lombok.experimental.Accessors;
+
+import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * 系统菜单权限表 DTO（前端入参）

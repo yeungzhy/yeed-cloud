@@ -1,10 +1,10 @@
 package com.yeungzhy.yeed.admin.sys.role.vo;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-
 import lombok.Data;
 import lombok.experimental.Accessors;
+
+import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * 系统角色 VO（返回出参）
