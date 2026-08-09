@@ -3,18 +3,18 @@ package ${package.Entity};
 #foreach($pkg in ${importEntityFrameworkPackages})
 import ${pkg};
 #end
-
 #foreach($pkg in ${importEntityJavaPackages})
 import ${pkg};
 #end
-#if(${chainModel})
-import lombok.experimental.Accessors;
-#end
+import lombok.Data;
 #if(${superEntityClass})
 import lombok.EqualsAndHashCode;
 #end
-import lombok.Data;
 import lombok.NoArgsConstructor;
+#if(${chainModel})
+import lombok.experimental.Accessors;
+#end
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -26,6 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
+@FieldNameConstants
 #if(${chainModel})
 @Accessors(chain = true)
 #end
