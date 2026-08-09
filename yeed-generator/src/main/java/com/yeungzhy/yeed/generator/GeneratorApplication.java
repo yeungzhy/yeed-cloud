@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.OutputFile;
 import com.baomidou.mybatisplus.generator.config.builder.CustomFile;
 import com.baomidou.mybatisplus.generator.config.rules.DateType;
+import com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
 import com.yeungzhy.yeed.common.model.BaseEntity;
 import com.yeungzhy.yeed.common.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.type.JdbcType;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -72,6 +74,22 @@ public class GeneratorApplication {
         System.out.println("=========================================================");
 
         FastAutoGenerator.create(DB_URL, DB_USERNAME, DB_PASSWORD)
+                // ========== 0. 数据源配置 ==========
+                .dataSourceConfig(builder -> builder
+                        // 配置类型转换处理器
+                        .typeConvertHandler((globalConfig, typeRegistry, metaInfo) -> {
+
+                            if (JdbcType.TINYINT == metaInfo.getJdbcType()) {
+                                // 如果字段名不是以 'is' 开头，将其映射为 Integer
+                                // 如果是布尔字段，建议保持 Boolean
+                                if (!metaInfo.getColumnName().toLowerCase().startsWith("is")) {
+                                    return DbColumnType.INTEGER;
+                                }
+                            }
+                            // 其他情况使用默认转换逻辑
+                            return typeRegistry.getColumnType(metaInfo);
+                        })
+                )
                 // ========== 1. 全局配置 ==========
                 .globalConfig(builder -> builder
                         .outputDir(javaOutputDir)
