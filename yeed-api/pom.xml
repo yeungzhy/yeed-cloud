@@ -10,4 +10,20 @@
     <artifactId>yeed-api</artifactId>
     <packaging>jar</packaging>
 
+    <description>内部契约包：存放 @FeignClient 接口及跨服务共享的入参/出参，仅供内部微服务调用</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common</artifactId>
+            <version>20260501</version>
+        </dependency>
+
+        <!-- OpenFeign：@FeignClient 契约定义（spring-web 注解由其传递引入） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>

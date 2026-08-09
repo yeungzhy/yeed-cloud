@@ -1,0 +1,7 @@
+# src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+#
+# yeed-api 模块自动装配入口：仅注册 Feign 客户端集中配置类。
+# 消费方（如 yeed-auth）依赖 yeed-api 后，所有 @FeignClient 代理 Bean 自动注入，
+# 启动类无需再标注 @EnableFeignClients。
+
+com.yeungzhy.yeed.api.FeignClientsAutoConfiguration
