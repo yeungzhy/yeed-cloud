@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common;
+package com.yeungzhy.yeed.common.constant;
 
 /**
  * 常量统一定义维护

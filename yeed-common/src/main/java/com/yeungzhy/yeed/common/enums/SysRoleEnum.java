@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common;
+package com.yeungzhy.yeed.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

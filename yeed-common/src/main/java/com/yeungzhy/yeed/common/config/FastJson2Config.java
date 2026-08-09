@@ -14,7 +14,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-import static com.yeungzhy.yeed.common.Constant.*;
+import static com.yeungzhy.yeed.common.constant.Constant.*;
 
 /**
  * FastJson2 全局配置

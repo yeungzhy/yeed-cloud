@@ -7,7 +7,7 @@ import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
-import com.yeungzhy.yeed.common.SysRoleEnum;
+import com.yeungzhy.yeed.common.enums.SysRoleEnum;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

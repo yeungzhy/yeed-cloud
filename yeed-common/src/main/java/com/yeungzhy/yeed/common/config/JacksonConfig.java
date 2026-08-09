@@ -22,7 +22,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
-import static com.yeungzhy.yeed.common.Constant.*;
+import static com.yeungzhy.yeed.common.constant.Constant.*;
 
 /**
  * Jackson 全局配置
