@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/menu/sys-menu")
+@RequestMapping("/sys/menu")
 public class SysMenuController {
 
     @Resource

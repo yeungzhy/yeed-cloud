@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/user/sys-user")
+@RequestMapping("/sys/user")
 public class SysUserController {
 
     @Resource
