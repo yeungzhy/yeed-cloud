@@ -13,3 +13,4 @@ com.yeungzhy.yeed.common.config.JacksonConfig
 com.yeungzhy.yeed.common.config.MybatisPlusConfig
 com.yeungzhy.yeed.common.config.RedisConfig
 com.yeungzhy.yeed.common.config.RestClientConfig
+com.yeungzhy.yeed.common.config.StartupInfoPrinterConfig
