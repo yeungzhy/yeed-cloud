@@ -6,16 +6,18 @@ import com.yeungzhy.yeed.common.request.BaseSorts;
 import org.springframework.stereotype.Component;
 
 /**
- * SysUser 排序字段白名单
- * <p> 仅暴露允许前端排序的字段；email/emailBidx/password 等敏感字段不在此列
+ * 系统用户 排序字段白名单
+ *
+ * @author yeungzhy
+ * @since 2026-08-09 11:55:36
  */
 @Component
 public class SysUserSorts extends BaseSorts<SysUser> {
 
     protected SysUserSorts() {
-        super(SysUser.class, config -> config
-                        .add(BaseEntity.Fields.createTime, SysUser::getCreateTime)
-                        .add(SysUser.Fields.username, SysUser::getUsername)
+        super(SysUser.class, new BaseSorts.Builder<SysUser>()
+                .add(BaseEntity.Fields.createTime, SysUser::getCreateTime)
         );
     }
+
 }

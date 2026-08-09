@@ -2,22 +2,23 @@ package com.yeungzhy.yeed.admin.sys.user.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.yeungzhy.yeed.common.model.BaseEntity;
-
-import lombok.experimental.Accessors;
-import lombok.EqualsAndHashCode;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 /**
  * 系统用户
  *
  * @author yeungzhy
- * @since 2026-08-09 10:22:12
+ * @since 2026-08-09 11:53:04
  */
 @Data
 @SuperBuilder
 @NoArgsConstructor
+@FieldNameConstants
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "yeed_sys_user", autoResultMap = true)
