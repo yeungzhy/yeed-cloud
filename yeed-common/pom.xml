@@ -29,6 +29,15 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- Caffeine：JVM 本地高性能缓存（W-TinyLFU 算法，命中率优于传统 LRU）。
+             版本由 Spring Boot BOM 统一管理，无需显式声明。
+             仅当使用 @Cacheable 等 Spring Cache 注解时才需额外引入 spring-boot-starter-cache；
+             此处采用 Caffeine 原生 API（Cache.get(k, loader)），无需 starter-cache -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- Servlet API：spring-web 中的多个 Web 异常类（如 HttpRequestMethodNotSupportedException、
              MissingServletRequestParameterException、HttpMediaTypeNotSupportedException）直接或间接继承自
              jakarta.servlet.ServletException。GlobalExceptionHandler 通过 @ExceptionHandler 捕获这些异常时，
