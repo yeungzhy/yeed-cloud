@@ -7,12 +7,12 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Identicon 头像生成工具（GitHub 默认头像风格）
  *
- * <p>算法原理：{@code HASH(seed)} 是确定性纯函数 —— 同一 seed + 同一算法 永远生成同一张图，
+ * <p>算法原理：{@code SHA-256(seed)} 是确定性纯函数 —— 同一 seed 永远生成同一张图，
  * 不同 seed 视觉差异明显；因此不需要存储生成结果，每次按 seed 实时计算即可。
  *
  * <p>具体规则：
  * <ol>
- *     <li>HASH(seed) → N 字节位流</li>
+ *     <li>SHA-256(seed) → 256 位位流</li>
  *     <li>第 1 字节 → HSL 色相（0°-360°），第 2 字节高/低 4 位分别映射为饱和度与亮度
  *         → 颜色饱满但不刺眼；最终转为 #RRGGBB 十六进制色值</li>
  *     <li>剩余位流中取 {@code GRID × ceil(GRID/2)} 位 = {@code GRID} 行 × 左半独立列，
@@ -22,11 +22,9 @@ import java.security.NoSuchAlgorithmException;
  *         前端通过 CSS width/height 控制展示尺寸</li>
  * </ol>
  *
- * <p>算法与 GRID 安全上限（保证每个决策位不被循环复用，分布最佳）：
- * <ul>
- *     <li>MD5 (128-bit)：颜色 16 位 + 网格 ≤ 112 位 → GRID ∈ [3, 14]，默认 5</li>
- *     <li>SHA-256 (256-bit)：颜色 16 位 + 网格 ≤ 240 位 → GRID ∈ [3, 21]，默认 7</li>
- * </ul>
+ * <p>GRID 安全上限：颜色固定占用前 16 位，剩 240 位供网格决策；
+ * 为保证每个决策位不被循环复用（分布最佳），需满足 {@code GRID × ceil(GRID/2) ≤ 240}，
+ * 即 GRID ∈ [3, 21]，默认 7。
  *
  * <p>深色模式：{@code dark=true} 时背景切换为深灰 #1e1e1e，前景亮度区间整体提亮，
  * 确保在深色背景上对比度足够。色相与饱和度两种模式一致，同一用户切换主题时色系保持连贯。
@@ -38,25 +36,22 @@ public final class IdenticonUtil {
 
     /* ============================================= 算法常量 ============================================= */
 
-    /** MessageDigest 算法名：MD5 */
-    public static final String ALG_MD5 = "MD5";
-    /** MessageDigest 算法名：SHA-256 */
-    public static final String ALG_SHA256 = "SHA-256";
-
-    /** MD5 默认网格尺寸（沿用 GitHub 经典 5×5） */
-    public static final int DEFAULT_GRID_MD5 = 5;
-    /** SHA-256 默认网格尺寸（位数充裕，提升到 7×7 视觉更丰富） */
-    public static final int DEFAULT_GRID_SHA256 = 7;
+    /** 默认网格尺寸（位数充裕，7×7 视觉丰富且分布均匀） */
+    public static final int DEFAULT_GRID = 7;
 
     /** 浅色模式背景色 */
     private static final String BG_LIGHT = "#ffffff";
     /** 深色模式背景色（深灰，不用纯黑避免过于刺眼） */
     private static final String BG_DARK = "#1e1e1e";
 
+    /** MessageDigest 算法名 */
+    private static final String ALGORITHM = "SHA-256";
     /** 颜色固定占用前 16 位（前 2 字节：色相 8bit + 饱和度 4bit + 亮度 4bit） */
     private static final int COLOR_BITS = 16;
     /** 最少 3 列，再小视觉上无法识别为"图案" */
     private static final int MIN_GRID = 3;
+    /** 最多 21 列：SHA-256 去掉颜色 16 位后剩 240 位，满足 GRID × ceil(GRID/2) ≤ 240 */
+    private static final int MAX_GRID = 21;
 
     private IdenticonUtil() {}
 
@@ -64,99 +59,19 @@ public final class IdenticonUtil {
     /* ============================================= 公共 API ============================================= */
 
     /**
-     * 生成 identicon SVG 字符串（MD5 算法，5×5，浅色模式）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     */
-    public static String generate(String seed) {
-        return generateMd5(seed, DEFAULT_GRID_MD5, false);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（MD5 算法，5×5，支持深色模式）
+     * 生成 identicon SVG 字符串（默认网格，支持深色模式）
      *
      * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
      * @param dark 是否深色模式（深色背景 + 提亮前景色）
      * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
+     * @throws IllegalArgumentException 种子为 null/空白
      */
     public static String generate(String seed, boolean dark) {
-        return generateMd5(seed, DEFAULT_GRID_MD5, dark);
+        return generate(seed, DEFAULT_GRID, dark);
     }
 
     /**
-     * 生成 identicon SVG 字符串（MD5 算法，自定义 GRID，浅色模式）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @param grid 网格尺寸，∈ [3, 14]
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     * @throws IllegalArgumentException grid 越界或种子为 null/空白
-     */
-    public static String generateMd5(String seed, int grid) {
-        return generateInternal(seed, ALG_MD5, grid, false);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（MD5 算法，5×5，支持深色模式）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @param dark 是否深色模式（深色背景 + 提亮前景色）
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     */
-    public static String generateMd5(String seed, boolean dark) {
-        return generateInternal(seed, ALG_MD5, DEFAULT_GRID_MD5, dark);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（MD5 算法，完全自定义）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @param grid 网格尺寸，∈ [3, 14]
-     * @param dark 是否深色模式（深色背景 + 提亮前景色）
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     * @throws IllegalArgumentException grid 越界或种子为 null/空白
-     */
-    public static String generateMd5(String seed, int grid, boolean dark) {
-        return generateInternal(seed, ALG_MD5, grid, dark);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（SHA-256 算法，7×7，浅色模式）
-     *
-     * <p>相比 MD5，SHA-256 位数更充裕，默认 GRID=7 可以在不牺牲分布的前提下呈现更丰富的图案细节。
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     */
-    public static String generateSha256(String seed) {
-        return generateInternal(seed, ALG_SHA256, DEFAULT_GRID_SHA256, false);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（SHA-256 算法，7×7，支持深色模式）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @param dark 是否深色模式（深色背景 + 提亮前景色）
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     */
-    public static String generateSha256(String seed, boolean dark) {
-        return generateInternal(seed, ALG_SHA256, DEFAULT_GRID_SHA256, dark);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（SHA-256 算法，自定义 GRID，浅色模式）
-     *
-     * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
-     * @param grid 网格尺寸，∈ [3, 21]
-     * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
-     * @throws IllegalArgumentException grid 越界或种子为 null/空白
-     */
-    public static String generateSha256(String seed, int grid) {
-        return generateInternal(seed, ALG_SHA256, grid, false);
-    }
-
-    /**
-     * 生成 identicon SVG 字符串（SHA-256 算法，完全自定义）
+     * 生成 identicon SVG 字符串（完全自定义）
      *
      * @param seed 种子（唯一即可，推荐传用户 id 的 toString）
      * @param grid 网格尺寸，∈ [3, 21]
@@ -164,43 +79,18 @@ public final class IdenticonUtil {
      * @return 完整 SVG 文档字符串，可直接作为 image/svg+xml 响应返回
      * @throws IllegalArgumentException grid 越界或种子为 null/空白
      */
-    public static String generateSha256(String seed, int grid, boolean dark) {
-        return generateInternal(seed, ALG_SHA256, grid, dark);
-    }
-
-
-    /* ============================================= 内部通用实现 ============================================= */
-
-    /**
-     * 通用生成入口。
-     *
-     * <p>负责：种子校验 → 参数范围校验 → 哈希计算 → 颜色/网格派生 → SVG 组装。
-     *
-     * @param seed      种子，非空非空白
-     * @param algorithm 哈希算法名（MD5 / SHA-256）
-     * @param grid      网格尺寸，按算法有不同上限
-     * @param dark      是否深色模式
-     * @return SVG 字符串
-     */
-    private static String generateInternal(String seed, String algorithm, int grid, boolean dark) {
+    public static String generate(String seed, int grid, boolean dark) {
         // 1. 参数校验
         if (seed == null || seed.isBlank()) {
             throw new IllegalArgumentException("seed must not be null or blank");
         }
-        if (grid < MIN_GRID) {
-            throw new IllegalArgumentException(
-                    "grid must be >= " + MIN_GRID + ", but was " + grid);
-        }
-        int maxGrid = maxGridForAlgorithm(algorithm);
-        if (grid > maxGrid) {
+        if (grid < MIN_GRID || grid > MAX_GRID) {
             throw new IllegalArgumentException(String.format(
-                    "grid=%d exceeds max safe grid for %s (%d). "
-                            + "Either reduce grid or use a stronger hash (SHA-256 supports up to %d)",
-                    grid, algorithm, maxGrid, maxGridForAlgorithm(ALG_SHA256)));
+                    "grid must be in [%d, %d], but was %d", MIN_GRID, MAX_GRID, grid));
         }
 
         // 2. 哈希
-        byte[] hash = digest(seed, algorithm);
+        byte[] hash = digest(seed);
 
         // 3. 派生颜色 & 网格
         String bgColor = dark ? BG_DARK : BG_LIGHT;
@@ -228,38 +118,16 @@ public final class IdenticonUtil {
         return sb.toString();
     }
 
-    /** 返回指定算法不循环复用位流时的最大安全 GRID。 */
-    private static int maxGridForAlgorithm(String algorithm) {
-        int hashBits;
-        switch (algorithm) {
-            case ALG_MD5:
-                hashBits = 128;
-                break;
-            case ALG_SHA256:
-                hashBits = 256;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported hash algorithm: " + algorithm);
-        }
-        int gridBitsBudget = hashBits - COLOR_BITS;
-        // 从大往小试，找到第一个满足 GRID × ceil(GRID/2) ≤ budget 的 GRID
-        // 理论上可以解二次方程：GRID≈sqrt(2·budget)，但枚举更直观不超过 20 次
-        for (int g = 32; g >= MIN_GRID; g--) {
-            int leftCols = (g + 1) / 2;
-            if ((long) g * leftCols <= gridBitsBudget) {
-                return g;
-            }
-        }
-        return MIN_GRID;
-    }
 
-    /** 按指定算法计算种子哈希。MD5/SHA-256 均为 JDK 标准算法，不可用则抛 ISE。 */
-    private static byte[] digest(String seed, String algorithm) {
+    /* ============================================= 内部实现 ============================================= */
+
+    /** 计算种子 SHA-256 哈希。SHA-256 为 JDK 标准算法，不可用则抛 ISE。 */
+    private static byte[] digest(String seed) {
         try {
-            MessageDigest md = MessageDigest.getInstance(algorithm);
+            MessageDigest md = MessageDigest.getInstance(ALGORITHM);
             return md.digest(seed.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(algorithm + " algorithm unavailable on this JVM", e);
+            throw new IllegalStateException(ALGORITHM + " algorithm unavailable on this JVM", e);
         }
     }
 
@@ -308,7 +176,7 @@ public final class IdenticonUtil {
     private static boolean getBit(byte[] hash, int n) {
         int byteIdx = n >> 3;        // n / 8
         int bitIdx  = 7 - (n & 0x7); // 字节内从高位(MSB)往低位取
-        // 安全兜底：前面 maxGrid 校验已保证不会进这个分支；取模避免越界作为防御性设计
+        // 安全兜底：前面 MAX_GRID 校验已保证不会进这个分支；取模避免越界作为防御性设计
         return ((hash[byteIdx % hash.length] >> bitIdx) & 0x01) == 1;
     }
 
@@ -332,9 +200,9 @@ public final class IdenticonUtil {
             b = hueToRgb(p, q, h / 360f - 1f / 3f);
         }
         return new int[]{
-                (int) Math.round(r * 255),
-                (int) Math.round(g * 255),
-                (int) Math.round(b * 255)
+                Math.round(r * 255),
+                Math.round(g * 255),
+                Math.round(b * 255)
         };
     }
 
