@@ -1,9 +1,18 @@
 package ${package.Controller};
 
+import ${dtoPackage}.${entity}DTO;
+import ${dtoPackage}.${entity}PageDTO;
+import ${voPackage}.${entity}VO;
 import ${package.Service}.${table.serviceName};
+import com.yeungzhy.yeed.common.request.IdRequest;
+import com.yeungzhy.yeed.common.result.ApiResult;
+import com.yeungzhy.yeed.common.result.PageResult;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +31,37 @@ public class ${table.controllerName} {
     @Resource
     private ${table.serviceName} ${table.entityPath}Service;
 
+
+        @PostMapping("/save")
+        public ApiResult<Long> save(@Valid @RequestBody ${entity}DTO dto) {
+            return ApiResult.ok(${table.entityPath}Service.save(dto));
+        }
+
+
+        @PostMapping("/detail")
+        public ApiResult<${entity}VO> detail(@Valid @RequestBody IdRequest id) {
+            return ApiResult.ok(${table.entityPath}Service.detail(id.getId()));
+        }
+
+
+        @PostMapping("/update")
+        public ApiResult<Boolean> update(@Valid @RequestBody ${entity}DTO dto) {
+                ${table.entityPath}Service.update(dto);
+            return ApiResult.ok();
+        }
+
+
+        @PostMapping("/page")
+        public ApiResult<PageResult<${entity}VO>> page(@Valid @RequestBody ${entity}PageDTO dto) {
+            return ApiResult.ok(${table.entityPath}Service.page(dto));
+        }
+
+
+        @PostMapping("/delete")
+        public ApiResult<Boolean> delete(@Valid @RequestBody IdRequest id) {
+                ${table.entityPath}Service.delete(id.getId());
+            return ApiResult.ok();
+        }
 
 
 }

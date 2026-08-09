@@ -164,11 +164,16 @@ public class GeneratorApplication {
                                 "sortsPackage", fullPackage + ".service",
                                 "entityFullPackage", fullPackage + ".entity"
                         ))
-                        // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxVO/XxxSorts），packageName 决定输出子包
+                        // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxPageDTO/XxxVO/XxxSorts），packageName 决定输出子包
                         .customFile(List.of(
                                 new CustomFile.Builder()
                                         .fileName("DTO.java")
                                         .templatePath("/templates/yeed-dto.java.vm")
+                                        .packageName("dto")
+                                        .build(),
+                                new CustomFile.Builder()
+                                        .fileName("PageDTO.java")
+                                        .templatePath("/templates/yeed-page.java.vm")
                                         .packageName("dto")
                                         .build(),
                                 new CustomFile.Builder()
