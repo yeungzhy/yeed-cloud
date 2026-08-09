@@ -1,19 +1,19 @@
 package ${package.ServiceImpl};
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import ${dtoPackage}.${entity}DTO;
+import ${dtoPackage}.${entity}PageDTO;
+import ${entityFullPackage}.${entity};
 import ${package.Mapper}.${table.mapperName};
 #if(${generateService})
 import ${package.Service}.${table.serviceName};
 #end
-import ${entityFullPackage}.${entity};
-import ${dtoPackage}.${entity}DTO;
-import ${dtoPackage}.${entity}PageDTO;
-import ${voPackage}.${entity}VO;
 import ${sortsPackage}.${entity}Sorts;
+import ${voPackage}.${entity}VO;
 import com.yeungzhy.yeed.common.exception.BizAssert;
 import com.yeungzhy.yeed.common.result.PageResult;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,55 +34,56 @@ public class ${table.serviceImplName}#if(${generateService}) implements ${table.
     private ${table.mapperName} ${table.entityPath}Mapper;
 
 
-        @Override
-        public Long save(${entity}DTO dto) {
-            ${entity} entity = new ${entity}();
-            // TODO 字段赋值：dto -> entity
-                ${table.entityPath}Mapper.insert(entity);
-            return entity.getId();
-        }
+    @Override
+    public Long save(${entity}DTO dto) {
+        ${entity} entity = new ${entity}();
+        // TODO 字段赋值：dto -> entity
+        ${table.entityPath}Mapper.insert(entity);
+        return entity.getId();
+    }
 
 
-        @Override
-        public ${entity}VO detail(Long id) {
-            ${entity} entity = ${table.entityPath}Mapper.selectById(id);
-            BizAssert.notNull(entity, "记录不存在");
+    @Override
+    public ${entity}VO detail(Long id) {
+        ${entity} entity = ${table.entityPath}Mapper.selectById(id);
+        BizAssert.notNull(entity, "记录不存在");
+        // TODO 字段转换：entity -> vo
+        return new ${entity}VO();
+    }
+
+
+    @Override
+    public void update(${entity}DTO dto) {
+        BizAssert.notNull(dto.getId(), "ID 不能为空");
+        ${entity} entity = new ${entity}();
+        // TODO 字段赋值：dto -> entity（id 必须赋值）
+        ${table.entityPath}Mapper.updateById(entity);
+    }
+
+
+    @Override
+    public PageResult<${entity}VO> page(${entity}PageDTO dto) {
+        // TODO 构建查询条件
+        LambdaQueryWrapper<${entity}> lambdaQuery = Wrappers.<${entity}>lambdaQuery();
+
+        // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
+        ${table.entityPath}Sorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
+
+        Page<${entity}> page = dto.toPage();
+        ${table.entityPath}Mapper.selectPage(page, lambdaQuery);
+
+        return PageResult.of(page, entity -> {
             // TODO 字段转换：entity -> vo
             return new ${entity}VO();
-        }
+        });
+    }
 
 
-        @Override
-        public void update(${entity}DTO dto) {
-            BizAssert.notNull(dto.getId(), "id 不能为空");
-            ${entity} entity = new ${entity}();
-            // TODO 字段赋值：dto -> entity（id 必须赋值）
-                ${table.entityPath}Mapper.updateById(entity);
-        }
-
-
-        @Override
-        public PageResult<${entity}VO> page(${entity}PageDTO dto) {
-            // TODO 构建查询条件
-            LambdaQueryWrapper<${entity}> lambdaQuery = Wrappers.<${entity}>lambdaQuery();
-
-            // 应用排序：先单字段 → 再多字段（顺序敏感）；默认降序；白名单外字段静默忽略
-                ${table.entityPath}Sorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
-
-            Page<${entity}> page = dto.toPage();
-                ${table.entityPath}Mapper.selectPage(page, lambdaQuery);
-
-            return PageResult.of(page, entity -> {
-                // TODO 字段转换：entity -> vo
-                return new ${entity}VO();
-            });
-        }
-
-
-        @Override
-        public void delete(Long id) {
-                ${table.entityPath}Mapper.deleteByIdAutoFill(id);
-        }
+    @Override
+    public void delete(Long id) {
+        BizAssert.notNull(id, "ID 不能为空");
+        ${table.entityPath}Mapper.deleteByIdAutoFill(id);
+    }
 
 
 }

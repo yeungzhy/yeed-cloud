@@ -3,9 +3,6 @@ package ${package.Entity};
 #foreach($pkg in ${importEntityFrameworkPackages})
 import ${pkg};
 #end
-#foreach($pkg in ${importEntityJavaPackages})
-import ${pkg};
-#end
 import lombok.Data;
 #if(${superEntityClass})
 import lombok.EqualsAndHashCode;
@@ -16,6 +13,12 @@ import lombok.experimental.Accessors;
 #end
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+#if($importEntityJavaPackages.size()>0)
+
+#foreach($pkg in ${importEntityJavaPackages})
+import ${pkg};
+#end
+#end
 
 /**
  * $!{table.comment}

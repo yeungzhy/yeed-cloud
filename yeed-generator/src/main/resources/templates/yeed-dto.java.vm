@@ -1,13 +1,13 @@
 package ${dtoPackage};
 
+import lombok.Data;
+import lombok.experimental.Accessors;
+
 #foreach($pkg in ${importEntityJavaPackages})
 import ${pkg};
 #end
 import java.time.LocalDateTime;
 import java.util.Map;
-
-import lombok.Data;
-import lombok.experimental.Accessors;
 
 /**
  * $!{table.comment} DTO（前端入参）

@@ -13,42 +13,52 @@ import com.yeungzhy.yeed.common.result.PageResult;
  */
 public interface ${table.serviceName} {
 
-        /**
-         * 新增
-         *
-         * @param dto 入参
-         * @return 新增记录的主键 ID
-         */
-        Long save(${entity}DTO dto);
+    /**
+     * 新增
+     *
+     * @param dto 入参
+     * @return 新增记录的主键 ID
+     * @author ${author}
+     * @since ${date}
+     */
+    Long save(${entity}DTO dto);
 
-        /**
-         * 详情
-         *
-         * @param id 主键 ID
-         * @return 详情数据
-         */
-            ${entity}VO detail(Long id);
+    /**
+     * 详情
+     *
+     * @param id 主键 ID
+     * @return 详情数据
+     * @author ${author}
+     * @since ${date}
+     */
+    ${entity}VO detail(Long id);
 
-        /**
-         * 更新
-         *
-         * @param dto 入参
-         */
-        void update(${entity}DTO dto);
+    /**
+     * 更新
+     *
+     * @param dto 入参
+     * @author ${author}
+     * @since ${date}
+     */
+    void update(${entity}DTO dto);
 
-        /**
-         * 分页查询
-         *
-         * @param dto 分页查询入参
-         * @return 分页结果
-         */
-        PageResult<${entity}VO> page(${entity}PageDTO dto);
+    /**
+     * 分页查询
+     *
+     * @param dto 分页查询入参
+     * @return 分页结果
+     * @author ${author}
+     * @since ${date}
+     */
+    PageResult<${entity}VO> page(${entity}PageDTO dto);
 
-        /**
-         * 删除（逻辑删除）
-         *
-         * @param id 主键 ID
-         */
-        void delete(Long id);
+    /**
+     * 删除（逻辑删除）
+     *
+     * @param id 主键 ID
+     * @author ${author}
+     * @since ${date}
+     */
+    void delete(Long id);
 
 }
