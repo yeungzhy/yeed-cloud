@@ -26,15 +26,17 @@
             <artifactId>yeed-common-web</artifactId>
             <version>20260501</version>
         </dependency>
+        <!-- Sa-Token 鉴权：security 模块提供 sa-token-core + jwt + redis-template（栈无关），
+             这里只需补 servlet 栈适配 starter -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-security</artifactId>
+            <version>20260501</version>
+        </dependency>
         <dependency>
             <groupId>com.yeungzhy</groupId>
             <artifactId>yeed-api</artifactId>
             <version>20260501</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Caffeine：本地高性能缓存（W-TinyLFU），IdenticonCacheConfig 和 SysUserController 使用 -->
@@ -43,18 +45,10 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
-        <!-- Sa-Token 权限认证 -->
+        <!-- Sa-Token Servlet 栈适配（security 模块已提供 core/jwt/redis-template） -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-template</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-jwt</artifactId>
         </dependency>
 
         <!-- Nacos 配置中心 -->
