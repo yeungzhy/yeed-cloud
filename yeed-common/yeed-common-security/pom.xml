@@ -18,9 +18,26 @@
             <version>20260501</version>
         </dependency>
 
+        <!--
+            Sa-Token 三件套（栈无关部分）：
+            业务模块引入本模块后，只需再补一个对应栈的 starter 即可拥有完整 Sa-Token 能力：
+              - servlet 模块（admin/auth）：sa-token-spring-boot3-starter
+              - reactive 模块（gateway）：sa-token-reactor-spring-boot3-starter
+        -->
+        <!-- Sa-Token 核心 API：StpUtil / SaSession 等 -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-core</artifactId>
+        </dependency>
+        <!-- Sa-Token JWT 扩展：token 生成与校验 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-jwt</artifactId>
+        </dependency>
+        <!-- Sa-Token Redis 存储：会话持久化，传递 spring-boot-starter-data-redis -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-template</artifactId>
         </dependency>
 
         <dependency>
@@ -28,10 +45,10 @@
             <artifactId>spring-boot-autoconfigure</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- SaTokenLoginUserContext 直接使用 ObjectMapper 做类型转换，compile 保证自包含 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>provided</scope>
         </dependency>
 
     </dependencies>

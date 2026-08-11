@@ -1,10 +1,12 @@
-package com.yeungzhy.yeed.common.core.security;
+package com.yeungzhy.yeed.common.core.config;
 
+import com.yeungzhy.yeed.common.core.security.DefaultLoginUserContext;
+import com.yeungzhy.yeed.common.core.security.LoginUserContext;
+import com.yeungzhy.yeed.common.core.security.LoginUserContextBinder;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
-// common-core: com.yeungzhy.yeed.common.security.LoginUserContextAutoConfiguration
 @AutoConfiguration
 public class LoginUserContextAutoConfiguration {
 
@@ -26,4 +28,5 @@ public class LoginUserContextAutoConfiguration {
     public LoginUserContextBinder loginUserContextBinder(LoginUserContext context) {
         return new LoginUserContextBinder(context);
     }
+
 }

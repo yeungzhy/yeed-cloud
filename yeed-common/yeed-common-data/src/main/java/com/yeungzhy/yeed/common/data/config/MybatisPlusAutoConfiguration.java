@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-public class MybatisPlusConfig {
+public class MybatisPlusAutoConfiguration {
 
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {

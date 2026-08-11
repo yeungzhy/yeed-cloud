@@ -1,7 +1,7 @@
 package com.yeungzhy.yeed.common.data.config;
 
+import com.yeungzhy.yeed.common.core.config.CryptoAutoConfiguration;
 import com.yeungzhy.yeed.common.core.crypto.BlindIndexProvider;
-import com.yeungzhy.yeed.common.core.crypto.CryptoAutoConfiguration;
 import com.yeungzhy.yeed.common.core.crypto.CryptoProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;

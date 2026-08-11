@@ -18,15 +18,16 @@
             <version>20260501</version>
         </dependency>
 
+        <!-- redisson-spring-boot-starter 传递依赖 spring-boot-starter-data-redis，一个依赖同时拥有 Redisson + RedisTemplate 能力 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- RedisConfig 使用 GenericJackson2JsonRedisSerializer(objectMapper)，compile 保证自包含 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>provided</scope>
         </dependency>
 
 

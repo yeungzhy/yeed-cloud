@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common.web.support;
+package com.yeungzhy.yeed.common.core.support;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,13 +14,20 @@ import java.util.Map;
 
 /**
  * Jackson 静态工具类 (用法同 Hutool/Fastjson2)
+ *
+ * <p>通过 {@link com.yeungzhy.yeed.common.core.config.JacksonConfig} 注册为 Spring Bean，
+ * 内部持有的 {@link ObjectMapper} 即全局统一实例，序列化行为与 HTTP 层 / Redis 层完全一致。
+ *
+ * @author yeungzhy
  */
 @Slf4j
-@Component
 public class JacksonHelper {
 
-    @Resource
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+
+    public JacksonHelper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
 
     // ============ 序列化：对象 -> JSON 字符串 ====================

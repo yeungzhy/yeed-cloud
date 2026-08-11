@@ -22,7 +22,7 @@ import java.util.Date;
  * @author yeungzhy
  */
 @AutoConfiguration
-public class FastJson2Config implements ApplicationRunner {
+public class FastJson2AutoConfiguration implements ApplicationRunner {
 
 
     @Override

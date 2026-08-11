@@ -1,5 +1,6 @@
-package com.yeungzhy.yeed.common.core.bootstrap;
+package com.yeungzhy.yeed.common.core.config;
 
+import com.yeungzhy.yeed.common.core.bootstrap.StartupInfoPrinter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

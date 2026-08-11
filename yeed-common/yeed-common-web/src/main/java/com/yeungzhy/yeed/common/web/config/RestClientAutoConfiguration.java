@@ -34,7 +34,7 @@ import org.springframework.web.client.RestClient;
  */
 @AutoConfiguration
 @ConditionalOnClass({RestClient.class, CloseableHttpClient.class})
-public class RestClientConfig {
+public class RestClientAutoConfiguration {
 
     // ===== 连接池参数 =====
     /** 连接池总连接数 */

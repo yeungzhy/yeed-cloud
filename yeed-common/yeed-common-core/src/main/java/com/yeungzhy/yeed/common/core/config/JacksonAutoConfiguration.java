@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common.web.config;
+package com.yeungzhy.yeed.common.core.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,9 +13,9 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.yeungzhy.yeed.common.core.constant.Constant;
+import com.yeungzhy.yeed.common.core.support.JacksonHelper;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
 import java.text.SimpleDateFormat;
@@ -30,11 +30,16 @@ import static com.yeungzhy.yeed.common.core.constant.Constant.DATE_TIME_PATTERN;
 /**
  * Jackson 全局配置
  *
+ * <p>定义全局唯一的 {@link ObjectMapper} Bean，统一时间格式化、Long→String 等序列化行为。
+ * 归属 common-core：所有引入 core 的模块（admin / auth / gateway）均自动获得同一份配置，
+ * cache 模块的 {@code RedisTemplate} 序列化、security 模块的类型转换、web 层的 HTTP JSON
+ * 序列化全部复用同一个实例。
+ *
  * @author yeungzhy
  */
 @AutoConfiguration
-@AutoConfigureBefore(JacksonAutoConfiguration.class)
-public class JacksonConfig {
+@AutoConfigureBefore(org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class)
+public class JacksonAutoConfiguration {
 
     /** 统一日期时间格式 */
     private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern(Constant.DATE_TIME_PATTERN);
@@ -78,6 +83,15 @@ public class JacksonConfig {
         objectMapper.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
 
         return objectMapper;
+    }
+
+    /**
+     * 注册 {@link JacksonHelper} 工具 Bean，持有上方全局统一的 {@link ObjectMapper}。
+     * 业务侧通过 {@code @Resource JacksonHelper jacksonHelper} 注入即可使用。
+     */
+    @Bean
+    public JacksonHelper jacksonHelper(ObjectMapper objectMapper) {
+        return new JacksonHelper(objectMapper);
     }
 
 }

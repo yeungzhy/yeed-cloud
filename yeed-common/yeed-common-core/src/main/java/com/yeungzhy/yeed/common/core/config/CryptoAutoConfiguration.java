@@ -1,5 +1,7 @@
-package com.yeungzhy.yeed.common.core.crypto;
+package com.yeungzhy.yeed.common.core.config;
 
+import com.yeungzhy.yeed.common.core.crypto.CryptoProperties;
+import com.yeungzhy.yeed.common.core.crypto.CryptoPropertiesValidator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +26,6 @@ public class CryptoAutoConfiguration {
     @Bean
     @ConfigurationProperties(prefix = "crypto")
     public CryptoProperties cryptoProperties() {
-        // 返回空实例，Spring 会通过 relaxed binding 自动填充属性
         return new CryptoProperties();
     }
 
