@@ -13,9 +13,20 @@
     <dependencies>
         <dependency>
             <groupId>com.yeungzhy</groupId>
-            <artifactId>yeed-common</artifactId>
+            <artifactId>yeed-common-core</artifactId>
             <version>20260501</version>
         </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-web</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-cache</artifactId>
+            <version>20260501</version>
+        </dependency>
+
         <dependency>
             <groupId>com.yeungzhy</groupId>
             <artifactId>yeed-api</artifactId>

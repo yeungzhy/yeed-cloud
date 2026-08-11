@@ -10,7 +10,7 @@ import java.time.Duration;
 /**
  * Identicon 头像本地缓存配置
  *
- * <p>{@link com.yeungzhy.yeed.common.support.IdenticonUtil#generate(String, int, boolean)}
+ * <p>{@link com.yeungzhy.yeed.common.core.support.IdenticonUtil#generate(String, int, boolean)}
  * 是确定性纯函数——同一 (id, dark) 永远产出同一 SVG，结果可永久复用且无需失效。
  * 此处用 Caffeine 在 JVM 进程内缓存生成结果，避免每次请求重复做 SHA-256 哈希 + SVG 拼接。
  *

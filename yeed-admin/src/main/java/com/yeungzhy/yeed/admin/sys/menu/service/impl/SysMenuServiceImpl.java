@@ -10,8 +10,9 @@ import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuService;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuSorts;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
-import com.yeungzhy.yeed.common.exception.BizAssert;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.exception.BizAssert;
+import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.data.support.MybatisPageConverters;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -67,10 +68,10 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         sysMenuSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        Page<SysMenu> page = dto.toPage();
+        Page<SysMenu> page = MybatisPageConverters.toMybatisPlusPage(dto);
         sysMenuMapper.selectPage(page, lambdaQuery);
 
-        return PageResult.of(page, entity -> {
+        return MybatisPageConverters.toPageResult(page, entity -> {
             // TODO 字段转换：entity -> vo
             return new SysMenuVO();
         });

@@ -10,8 +10,9 @@ import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserSorts;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
-import com.yeungzhy.yeed.common.exception.BizAssert;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.exception.BizAssert;
+import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.data.support.MybatisPageConverters;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -67,10 +68,10 @@ public class SysUserServiceImpl implements SysUserService {
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         sysUserSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        Page<SysUser> page = dto.toPage();
+        Page<SysUser> page = MybatisPageConverters.toMybatisPlusPage(dto);
         sysUserMapper.selectPage(page, lambdaQuery);
 
-        return PageResult.of(page, entity -> {
+        return MybatisPageConverters.toPageResult(page, entity -> {
             // TODO 字段转换：entity -> vo
             return new SysUserVO();
         });

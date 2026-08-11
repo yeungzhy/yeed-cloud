@@ -3,7 +3,7 @@ package com.yeungzhy.yeed.admin.sys.user.service;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 
 /**
  * 系统用户 服务类

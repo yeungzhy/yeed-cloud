@@ -8,7 +8,15 @@
     </parent>
 
     <artifactId>yeed-common</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>yeed-common-cache</module>
+        <module>yeed-common-core</module>
+        <module>yeed-common-data</module>
+        <module>yeed-common-security</module>
+        <module>yeed-common-web</module>
+    </modules>
 
     <dependencies>
         <dependency>
@@ -16,132 +24,6 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <!-- Caffeine：JVM 本地高性能缓存（W-TinyLFU 算法，命中率优于传统 LRU）。
-             版本由 Spring Boot BOM 统一管理，无需显式声明。
-             仅当使用 @Cacheable 等 Spring Cache 注解时才需额外引入 spring-boot-starter-cache；
-             此处采用 Caffeine 原生 API（Cache.get(k, loader)），无需 starter-cache -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
-
-        <!-- Servlet API：spring-web 中的多个 Web 异常类（如 HttpRequestMethodNotSupportedException、
-             MissingServletRequestParameterException、HttpMediaTypeNotSupportedException）直接或间接继承自
-             jakarta.servlet.ServletException。GlobalExceptionHandler 通过 @ExceptionHandler 捕获这些异常时，
-             编译器需要解析其完整继承链（含 ServletException），而 spring-web 将 jakarta.servlet-api 声明为
-             provided 不向下传递，故此显式声明以保证 yeed-common 编译通过 -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Spring WebMVC：GlobalExceptionHandler 通过 @ExceptionHandler 捕获的多个 Web 异常类
-             （如 MissingServletRequestParameterException、NoResourceFoundException）物理位于
-             spring-webmvc 模块（尽管包名为 org.springframework.web.bind / web.servlet.resource）。
-             spring-webmvc 由 spring-boot-starter-web 引入，但 yeed-common 不依赖 starter-web，
-             此处 provided scope 保证编译可用且不传递给下游（如 reactive Gateway 模块） -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-extension</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-core</artifactId>
-        </dependency>
-
-        <!-- Apache HttpClient 5：RestClient 与 OpenFeign 共用的底层高性能 HTTP 客户端（连接池/超时/重试） -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-        </dependency>
-
-        <!-- Apache Commons 工具 -->
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-        </dependency>
-
-        <!-- Guava -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-
-        <!-- Hutool -->
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-crypto</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-jwt</artifactId>
-        </dependency>
-
-        <!-- FastJson -->
-        <dependency>
-            <groupId>com.alibaba.fastjson2</groupId>
-            <artifactId>fastjson2</artifactId>
-        </dependency>
 
         <!-- Spring Boot Test -->
         <dependency>

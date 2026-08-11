@@ -10,4 +10,33 @@
     <artifactId>yeed-gateway</artifactId>
     <packaging>jar</packaging>
 
+    <!--
+        ===================== Gateway 依赖约定 =====================
+        Gateway 是 Reactive（WebFlux），与 admin/auth 等传统 Servlet/MVC 模块不同。
+        引入 common 子模块时务必遵守以下约定：
+
+        ✅ 可引：yeed-common-core    —— 纯基础（DTO/异常/响应体/加密工具），零框架依赖
+        ✅ 可引：yeed-common-cache   —— Redis（Lettuce 本身是响应式客户端）
+        ✅ 可引：yeed-common-security —— Sa-Token 有 Reactive 适配，Gateway 可正常使用
+
+        ❌ 禁引：yeed-common-data    —— MyBatis-Plus + MySQL + Druid 全是阻塞 IO
+        ❌ 禁引：yeed-common-web     —— Servlet/MVC 栈（含 logback-spring.xml、GlobalExceptionHandler）
+        ❌ 禁引：spring-boot-starter-web —— 与 Gateway 的 WebFlux 冲突
+    -->
+
+
+    <build>
+        <plugins>
+            <!--
+                引用父 POM pluginManagement 中的配置。
+                因为父 POM 已经配置了 repackage goal 和 excludes，
+                这里可以极度简化，甚至只写 groupId + artifactId。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

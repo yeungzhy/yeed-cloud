@@ -1,0 +1,2 @@
+# src/main/resources/META-INF/spring.factories
+org.springframework.context.ApplicationListener=com.yeungzhy.yeed.common.core.listener.EnvCheckListener

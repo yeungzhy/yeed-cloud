@@ -14,7 +14,7 @@
         <!-- 依赖 common，复用 BaseEntity、Result、工具类 -->
         <dependency>
             <groupId>com.yeungzhy</groupId>
-            <artifactId>yeed-common</artifactId>
+            <artifactId>yeed-common-data</artifactId>
             <version>20260501</version>
         </dependency>
 
@@ -39,6 +39,10 @@
 
     <build>
         <plugins>
+            <!--
+                父 POM pluginManagement, skip=true 其实是 防御性/文档化 配置（不写也不会 repackage）
+                明确声明这里不打包
+            -->
             <!-- 跳过 spring-boot:repackage，避免打包成可执行 fat jar -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -47,6 +51,11 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+
+            <!--
+                maven-install-plugin / maven-deploy-plugin 是默认绑定到生命周期的
+                所以 skip=true 是必需的, 不写就真会把产物装进本地仓库
+            -->
             <!-- 跳过 install，不安装到本地仓库，防止被其他模块误依赖 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

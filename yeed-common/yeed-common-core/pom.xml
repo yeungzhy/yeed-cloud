@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yeungzhy</groupId>
+        <artifactId>yeed-common</artifactId>
+        <version>20260501</version>
+    </parent>
+
+    <artifactId>yeed-common-core</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            mybatis-plus-annotation：仅含 @EnumValue/@TableName 等注解定义，零传递依赖。
+            供 com.yeungzhy.yeed.common.core.enums.CommonStatusEnum 标注 DB 持久化字段，
+            使该系统级语义枚举可下沉到 core 层（与 SysRoleEnum 同级），而不必拖入整个 ORM starter。
+            版本由根 POM 的 mybatis-plus-bom 统一管理。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+        </dependency>
+
+        <!--
+            jackson-annotations：仅含 @JsonValue 等注解定义。
+            供 CommonStatusEnum 声明序列化契约（前端拿到整数 0/1）。
+            provided 范围：编译期需要，运行期由使用方（web 模块等）的 jackson-databind 提供。
+            版本由根 POM 的 jackson-bom 统一管理。
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+</project>

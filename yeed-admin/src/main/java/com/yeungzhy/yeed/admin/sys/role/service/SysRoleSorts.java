@@ -1,8 +1,8 @@
 package com.yeungzhy.yeed.admin.sys.role.service;
 
 import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
-import com.yeungzhy.yeed.common.model.BaseEntity;
-import com.yeungzhy.yeed.common.request.BaseSorts;
+import com.yeungzhy.yeed.common.data.model.BaseEntity;
+import com.yeungzhy.yeed.common.data.request.BaseSorts;
 import org.springframework.stereotype.Component;
 
 /**

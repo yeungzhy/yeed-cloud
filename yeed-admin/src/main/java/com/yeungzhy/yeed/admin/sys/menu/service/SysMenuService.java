@@ -3,7 +3,7 @@ package com.yeungzhy.yeed.admin.sys.menu.service;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuPageDTO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 
 /**
  * 系统菜单权限表 服务类

@@ -1,7 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.role.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.yeungzhy.yeed.common.model.BaseEntity;
+import com.yeungzhy.yeed.common.data.model.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

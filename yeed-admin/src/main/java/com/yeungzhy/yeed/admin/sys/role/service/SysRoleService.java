@@ -3,7 +3,7 @@ package com.yeungzhy.yeed.admin.sys.role.service;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRolePageDTO;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 
 /**
  * 系统角色 服务类

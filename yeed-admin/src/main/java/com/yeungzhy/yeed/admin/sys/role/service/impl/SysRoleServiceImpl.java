@@ -7,10 +7,12 @@ import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRolePageDTO;
 import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
 import com.yeungzhy.yeed.admin.sys.role.mapper.SysRoleMapper;
+import com.yeungzhy.yeed.admin.sys.role.service.SysRoleService;
 import com.yeungzhy.yeed.admin.sys.role.service.SysRoleSorts;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
-import com.yeungzhy.yeed.common.exception.BizAssert;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.exception.BizAssert;
+import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.data.support.MybatisPageConverters;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,10 +68,10 @@ public class SysRoleServiceImpl implements SysRoleService {
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         sysRoleSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        Page<SysRole> page = dto.toPage();
+        Page<SysRole> page = MybatisPageConverters.toMybatisPlusPage(dto);
         sysRoleMapper.selectPage(page, lambdaQuery);
 
-        return PageResult.of(page, entity -> {
+        return MybatisPageConverters.toPageResult(page, entity -> {
             // TODO 字段转换：entity -> vo
             return new SysRoleVO();
         });

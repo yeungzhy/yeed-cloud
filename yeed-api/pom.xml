@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.yeungzhy</groupId>
-            <artifactId>yeed-common</artifactId>
+            <artifactId>yeed-common-core</artifactId>
             <version>20260501</version>
         </dependency>
 
@@ -25,5 +25,19 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                引用父 POM pluginManagement 中的配置。
+                因为父 POM 已经配置了 repackage goal 和 excludes，
+                这里可以极度简化，甚至只写 groupId + artifactId。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

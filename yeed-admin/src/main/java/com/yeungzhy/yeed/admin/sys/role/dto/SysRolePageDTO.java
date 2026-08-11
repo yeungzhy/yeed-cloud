@@ -1,6 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.role.dto;
 
-import com.yeungzhy.yeed.common.request.PageRequest;
+import com.yeungzhy.yeed.common.core.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;

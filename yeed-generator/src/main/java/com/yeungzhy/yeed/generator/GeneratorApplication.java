@@ -7,8 +7,8 @@ import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
-import com.yeungzhy.yeed.common.model.BaseEntity;
-import com.yeungzhy.yeed.common.mybatis.BaseMapper;
+import com.yeungzhy.yeed.common.data.model.BaseEntity;
+import com.yeungzhy.yeed.common.data.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.type.JdbcType;
 

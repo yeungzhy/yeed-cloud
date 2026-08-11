@@ -1,7 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.user.mapper;
 
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
-import com.yeungzhy.yeed.common.mybatis.BaseMapper;
+import com.yeungzhy.yeed.common.data.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

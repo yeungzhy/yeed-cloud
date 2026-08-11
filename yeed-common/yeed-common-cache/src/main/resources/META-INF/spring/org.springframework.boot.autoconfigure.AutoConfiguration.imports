@@ -1,0 +1,9 @@
+# src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+
+# Only for @Configuration classes (auto‑configuration candidates).
+# This is the standard Spring Boot 3 mechanism for registering configuration classes and defining Beans.
+
+# ApplicationListener implementations must be loaded before the ApplicationContext starts to catch early events. AutoConfiguration.imports loads too late.
+# To register an ApplicationListener, use the dedicated SPI file: `src/main/resources/META-INF/spring.factories`, use key `org.springframework.context.ApplicationListener`, and add the fully‑qualified class name of the ApplicationListener implementation.
+
+com.yeungzhy.yeed.common.cache.config.RedisConfig
