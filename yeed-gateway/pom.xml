@@ -23,6 +23,54 @@
         ❌ 禁引：yeed-common-web     —— Servlet/MVC 栈（含 logback-spring.xml、GlobalExceptionHandler）
         ❌ 禁引：spring-boot-starter-web —— 与 Gateway 的 WebFlux 冲突
     -->
+    <dependencies>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-core</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-cache</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-security</artifactId>
+            <version>20260501</version>
+        </dependency>
+
+        <!-- Spring Cloud Gateway（WebFlux 响应式网关） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+        </dependency>
+
+        <!-- Sa-Token 响应式鉴权（WebFlux）。
+             security 模块已提供 sa-token-core + jwt + redis-template（栈无关），
+             这里只需补 reactive 栈适配 starter -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <!-- Nacos 服务发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <!-- 负载均衡器（lb:// 路由依赖） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+    </dependencies>
 
 
     <build>
