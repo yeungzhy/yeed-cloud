@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.api;
 
+import com.yeungzhy.yeed.api.feign.EnableFeignFallbacks;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,5 +18,6 @@ import org.springframework.context.annotation.Configuration;
  * @since 2026-08-09
  */
 @Configuration
+@EnableFeignFallbacks
 @EnableFeignClients("com.yeungzhy.yeed.api")
 public class FeignClientsAutoConfiguration { }
