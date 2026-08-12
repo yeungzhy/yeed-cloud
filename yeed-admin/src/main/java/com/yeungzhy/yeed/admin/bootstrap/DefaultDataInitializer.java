@@ -87,6 +87,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
         }
 
         SysUser sysUser = SysUser.builder()
+                .realName(BuiltinRoleEnum.SUPER_ADMIN.getRoleName())
                 .username(username)
                 // 超管固定工号
                 .employeeNo("1")
