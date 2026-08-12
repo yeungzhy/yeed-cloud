@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.user.service;
 
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
 import org.mapstruct.Mapper;
@@ -23,5 +24,8 @@ public interface SysUserConvert {
 
     /** DTO → Entity（save / update 入参） */
     SysUser toEntity(SysUserDTO dto);
+
+    /** DTO → Entity（update 入参） */
+    SysUser toEntity(SysUserUpdateDTO dto);
 
 }

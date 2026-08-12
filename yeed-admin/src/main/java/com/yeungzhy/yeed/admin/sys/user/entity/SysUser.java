@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.user.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.yeungzhy.yeed.common.core.crypto.Crypto;
 import com.yeungzhy.yeed.common.data.model.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,7 @@ public class SysUser extends BaseEntity {
     /** 密码 */
     private String password;
     /** 邮箱 */
+    @Crypto
     private String email;
     /** 邮箱盲索引 */
     private String emailBidx;

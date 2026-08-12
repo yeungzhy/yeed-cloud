@@ -1,13 +1,12 @@
 package com.yeungzhy.yeed.admin.sys.user.service;
 
-import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
-import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * 系统用户 服务类
@@ -27,7 +26,7 @@ public interface SysUserService {
      * @author yeungzhy
      * @since 2026-08-13 06:48:01
      */
-    Long save(SysUserDTO dto);
+    Long save(SysUserAddDTO dto);
 
     /**
      * 更新
@@ -36,7 +35,7 @@ public interface SysUserService {
      * @author yeungzhy
      * @since 2026-08-13 06:48:01
      */
-    void update(SysUserDTO dto);
+    void update(SysUserUpdateDTO dto);
 
 
     // ==================== 标准查询（R） ====================
