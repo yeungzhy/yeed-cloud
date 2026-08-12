@@ -19,7 +19,7 @@ import org.mapstruct.Mapper;
 public interface ${entity}Convert {
 
     /** Entity → VO（详情 / 分页列表出参） */
-    ${entity}VO toVo(${entity} entity);
+    ${entity}VO toVO(${entity} entity);
 
     /** DTO → Entity（save / update 入参） */
     ${entity} toEntity(${entity}DTO dto);

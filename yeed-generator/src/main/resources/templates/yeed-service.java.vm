@@ -2,8 +2,12 @@ package ${package.Service};
 
 import ${dtoPackage}.${entity}DTO;
 import ${dtoPackage}.${entity}PageDTO;
+import ${entityFullPackage}.${entity};
 import ${voPackage}.${entity}VO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * $!{table.comment} 服务类
@@ -12,6 +16,8 @@ import com.yeungzhy.yeed.common.core.result.PageResult;
  * @since ${date}
  */
 public interface ${table.serviceName} {
+
+    // ==================== 标准写入（CUD） ====================
 
     /**
      * 新增
@@ -24,6 +30,18 @@ public interface ${table.serviceName} {
     Long save(${entity}DTO dto);
 
     /**
+     * 更新
+     *
+     * @param dto 入参
+     * @author ${author}
+     * @since ${date}
+     */
+    void update(${entity}DTO dto);
+
+
+    // ==================== 标准查询（R） ====================
+
+    /**
      * 详情
      *
      * @param id 主键 ID
@@ -32,15 +50,6 @@ public interface ${table.serviceName} {
      * @since ${date}
      */
     ${entity}VO detail(Long id);
-
-    /**
-     * 更新
-     *
-     * @param dto 入参
-     * @author ${author}
-     * @since ${date}
-     */
-    void update(${entity}DTO dto);
 
     /**
      * 分页查询
@@ -52,6 +61,9 @@ public interface ${table.serviceName} {
      */
     PageResult<${entity}VO> page(${entity}PageDTO dto);
 
+
+    // ==================== 标准删除（逻辑删除） ====================
+
     /**
      * 删除（逻辑删除）
      *
@@ -60,5 +72,44 @@ public interface ${table.serviceName} {
      * @since ${date}
      */
     void delete(Long id);
+
+    /**
+     * 批量删除（逻辑删除）
+     *
+     * @param ids 主键 ID 集合
+     * @author ${author}
+     * @since ${date}
+     */
+    void delete(Collection<Long> ids);
+
+
+    // ==================== 特殊操作（回收站 & 危险操作） ====================
+
+    /**
+     * 分页查询已逻辑删除的数据，如回收站列表
+     *
+     * @return 分页结果
+     * @author ${author}
+     * @since ${date}
+     */
+    PageResult<${entity}VO> pageWithDeleted(${entity}PageDTO dto);
+
+    /**
+     * 恢复已逻辑删除的数据
+     *
+     * @param id 主键 ID
+     * @author ${author}
+     * @since ${date}
+     */
+    void restoreById(Long id);
+
+    /**
+     * 物理删除（真 DELETE，不可恢复，仅用于"回收站彻底删除"等场景）
+     *
+     * @param id 主键 ID
+     * @author ${author}
+     * @since ${date}
+     */
+    void physicalDeleteById(Long id);
 
 }

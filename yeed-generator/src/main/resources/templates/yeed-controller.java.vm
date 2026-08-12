@@ -5,6 +5,7 @@ import ${dtoPackage}.${entity}PageDTO;
 import ${package.Service}.${table.serviceName};
 import ${voPackage}.${entity}VO;
 import com.yeungzhy.yeed.common.core.request.IdRequest;
+import com.yeungzhy.yeed.common.core.request.IdsRequest;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.annotation.Resource;
@@ -47,20 +48,6 @@ public class ${table.controllerName} {
 
 
     /**
-     * 详情
-     *
-     * @param id 主键 ID
-     * @return 详情数据
-     * @author ${author}
-     * @since ${date}
-     */
-    @PostMapping("/detail")
-    public ApiResult<${entity}VO> detail(@Valid @RequestBody IdRequest id) {
-        return ApiResult.ok(${table.entityPath}Service.detail(id.getId()));
-    }
-
-
-    /**
      * 更新
      *
      * @param dto 入参
@@ -72,6 +59,20 @@ public class ${table.controllerName} {
     public ApiResult<Boolean> update(@Valid @RequestBody ${entity}DTO dto) {
         ${table.entityPath}Service.update(dto);
         return ApiResult.ok();
+    }
+
+
+    /**
+     * 详情
+     *
+     * @param id 主键 ID
+     * @return 详情数据
+     * @author ${author}
+     * @since ${date}
+     */
+    @PostMapping("/detail")
+    public ApiResult<${entity}VO> detail(@Valid @RequestBody IdRequest id) {
+        return ApiResult.ok(${table.entityPath}Service.detail(id.getId()));
     }
 
 
@@ -100,6 +101,65 @@ public class ${table.controllerName} {
     @PostMapping("/delete")
     public ApiResult<Boolean> delete(@Valid @RequestBody IdRequest id) {
         ${table.entityPath}Service.delete(id.getId());
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 批量删除（逻辑删除）
+     *
+     * @param request 主键 ID 集合请求体
+     * @return 操作结果
+     * @author ${author}
+     * @since ${date}
+     */
+    @PostMapping("/delete-batch")
+    public ApiResult<Boolean> deleteBatch(@Valid @RequestBody IdsRequest request) {
+        ${table.entityPath}Service.delete(request.getIds());
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 回收站分页（包含已逻辑删除的数据）
+     *
+     * @param dto 分页查询入参
+     * @return 分页结果
+     * @author ${author}
+     * @since ${date}
+     */
+    @PostMapping("/recycle/page")
+    public ApiResult<PageResult<${entity}VO>> pageWithDeleted(@Valid @RequestBody ${entity}PageDTO dto) {
+        return ApiResult.ok(${table.entityPath}Service.pageWithDeleted(dto));
+    }
+
+
+    /**
+     * 恢复已逻辑删除的数据
+     *
+     * @param id 主键 ID
+     * @return 操作结果
+     * @author ${author}
+     * @since ${date}
+     */
+    @PostMapping("/restore")
+    public ApiResult<Boolean> restore(@Valid @RequestBody IdRequest id) {
+        ${table.entityPath}Service.restoreById(id.getId());
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 物理删除（真 DELETE，不可恢复，仅用于"回收站彻底删除"等场景）
+     *
+     * @param id 主键 ID
+     * @return 操作结果
+     * @author ${author}
+     * @since ${date}
+     */
+    @PostMapping("/physical-delete")
+    public ApiResult<Boolean> physicalDelete(@Valid @RequestBody IdRequest id) {
+        ${table.entityPath}Service.physicalDeleteById(id.getId());
         return ApiResult.ok();
     }
 
