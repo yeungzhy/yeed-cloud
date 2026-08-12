@@ -16,18 +16,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
- * FastJson2 全局配置
- * 解决 Java 8+ 时间类型格式化问题，保持与 Jackson 配置一致
+ * FastJson2 全局时间序列化配置。
+ *
+ * <p>解决 Java 8+ 时间类型默认序列化格式不统一的问题，按
+ * {@link com.yeungzhy.yeed.common.core.constant.Constant} 中的时间格式注册
+ * {@code LocalDateTime}/{@code LocalDate}/{@code LocalTime}/{@code Date} 序列化器，
+ * 保持与 Jackson 配置一致。
  *
  * @author yeungzhy
+ * @since 2026-08-07
  */
 @AutoConfiguration
 public class FastJson2AutoConfiguration implements ApplicationRunner {
 
-
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // 获取 FastJson2 全局的 Provider
         ObjectWriterProvider provider = JSONFactory.getDefaultObjectWriterProvider();
 
         // 注册 LocalDateTime 序列化器
@@ -86,6 +89,4 @@ public class FastJson2AutoConfiguration implements ApplicationRunner {
             }
         });
     }
-
-
 }

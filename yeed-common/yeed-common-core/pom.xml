@@ -61,7 +61,7 @@
         </dependency>
 
         <!--
-            jackson-databind + jackson-datatype-jsr310：JacksonConfig 定义全局 ObjectMapper Bean 所需。
+            jackson-databind + jackson-datatype-jsr310：JacksonAutoConfiguration 定义全局 ObjectMapper Bean 所需。
             provided 范围：编译期需要，运行期由业务模块的 spring-boot-starter-web / webflux 传递提供。
             版本由根 POM 的 jackson-bom 统一管理。
         -->

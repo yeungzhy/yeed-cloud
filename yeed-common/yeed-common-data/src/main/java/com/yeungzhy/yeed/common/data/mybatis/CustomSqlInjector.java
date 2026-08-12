@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 自定义 SQL 注入器：在 MyBatis-Plus 内置方法基础上追加项目自定义方法
- * <p> 详述: 保留 {@link DefaultSqlInjector} 注入的全部内置方法（insert/update/select/delete 等）, 额外追加:
+ * <p>详述: 保留 {@link DefaultSqlInjector} 注入的全部内置方法（insert/update/select/delete 等）, 额外追加:
  * <ul>
  *     <li>{@link ExistsByWrapper}: EXISTS 高性能存在性判断, 所有表可用</li>
  *     <li>{@link AlwaysUpdateSomeColumnById}: MyBatis-Plus 官方的"全字段更新（含 null）", 所有表可用</li>
@@ -22,7 +22,7 @@ import java.util.List;
  *     <li>{@link LogicDeleteByIds}: 根据主键集合批量逻辑删除（IN 固定 SQL, 删除时间戳/删除人由调用方传参）,
  *         注入条件同 {@link LogicDeleteById}</li>
  * </ul>
- * <p> 注意: 需在配置类中注册为 Spring Bean, MyBatis-Plus 检测到容器中存在 SqlInjector 时会替代默认注入器
+ * <p>注意: 需在配置类中注册为 Spring Bean, MyBatis-Plus 检测到容器中存在 SqlInjector 时会替代默认注入器
  *
  * @author yeungzhy
  * @since 2026-08-08

@@ -9,24 +9,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 敏感字段脱敏注解
+ * 敏感字段脱敏注解：标注在 VO 字段上，Jackson 序列化时按 {@link SensitiveType} 对明文掩码后输出。
  *
- * <p> 标注在 VO 字段上，Jackson 序列化时由 {@link SensitiveJsonSerializer} 按指定
- * {@link SensitiveType} 对明文执行掩码，输出到 HTTP 响应 JSON。
+ * <p>注意事项：
+ * <ul>
+ *   <li>只做明文→掩码，不做密文→解密——序列化时字段必须是明文
+ *       （由 {@link com.yeungzhy.yeed.common.data.mybatis.FieldCryptoInterceptor} 在 MyBatis 出库阶段保证）</li>
+ *   <li>列表/详情掩码策略不同时，用不同 VO 区分标注与否，不做运行时开关</li>
+ * </ul>
  *
- * <p> <b>职责边界（重要）</b>：本注解<b>只做明文→掩码</b>，不做密文→明文解密。
- * 调用方需保证被标注字段在序列化时已是明文（解密由 {@code FieldCryptoInterceptor}
- * 在 MyBatis 出库阶段完成）。把解密塞进 serializer 会引入 AES key 注入与职责混淆，明确禁止。
- *
- * <p> <b>View 差异</b>：列表与详情需要不同掩码策略时，通过不同 VO 区分
- * （如 {@code SysUserPageVO.email} 标注、{@code SysUserDetailVO.email} 不标注），
- * 不在同 VO 上提供运行时开关。
- *
- * <p> <b>非 Spring Bean</b>：注解与 serializer 均非 Spring Bean，由 Jackson 注解扫描驱动，
- * 无需在 yeed-common 的 {@code AutoConfiguration.imports} 中注册。
+ * <p>示例：{@code @Sensitive(type = SensitiveType.EMAIL) private String email;}
  *
  * @author yeungzhy
  * @since 2026-08-07
+ * @see SensitiveType
+ * @see SensitiveJsonSerializer
  */
 @JacksonAnnotationsInside
 @JsonSerialize(using = SensitiveJsonSerializer.class)
@@ -35,9 +32,10 @@ import java.lang.annotation.Target;
 public @interface Sensitive {
 
     /**
-     * 脱敏类型，决定掩码策略
+     * 脱敏类型（必填，无默认值），决定掩码策略。
+     * 可选值及掩码形态见 {@link SensitiveType} 各常量。
      *
-     * @return {@link com.yeungzhy.yeed.common.web.sensitive.SensitiveType} 枚举值
+     * @return 脱敏类型
      */
     SensitiveType type();
 }

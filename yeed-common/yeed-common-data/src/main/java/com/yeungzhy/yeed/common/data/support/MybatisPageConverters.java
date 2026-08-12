@@ -11,10 +11,10 @@ import java.util.function.Function;
 /**
  * MyBatis-Plus 分页对象与 common-core 的 PageRequest/PageResult 之间的转换工具
  *
- * <p> <b>职责</b>：将 "与 MyBatis-Plus 的互相转换" 集中在 common-data 层，
+ * <p><b>职责</b>：将 "与 MyBatis-Plus 的互相转换" 集中在 common-data 层，
  * 使 common-core 的 PageRequest/PageResult 不耦合任何 ORM 框架。
  *
- * <p> <b>用法</b>：
+ * <p><b>用法</b>：
  * <pre>
  * // 构造 MyBatis-Plus 分页对象
  * Page&lt;SysUser&gt; page = MybatisPageConverters.toMybatisPlusPage(dto);

@@ -21,17 +21,17 @@ import java.nio.charset.StandardCharsets;
  * <p>监听 {@link ApplicationReadyEvent}，保证容器就绪且所有 ApplicationRunner
  * 全部成功执行后才输出，避免「先打印启动成功、随后启动失败」的误导输出。
  *
- * <h3>使用方式</h3>
+ * <p><b>使用方式</b>
  * <ol>
- *   <li>由 {@code StartupInfoPrinterAutoConfiguration} 通过 {@code @Bean} 注册，该配置类由
- *       {@code AutoConfiguration.imports} 自动加载，下游模块引入 yeed-common-core 即生效，
- *       无需额外配置。</li>
+ *   <li>由 {@link com.yeungzhy.yeed.common.core.config.StartupInfoPrinterAutoConfiguration} 通过
+ *       {@code @Bean} 注册，该配置类由 {@code AutoConfiguration.imports} 自动加载，
+ *       下游模块引入 yeed-common-core 即生效，无需额外配置。</li>
  *   <li>如需自定义 Banner，在对应服务模块的 {@code src/main/resources/} 下放置
- *       {@code banner.txt} 即可，ClassPath 加载优先级保证当前服务的文件会覆盖公共默认 Banner。
- *       若未提供 banner.txt，则兜底跳过 Banner 打印。</li>
+ *       {@code banner.txt} 即可，ClassPath 加载优先级保证当前服务的文件会覆盖公共默认 Banner；
+ *       若未提供则兜底跳过 Banner 打印。</li>
  * </ol>
  *
- * <h3>运行环境兼容</h3>
+ * <p><b>运行环境兼容</b>
  * <ul>
  *   <li>Servlet Web（admin / auth 等）：通过 {@link WebServerApplicationContext} 取实际绑定端口</li>
  *   <li>Reactive Web（gateway 等）：通过反射获取 {@code ReactiveWebServerApplicationContext} 的端口</li>
@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
  * </ul>
  *
  * @author yeungzhy
- * @date 2026-08-09
+ * @since 2026-08-09
  */
 @Slf4j
 public class StartupInfoPrinter {
@@ -49,8 +49,6 @@ public class StartupInfoPrinter {
             "org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext";
     /** spring.application.name 配置键 */
     private static final String KEY_APPLICATION_NAME = "spring.application.name";
-
-
 
     @EventListener(ApplicationReadyEvent.class)
     public void printStartupInfo(ApplicationReadyEvent event) {
@@ -78,7 +76,7 @@ public class StartupInfoPrinter {
     /**
      * 从 classpath:banner.txt 加载 Banner 内容。
      * 优先加载当前服务模块的资源，找不到时返回空串（跳过 Banner 打印）。
-     * <p> 使用纯 JDK InputStream.readAllBytes()（Java 11+）避免引入 commons-io 依赖。
+     * <p>使用纯 JDK {@code InputStream.readAllBytes()}（Java 11+），避免引入 commons-io 依赖。
      */
     private String loadBanner() {
         ClassPathResource resource = new ClassPathResource("banner.txt");

@@ -17,14 +17,6 @@ import lombok.Getter;
  * <p>禁止在任何业务代码中散落裸数字 0/1 判断"启用/禁用"语义，
  * 一律使用 {@link #ENABLED} / {@link #DISABLED} 枚举或 {@link #fromCode(Integer)} 做转换。
  *
- * <p><b>模块归属说明</b>：本枚举位于 {@code yeed-common-core} 而非 {@code yeed-common-data}。
- * 原因："启用/禁用"是系统级通用语义契约，应与 {@link SysRoleEnum} 同级、可被所有 common
- * 子模块（cache/security/web/data）及业务模块自由引用；若放在 data 模块，则任何引用方
- * 都会被迫拖入 mybatis-plus + druid + mysql 驱动等持久化全家桶，造成依赖污染。
- * 本模块通过仅引入 {@code mybatis-plus-annotation}（纯注解包，零传递依赖）和
- * {@code jackson-annotations}（provided）承载 ORM/序列化注解，既保留双保险机制，
- * 又不破坏 core 的轻量定位。
- *
  * @author yeungzhy
  * @since 2026-08-09
  */

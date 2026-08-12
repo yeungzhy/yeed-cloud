@@ -11,17 +11,17 @@ import org.apache.ibatis.mapping.SqlSource;
 /**
  * 自定义 SQL 方法：根据主键恢复已逻辑删除的数据（restoreById）
  *
- * <p> 详述: 继承 {@link AbstractMethod} 实现 SQL 注入, 将逻辑删除字段置回"未删除"值,
+ * <p>详述: 继承 {@link AbstractMethod} 实现 SQL 注入, 将逻辑删除字段置回"未删除"值,
  * 用于"回收站恢复"场景; 配合 {@link CustomSqlInjector} 注册后, 所有 Mapper 均可声明方法调用（方法签名示例见类注释末尾）
  *
- * <p> 生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = 0, delete_by = NULL WHERE id = ? AND delete_time != 0}
+ * <p>生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = 0, delete_by = NULL WHERE id = ? AND delete_time != 0}
  *
- * <p> 注意: WHERE 携带"已删除"条件, 对未删除数据执行返回 0（天然幂等）;
+ * <p>注意: WHERE 携带"已删除"条件, 对未删除数据执行返回 0（天然幂等）;
  * 项目存在 deleteBy（删除人）字段时一并置 NULL, 避免恢复后残留删除痕迹;
  * 本方法不做自动填充, 如需记录恢复人/恢复时间, 由业务层在恢复后自行更新;
  * 本方法参数不含 Wrapper, 不能携带 sqlComment()（其脚本引用 ew.sqlComment 会导致 OGNL 解析失败）;
  *
- * <p> 调用方声明:
+ * <p>调用方声明:
  * <pre>
  *     {@code int restoreById(java.io.Serializable id);}
  * </pre>
@@ -33,7 +33,7 @@ public class RestoreById extends AbstractMethod {
 
     /**
      * 恢复 SQL 模板
-     * <p> 占位符依次为: 表名、SET 子句、主键列、主键属性、逻辑删除列、未删除值
+     * <p>占位符依次为: 表名、SET 子句、主键列、主键属性、逻辑删除列、未删除值
      */
     private static final String SQL_RESTORE_BY_ID = "<script>UPDATE %s SET %s WHERE %s=#{%s} AND %s &lt;&gt; %s</script>";
 

@@ -36,7 +36,7 @@ public class RsaUtil {
     private static final String TRANSFORMATION = KEY_ALGORITHM + "/" + MODE + "/" + PADDING;
     /**
      * OAEP 参数：主哈希 SHA-256 + MGF1 也用 SHA-256
-     * <p> JDK 默认 MGF1 走 SHA-1，会导致与前端 JS/WebCrypto 等多端互通解密失败，故显式指定</p>
+     * <p>JDK 默认 MGF1 走 SHA-1，会导致与前端 JS/WebCrypto 等多端互通解密失败，故显式指定
      */
     private static final OAEPParameterSpec OAEP_SPEC = new OAEPParameterSpec(
             "SHA-256",

@@ -10,6 +10,9 @@ import java.util.stream.Collectors;
 /**
  * 树形结构处理工具类
  *
+ * <p>不依赖任何 TreeNode 基类 / 接口，通过函数式接口传参，适用于任意带
+ * 父 ID 与子列表字段的 POJO。
+ *
  * @author yeungzhy
  */
 public class TreeUtil {
@@ -66,15 +69,14 @@ public class TreeUtil {
      * @param <E>             节点实体类型
      * @return 打平后的节点列表
      *
-     * <h3>实用场景：树的深拷贝</h3>
-     * <p>
-     * 由于打平后的节点已经清空了子节点引用（脱离了嵌套关系），此时配合 {@code BeanUtils} 等工具对单个节点进行浅拷贝是安全的。
-     * 拷贝完成后，再使用 {@link #buildTree} 重新组装，即可完美实现一整棵树的深拷贝，且性能远高于 JSON 序列化方式。
-     * </p>
-     * <p>使用示例：</p>
+     * <p><b>实用场景：树的深拷贝</b>
+     * 由于打平后的节点已清空子节点引用（脱离嵌套关系），此时配合 {@code BeanUtils} 等工具
+     * 对单个节点进行浅拷贝是安全的；拷贝完成后再用 {@link #buildTree} 重新组装，
+     * 即可实现一整棵树的深拷贝，性能远高于 JSON 序列化方式。
+     * <p>使用示例：
      * <pre>{@code
      * // 1. 将树打平，并清空 children 引用
-     * List<TreeNode> flatList = TreeUtil.flatten(tree, TreeNode::getChildren, m -> node -> node.setChildren(null));
+     * List<TreeNode> flatList = TreeUtil.flatten(tree, TreeNode::getChildren, node -> node.setChildren(null));
      *
      * // 2. 拷贝扁平数据中的每个对象
      * List<TreeNode> copiedList = flatList.stream().map(src -> {

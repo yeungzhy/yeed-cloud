@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 /**
  * 项目统一 Mapper：在 MyBatis-Plus {@link com.baomidou.mybatisplus.core.mapper.BaseMapper} 之上集中提供项目扩展能力
- * <p> 能力总览（各方法的实现细节、亮点与注意事项见方法自身的 Javadoc）:
+ * <p>能力总览（各方法的实现细节、亮点与注意事项见方法自身的 Javadoc）:
  * <ul>
  *     <li>存在性判断: {@code existsByWrapper}/{@code existsByCondition}/{@code existsByColumn}, 所有表可用</li>
  *     <li>全字段更新: {@code alwaysUpdateSomeColumnById}, 所有表可用</li>
@@ -28,12 +28,12 @@ import java.util.function.Consumer;
  *     <li>逻辑删除逃逸: {@code physicalDeleteById}/{@code physicalDelete}/{@code selectListWithDeleted}/{@code restoreById},
  *         仅 @TableLogic 表可用, 支撑"回收站列表 + 恢复 + 彻底删除"场景</li>
  * </ul>
- * <p> 用法: 业务 Mapper 继承本接口即可, 例如:
+ * <p>用法: 业务 Mapper 继承本接口即可, 例如:
  * {@code public interface SysUserMapper extends BaseMapper<SysUser> {}}
  *
- * <p> 注意:
- * <p> 未满足可用条件的表不会注入对应方法, 调用将抛 BindingException, 请勿误用;
- * <p> 本接口及其注入方法耦合 MyBatis-Plus, 若未来更换 ORM 需整体替换本接口实现;
+ * <p>注意:
+ * <p>未满足可用条件的表不会注入对应方法, 调用将抛 BindingException, 请勿误用;
+ * <p>本接口及其注入方法耦合 MyBatis-Plus, 若未来更换 ORM 需整体替换本接口实现;
  *
  * @author yeungzhy
  * @since 2026-08-08
@@ -46,25 +46,25 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据 Wrapper 条件,判断是否有数据存在
-     * <p> 详述: 由 {@link ExistsByWrapper} 注入, 生成 SQL: SELECT EXISTS (SELECT 1 FROM table WHERE ...)
+     * <p>详述: 由 {@link ExistsByWrapper} 注入, 生成 SQL: SELECT EXISTS (SELECT 1 FROM table WHERE ...)
      *
-     * <p> 亮点: EXISTS 子查询命中首条记录即短路返回, 相比 COUNT(*) 无需扫描全部匹配行;
-     * <p> WHERE 自动携带逻辑删除(@TableLogic)过滤, 不会误判已删数据为存在
+     * <p>亮点: EXISTS 子查询命中首条记录即短路返回, 相比 COUNT(*) 无需扫描全部匹配行;
+     * <p>WHERE 自动携带逻辑删除(@TableLogic)过滤, 不会误判已删数据为存在
      *
      * @param queryWrapper 查询条件（不可为 null）
      * @return true存在,false不存在
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     Boolean existsByWrapper(@Param(Constants.WRAPPER) Wrapper<T> queryWrapper);
 
 
     /**
      * 根据 Consumer 包装的条件,判断是否有数据存在
-     * <p> 详述: 调用方自行决定条件, 使用 EXISTS 子查询判断, 复杂条件（多字段、模糊等）统一走本方法
+     * <p>详述: 调用方自行决定条件, 使用 EXISTS 子查询判断, 复杂条件（多字段、模糊等）统一走本方法
      *
      * @param consumer LambdaQueryWrapper 消费函数,包装条件
      * @return true存在,false不存在
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     default Boolean existsByCondition(Consumer<LambdaQueryWrapper<T>> consumer) {
         LambdaQueryWrapper<T> lambdaQuery = Wrappers.lambdaQuery();
@@ -75,13 +75,13 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据单个字段,判断是否有数据存在
-     * <p> 详述: 调用方指定比较的字段, 使用 EXISTS 子查询判断, 适合"用户名/邮箱是否已存在"等单字段唯一性校验
-     * <p> 注意: 此方法不支持复杂查询, 如: 多字段比较, 模糊查询等, 复杂条件请使用 {@link #existsByCondition(Consumer)}
+     * <p>详述: 调用方指定比较的字段, 使用 EXISTS 子查询判断, 适合"用户名/邮箱是否已存在"等单字段唯一性校验
+     * <p>注意: 此方法不支持复杂查询, 如: 多字段比较, 模糊查询等, 复杂条件请使用 {@link #existsByCondition(Consumer)}
      *
      * @param column 比较的字段
      * @param value  字段值
      * @return true存在,false不存在
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     default Boolean existsByColumn(SFunction<T, ?> column, Object value) {
         return existsByCondition(lambdaQuery -> lambdaQuery.eq(column, value));
@@ -94,15 +94,15 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键更新全部字段（包括值为 null 的字段）
-     * <p> 详述: 由 MyBatis-Plus 官方 {@link AlwaysUpdateSomeColumnById} 注入,
+     * <p>详述: 由 MyBatis-Plus 官方 {@link AlwaysUpdateSomeColumnById} 注入,
      * 与 {@code updateById} 的区别是 SET 子句无条件包含除主键外的全部字段（不跳过 null）,
      * 适用于"把指定列置空"等 updateById 做不到的场景; WHERE 自动携带逻辑删除(@TableLogic)过滤
-     * <p> 注意: 传入实体除主键外的所有列都会原样写入数据库, 未赋值的列会被置 NULL!
+     * <p>注意: 传入实体除主键外的所有列都会原样写入数据库, 未赋值的列会被置 NULL!
      * 推荐用法: 先 selectById 读出完整实体, 修改后整体回写, 切勿用新建的空实体直接调用
      *
      * @param entity 实体（必须携带主键）
      * @return 更新行数
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int alwaysUpdateSomeColumnById(@Param(Constants.ENTITY) T entity);
 
@@ -113,11 +113,11 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 生成纳秒级 epoch 时间戳作为逻辑删除标识
-     * <p> 亮点: 比 MySQL UNIX_TIMESTAMP() 秒级精度高 10⁹ 倍, 高并发下基本不会重复;
+     * <p>亮点: 比 MySQL UNIX_TIMESTAMP() 秒级精度高 10⁹ 倍, 高并发下基本不会重复;
      * 跨机器即使时钟微秒级漂移, 配合数据库唯一约束兜底, 冲突概率趋近于 0
      *
      * @return 纳秒级 epoch 时间戳
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     default long nanoEpoch() {
         Instant now = Instant.now();
@@ -127,17 +127,17 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键逻辑删除（将逻辑删除列置为"已删除"值, 同时记录删除人）
-     * <p> 详述: 由 {@link LogicDeleteById} 注入, 生成 UPDATE 语句; WHERE 携带"未删除"条件,
+     * <p>详述: 由 {@link LogicDeleteById} 注入, 生成 UPDATE 语句; WHERE 携带"未删除"条件,
      * 重复删除返回 0（天然幂等）
-     * <p> 生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = ?, delete_by = ? WHERE id = ? AND delete_time = 0}
-     * <p> 注意: 本方法不做自动填充, 删除时间戳与删除人均由调用方传参,
+     * <p>生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = ?, delete_by = ? WHERE id = ? AND delete_time = 0}
+     * <p>注意: 本方法不做自动填充, 删除时间戳与删除人均由调用方传参,
      * 一般不直接调用, 统一走自动填充入口 {@link #deleteByIdAutoFill(Long)}
      *
      * @param id         主键
      * @param deleteTime 删除时间戳（纳秒级 epoch, 用 {@link #nanoEpoch()} 生成）
      * @param deleteBy   删除人（当前登录用户 ID）
      * @return 1-删除成功; 0-主键不存在或已被删除
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int logicDeleteById(@Param("id") Long id,
                         @Param("deleteTime") long deleteTime,
@@ -146,16 +146,16 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键逻辑删除（自动填充纳秒级删除时间戳与当前登录删除人）
-     * <p> 详述: {@link #logicDeleteById} 的自动填充入口, 删除时间戳由 {@link #nanoEpoch()} 生成,
+     * <p>详述: {@link #logicDeleteById} 的自动填充入口, 删除时间戳由 {@link #nanoEpoch()} 生成,
      * 删除人取 Sa-Token 当前登录用户 ID
-     * <p> 亮点: 相比框架内置删除（deleteTime 由数据库 UNIX_TIMESTAMP() 秒级生成）,
+     * <p>亮点: 相比框架内置删除（deleteTime 由数据库 UNIX_TIMESTAMP() 秒级生成）,
      * Java 纳秒级时间戳高并发下不会同秒冲突导致唯一约束失败; 命名带 AutoFill 后缀,
      * 与官方 deleteById 相邻出现在代码补全中, 易于发现
-     * <p> 注意: 逻辑删除（标记删除）统一走本方法, 不要调用框架内置删除
+     * <p>注意: 逻辑删除（标记删除）统一走本方法, 不要调用框架内置删除
      *
      * @param id 主键
      * @return true-删除成功; false-主键不存在或已被删除
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     default boolean deleteByIdAutoFill(Long id) {
         return logicDeleteById(id, nanoEpoch(), LoginUserHolder.requireUserId()) > 0;
@@ -164,10 +164,10 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键集合批量逻辑删除（将逻辑删除列置为"已删除"值, 同时记录删除人）
-     * <p> 详述: 由 {@link LogicDeleteByIds} 注入, 生成带 IN 的 UPDATE 语句; WHERE 携带"未删除"条件,
+     * <p>详述: 由 {@link LogicDeleteByIds} 注入, 生成带 IN 的 UPDATE 语句; WHERE 携带"未删除"条件,
      * 已删除或不存在的 id 自动跳过, 重复删除只作用于未删数据（天然幂等）
-     * <p> 生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = ?, delete_by = ? WHERE id IN (?, ?) AND delete_time = 0}
-     * <p> 注意: 本方法不做自动填充, 删除时间戳与删除人均由调用方传参,
+     * <p>生成的 SQL 形如: {@code UPDATE yeed_sys_user SET delete_time = ?, delete_by = ? WHERE id IN (?, ?) AND delete_time = 0}
+     * <p>注意: 本方法不做自动填充, 删除时间戳与删除人均由调用方传参,
      * 一般不直接调用, 统一走自动填充入口 {@link #deleteByIdsAutoFill(Collection)};
      * 系统操作等无登录态场景由调用方显式传 deleteBy（如 0L 表示系统操作）;
      * ids 为空集合时 foreach 生成 IN () 导致 SQL 语法错误, 本方法不防御, 调用方必须保证非空
@@ -176,7 +176,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * @param deleteTime 删除时间戳（纳秒级 epoch, 用 {@link #nanoEpoch()} 生成）
      * @param deleteBy   删除人（当前登录用户 ID, 系统操作传 0L）
      * @return 实际删除行数, 可能小于 ids.size()（部分主键不存在或已被删除）
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int logicDeleteByIds(@Param("ids") Collection<Long> ids,
                          @Param("deleteTime") long deleteTime,
@@ -185,18 +185,18 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键集合批量逻辑删除（自动填充纳秒级删除时间戳与当前登录删除人）
-     * <p> 详述: {@link #logicDeleteByIds} 的自动填充入口, 空集合直接返回 0 不触库（对齐 MP 判空风格）;
+     * <p>详述: {@link #logicDeleteByIds} 的自动填充入口, 空集合直接返回 0 不触库（对齐 MP 判空风格）;
      * 超过 {@link Constants#DEFAULT_BATCH_SIZE}（1000）条时自动分片执行, 避免 IN 列表过长,
      * 全部分片共享同一个删除时间戳与删除人（整批视为一次操作）
-     * <p> 亮点: 命名带 AutoFill 后缀, 与官方 deleteByIds 相邻出现在代码补全中, 易于发现
-     * <p> 注意: 逻辑删除（标记删除）统一走本方法, 不要调用框架内置删除;
+     * <p>亮点: 命名带 AutoFill 后缀, 与官方 deleteByIds 相邻出现在代码补全中, 易于发现
+     * <p>注意: 逻辑删除（标记删除）统一走本方法, 不要调用框架内置删除;
      * 删除人取 Sa-Token 当前登录用户 ID, 未登录场景（定时任务等）将抛异常,
      * 系统操作请改调 {@link #logicDeleteByIds} 显式传 deleteBy;
      * 分片执行时各片为独立 UPDATE, 需要整体原子性请在 Service 层加事务
      *
      * @param ids 主键集合（null 或空集合返回 0）
      * @return 实际删除行数, 可能小于 ids.size()（部分主键不存在或已被删除）
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     default int deleteByIdsAutoFill(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -225,53 +225,53 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 根据主键物理删除（真 DELETE, 不带 delete_time 未删除条件, 不可恢复）
-     * <p> 详述: 由 {@link PhysicalDeleteById} 注入; 逻辑删除表上 MyBatis-Plus 内置的 deleteById
+     * <p>详述: 由 {@link PhysicalDeleteById} 注入; 逻辑删除表上 MyBatis-Plus 内置的 deleteById
      * 会被框架改写为 UPDATE, 本方法注入真正的 DELETE 语句, 用于"回收站彻底删除"等场景
-     * <p> 注意: 物理删除不可恢复, 业务侧应确保只对已逻辑删除的数据执行
+     * <p>注意: 物理删除不可恢复, 业务侧应确保只对已逻辑删除的数据执行
      *
      * @param id 主键
      * @return 删除行数
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int physicalDeleteById(Serializable id);
 
 
     /**
      * 根据 Wrapper 条件物理删除（真 DELETE, 不带 delete_time 未删除条件, 不可恢复）
-     * <p> 详述: 由 {@link PhysicalDelete} 注入, 用于按条件批量彻底清除
-     * <p> 亮点: Wrapper 未携带有效条件时兜底 WHERE 1=0, 一条都不删, 防止误删全表
-     * <p> 注意: 条件请全部通过 Wrapper 方法构建（Wrapper 上设置的 entity 条件不生效）;
+     * <p>详述: 由 {@link PhysicalDelete} 注入, 用于按条件批量彻底清除
+     * <p>亮点: Wrapper 未携带有效条件时兜底 WHERE 1=0, 一条都不删, 防止误删全表
+     * <p>注意: 条件请全部通过 Wrapper 方法构建（Wrapper 上设置的 entity 条件不生效）;
      * 物理删除不可恢复, 业务侧应确保只对已逻辑删除的数据执行
      *
      * @param wrapper 删除条件
      * @return 删除行数
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int physicalDelete(@Param(Constants.WRAPPER) Wrapper<T> wrapper);
 
 
     /**
      * 根据 Wrapper 条件查询列表（包含已逻辑删除的数据）
-     * <p> 详述: 由 {@link SelectListWithDeleted} 注入, 不带 delete_time 未删除条件;
+     * <p>详述: 由 {@link SelectListWithDeleted} 注入, 不带 delete_time 未删除条件;
      * Wrapper 为空条件时查全表（含已删）, 适合"回收站列表、已删数据审计"
-     * <p> 注意: 条件请全部通过 Wrapper 方法构建（Wrapper 上设置的 entity 条件不生效）
+     * <p>注意: 条件请全部通过 Wrapper 方法构建（Wrapper 上设置的 entity 条件不生效）
      *
      * @param wrapper 查询条件
      * @return 实体列表（含已删数据）
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     List<T> selectListWithDeleted(@Param(Constants.WRAPPER) Wrapper<T> wrapper);
 
 
     /**
      * 根据主键恢复已逻辑删除的数据（逻辑删除列置回未删除值, 删除人一并置 NULL）
-     * <p> 详述: 由 {@link RestoreById} 注入, WHERE 携带"已删除"条件, 对未删除数据执行返回 0, 天然幂等;
+     * <p>详述: 由 {@link RestoreById} 注入, WHERE 携带"已删除"条件, 对未删除数据执行返回 0, 天然幂等;
      * 删除人一并置 NULL, 避免恢复后残留删除痕迹
-     * <p> 注意: 本方法不做自动填充, 如需记录恢复人/恢复时间, 由业务层在恢复后自行更新
+     * <p>注意: 本方法不做自动填充, 如需记录恢复人/恢复时间, 由业务层在恢复后自行更新
      *
      * @param id 主键
      * @return 1-恢复成功; 0-主键不存在或数据未删除
-     * @date 2026-08-08
+     * @since 2026-08-08
      */
     int restoreById(Serializable id);
 

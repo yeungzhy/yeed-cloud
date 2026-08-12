@@ -4,7 +4,10 @@ import com.yeungzhy.yeed.common.core.result.ApiResult;
 import lombok.Getter;
 
 /**
- * 自定义业务异常, 仅允许传入错误码枚举 和 自定义描述
+ * 自定义业务异常
+ *
+ * <p>仅允许传入错误码枚举（{@link ApiResult.CommonCode}）或自定义描述；message 最终由
+ * {@code GlobalExceptionHandler} 原样透传给前端用户。业务断言（{@code BizAssert}）应优先于手动抛出。
  *
  * @author yeungzhy
  */
@@ -13,9 +16,8 @@ public class BizException extends RuntimeException {
 
     /** 错误码枚举 */
     private final ApiResult.CommonCode commonCode;
-    /** 自定义描述（可选，若为null则使用 commonCode.desc） */
+    /** 自定义描述（可选，若为 null 则使用 commonCode.desc） */
     private final String customDesc;
-
 
     public BizException(ApiResult.CommonCode commonCode) {
         this(commonCode, null, null);
@@ -31,7 +33,5 @@ public class BizException extends RuntimeException {
         this.commonCode = commonCode;
         this.customDesc = customDesc;
     }
-
-
 
 }

@@ -12,9 +12,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 敏感数据脱敏转换器
+ * 日志敏感数据脱敏转换器（logback {@link MessageConverter}）
  *
- * @author MaXueSong at 2023-12-14 08:48:04
+ * <p>通过 logback.xml 的 {@code <conversionRule>} 注册为 {@code %seda} 转换器，
+ * 对每条日志文本做正则匹配，掩码手机号 / 身份证 / 邮箱 / 生日，防止敏感信息落入日志文件。
+ *
+ * <p>职责边界：仅处理日志文本脱敏；VO 序列化脱敏（common-web 的 Sensitive）与
+ * MyBatis 出库解密（common-data 的 FieldCryptoInterceptor）职责独立，互不影响。
+ *
+ * @author MaXueSong
+ * @since 2023-12-14
  */
 public final class SensitiveDataLogConverter extends MessageConverter {
     private static final String MASK_TWO_STARS = "**";
@@ -48,15 +55,10 @@ public final class SensitiveDataLogConverter extends MessageConverter {
     /** 生日正则匹配（YYYY-MM-DD YY-MM-DD DD-MM-YYYY格式，兼容符号【- / . _ 空格】） 目前支持年份1900-2099 */
     private final static Pattern BIRTHDAY_PATTERN = Pattern.compile("((?:19|20)\\d{2}[-._/\\s](?:0[1-9]|1[0-2])[-._/\\s](?:0[1-9]|[12][0-9]|3[01]))|((?:0[1-9]|[12][0-9]|3[01])[-._/\\s](?:0[1-9]|1[0-2])[-._/\\s](?:19|20)\\d{2})|(\\d{2}[-._/\\s](?:0[1-9]|1[0-2])[-._/\\s](?:0[1-9]|[12][0-9]|3[01]))");
 
-
-
-
-
     /**
-     * 日志转换
+     * 日志转换：对原始日志文本做敏感数据匹配与掩码替换
      *
-     * @param event 事件
-     *
+     * @param event 日志事件
      * @return 脱敏后的日志信息
      */
     @Override
@@ -84,7 +86,6 @@ public final class SensitiveDataLogConverter extends MessageConverter {
             return event.getFormattedMessage();
         }
     }
-
 
     /**
      * 正则匹配是否包含脱敏数据，并在匹配阶段同时确定数据类型
@@ -117,7 +118,6 @@ public final class SensitiveDataLogConverter extends MessageConverter {
         return list;
     }
 
-
     /**
      * 数据脱敏：根据匹配阶段确定的类型直接处理，不再重复执行正则匹配
      *
@@ -146,7 +146,6 @@ public final class SensitiveDataLogConverter extends MessageConverter {
         }
         return logMsg.replace(param, replaceContext);
     }
-
 
     /**
      * 手机号脱敏：保留前3位和后4位，中间4位用4个*替换；区号(+86 / 0086)不参与掩码
@@ -206,8 +205,6 @@ public final class SensitiveDataLogConverter extends MessageConverter {
         String domain = param.substring(atIndex);
         return param.charAt(0) + MASK_FOUR_STARS + domain;
     }
-
-
 
     /**
      * 生日脱敏：保留年份和月份，隐藏日期（日段替换为 **）

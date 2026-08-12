@@ -76,9 +76,9 @@ public class JacksonAutoConfiguration {
                 .addSerializer(Long.TYPE, ToStringSerializer.instance)
         );
 
-        // 忽略未知字段（当前端传入后端不存在的字段时不报错，提高容错性）
+        // 忽略未知字段：前端传入后端不存在的字段时不报错，提高容错性
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        // 关闭输出: 时间戳\时区
+        // 时间类型不输出数字时间戳、不携带时区 ID（格式统一由上方 DateTimeFormatter 控制）
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
 

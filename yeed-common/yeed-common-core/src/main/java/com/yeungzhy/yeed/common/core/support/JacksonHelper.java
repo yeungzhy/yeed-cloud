@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Jackson 静态工具类 (用法同 Hutool/Fastjson2)
  *
- * <p>通过 {@link com.yeungzhy.yeed.common.core.config.JacksonConfig} 注册为 Spring Bean，
+ * <p>通过 {@link com.yeungzhy.yeed.common.core.config.JacksonAutoConfiguration} 注册为 Spring Bean，
  * 内部持有的 {@link ObjectMapper} 即全局统一实例，序列化行为与 HTTP 层 / Redis 层完全一致。
  *
  * @author yeungzhy
@@ -33,9 +33,9 @@ public class JacksonHelper {
     // ============ 序列化：对象 -> JSON 字符串 ====================
     /**
      * 对象转 JSON 字符串
-     * <p> 内部捕获异常，转为运行时异常，避免业务代码到处 try-catch
+     * <p>内部捕获异常，转为运行时异常，避免业务代码到处 try-catch
      */
-    public String toJsonStr(Object obj) {
+        public String toJsonStr(Object obj) {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
@@ -73,7 +73,7 @@ public class JacksonHelper {
 
     /**
      * JSON 字符串转泛型对象，用于 List＜User＞、Map＜String, User＞ 等场景
-     * <p> 用法：JacksonUtil.parseObject(json, new TypeReference＜List＜User＞＞(){})
+     * <p>用法：JacksonUtil.parseObject(json, new TypeReference&lt;List&lt;User&gt;&gt;(){})
      */
     public <T> T parseObject(String json, TypeReference<T> typeReference) {
         try {

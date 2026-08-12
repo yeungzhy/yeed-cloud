@@ -23,15 +23,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * 基于 {@link RedissonClient} 封装常用的缓存操作
  *
- * <p>关键参数校验与异常捕获，保证调用方在异常情况下能拿到安全默认值，
- * 避免由于 Redis 抖动直接导致业务流程中断
+ * <p>统一做参数校验与异常捕获：参数非法时直接忽略，Redis 异常时记录日志并返回
+ * 安全默认值（null / 空集合 / 0 / false），避免 Redis 抖动直接中断业务流程
  *
  * <p>分布式锁（RLock）、限流（RRateLimiter）、发布订阅（RTopic）等能力不在此封装，
  * 业务代码直接注入 {@link RedissonClient} 使用
  *
- * <p>通过 {@link com.yeungzhy.yeed.common.cache.config.RedisConfig} 注册为 Spring Bean
+ * <p>通过 {@link com.yeungzhy.yeed.common.cache.config.RedisAutoConfiguration} 注册为 Spring Bean
  *
  * @author yeungzhy
+ * @since 2026-08-11
  */
 @Slf4j
 public class RedisHelper {
@@ -161,7 +162,7 @@ public class RedisHelper {
      * 批量获取多个 key 的值（一次网络往返）
      *
      * @param keys 键集合，不能为空
-     * @return Map&lt;key, value&gt;；异常或参数非法返回空集合
+     * @return 键值映射（{@code Map<K, V>}）；异常或参数非法返回空集合
      */
     @SuppressWarnings("unchecked")
     public <T> Map<String, T> getBuckets(Collection<String> keys) {
@@ -218,10 +219,13 @@ public class RedisHelper {
     }
 
     /**
-     * 获取 List 缓存
+     * 获取 List 缓存（返回内存副本）
      *
      * @param key 键
      * @return List；异常或不存在返回空集合
+     *
+     * <p>返回的是 {@code ArrayList} 副本而非 RList 远程代理，
+     * 直接修改返回结果不会影响 Redis 中的数据
      */
     public <T> List<T> getList(String key) {
         try {
@@ -258,10 +262,13 @@ public class RedisHelper {
     }
 
     /**
-     * 获取 Set 缓存
+     * 获取 Set 缓存（返回内存副本）
      *
      * @param key 键
      * @return Set；异常或不存在返回空集合
+     *
+     * <p>返回的是 {@code HashSet} 副本而非 RSet 远程代理，
+     * 直接修改返回结果不会影响 Redis 中的数据
      */
     public <T> Set<T> getSet(String key) {
         try {
@@ -557,7 +564,7 @@ public class RedisHelper {
         }
         try {
             long millis = redissonClient.getBucket(key).remainTimeToLive();
-            // -1 表示永不过期，-2 表示 key 不存在，原样返回
+            // remainTimeToLive() 返回毫秒：-1 永不过期、-2 key 不存在，负值无需换算单位，原样返回
             if (millis < 0) {
                 return millis;
             }

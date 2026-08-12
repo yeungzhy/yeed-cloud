@@ -10,6 +10,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * MyBatis-Plus 自动配置：集中注册项目所需的扩展 Bean。
+ *
+ * <p>注册项：
+ * <ul>
+ *   <li>MyBatis-Plus 拦截器：乐观锁 + 分页（MySQL）</li>
+ *   <li>{@link AutoFillFieldHandler}：审计字段自动填充（createBy/createTime/updateBy/updateTime）</li>
+ *   <li>{@link CustomIdProperties}/{@link CustomIdGenerator}：雪花 ID 的 workerId/dataCenterId 配置</li>
+ *   <li>{@link FieldCryptoInterceptor}：{@code @Crypto} 字段 AES 加解密拦截器</li>
+ *   <li>{@link CustomSqlInjector}：注入项目自定义 SQL 方法</li>
+ * </ul>
+ *
+ * @author yeungzhy
+ * @since 2026-08-02
+ */
 @AutoConfiguration
 public class MybatisPlusAutoConfiguration {
 
@@ -18,10 +33,7 @@ public class MybatisPlusAutoConfiguration {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
 
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
-        /*
-         * 如果配置多个插件, 切记分页最后添加
-         * 如果有多数据源可以不配具体类型, 否则都建议配上具体的 DbType
-         */
+        // 分页插件必须在拦截器链最后添加，且建议显式指定 DbType（多数据源可不配）
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
     }

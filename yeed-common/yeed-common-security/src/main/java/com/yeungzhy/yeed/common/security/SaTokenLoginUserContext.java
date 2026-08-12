@@ -7,7 +7,18 @@ import com.yeungzhy.yeed.common.core.security.LoginUserContext;
 import com.yeungzhy.yeed.common.core.security.LoginUserVO;
 import com.yeungzhy.yeed.common.core.security.SessionKeys;
 
-// common-security: com.yeungzhy.yeed.common.security.SaTokenLoginUserContext
+/**
+ * 基于 Sa-Token 会话的 {@link LoginUserContext} 实现。
+ *
+ * <p>通过 {@link StpUtil#getSession(boolean)} 从 Sa-Token 会话中读取当前登录用户，
+ * 由 {@link com.yeungzhy.yeed.common.security.config.SecurityAutoConfiguration} 在存在 Sa-Token
+ * 时自动装配。
+ *
+ * @author yeungzhy
+ * @since 2026-08-07
+ * @see com.yeungzhy.yeed.common.security.config.SecurityAutoConfiguration
+ * @see LoginUserContext
+ */
 public class SaTokenLoginUserContext implements LoginUserContext {
 
     private final ObjectMapper objectMapper;

@@ -31,6 +31,7 @@ import org.springframework.web.client.RestClient;
  * 与此处的 {@link CloseableHttpClient} 互不干扰，各自独立连接池。
  *
  * @author yeungzhy
+ * @since 2026-08-07
  */
 @AutoConfiguration
 @ConditionalOnClass({RestClient.class, CloseableHttpClient.class})

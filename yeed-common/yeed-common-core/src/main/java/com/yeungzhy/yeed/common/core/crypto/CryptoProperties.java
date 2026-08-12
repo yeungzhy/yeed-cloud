@@ -21,7 +21,7 @@ import lombok.experimental.Accessors;
  * </pre>
  *
  * @author YangZhaoHuang
- * @since 2026-06-04 19:25
+ * @since 2026-06-04
  */
 @Data
 @Accessors(chain = true)
@@ -38,9 +38,6 @@ public class CryptoProperties {
     /** HMAC 配置 */
     @Setter(value = AccessLevel.PACKAGE)
     private Hmac hmac;
-
-
-
 
     /** RSA 密钥对 */
     @Data

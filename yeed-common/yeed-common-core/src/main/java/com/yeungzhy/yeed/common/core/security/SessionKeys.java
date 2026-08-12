@@ -3,7 +3,7 @@ package com.yeungzhy.yeed.common.core.security;
 /**
  * Sa-Token 会话 session key 常量
  *
- * <p> 下游服务写入方与读取方统一引用本常量，避免散落魔法字符串
+ * <p>下游服务写入方与读取方统一引用本常量，避免散落魔法字符串
  *
  * @author yeungzhy
  * @since 2026-08-09

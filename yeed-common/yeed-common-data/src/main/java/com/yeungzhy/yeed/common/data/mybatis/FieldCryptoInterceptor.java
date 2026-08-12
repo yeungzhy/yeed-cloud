@@ -25,49 +25,36 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MyBatis 字段加解密拦截器
+ * MyBatis 字段加解密拦截器。
  *
- * <p> <b>职责</b>：拦截 MyBatis 写入（{@link ParameterHandler#setParameters}）与读取
- * （{@link ResultSetHandler#handleResultSets}）两条链路，对实体上标注 {@link Crypto} 的字段
- * 自动执行 AES 加解密，使业务代码不再感知密文——Java 层 entity 字段<b>永远是明文</b>，
- * DB 层<b>永远是密文</b>。
+ * <p><b>职责</b>：拦截 MyBatis 写入（{@link ParameterHandler#setParameters}）与读取
+ * （{@link ResultSetHandler#handleResultSets}）两条链路，对实体上标注 {@link Crypto} 的字段自动 AES
+ * 加解密。Java 层 entity 字段<b>永远是明文</b>，DB 层<b>永远是密文</b>，业务代码不感知密文。
  *
- * <p> <b>覆盖场景</b>（完整递归）：
+ * <p><b>覆盖场景</b>（完整递归）：单 entity、{@code @Param} 多参数 / {@code foreach} 批量、
+ * 批量集合（saveBatch）、DTO 包装类嵌套 entity、MyBatis-Plus JSON 列（JacksonTypeHandler）内部
+ * 字段——写时在 TypeHandler 序列化<b>前</b>加密，读时在反序列化<b>后</b>解密，时序均成立。
+ *
+ * <p><b>循环引用 / 深度防御</b>：双向关联（如 {@code User.dept} ↔ {@code Department.manager}）会导致
+ * 无限递归，用基于对象身份的 {@link IdentityHashMap} visited set 进入前判重断开环（每条 SQL 新建，
+ * 不跨请求共享）；非循环深嵌套由 {@link #MAX_DEPTH} 强制截断，防异常数据结构拖垮栈。
+ *
+ * <p><b>异常分级</b>：
  * <ul>
- *   <li>单 entity 参数：{@code insert(SysUser entity)}</li>
- *   <li>MyBatis {@code @Param} 多参数 / {@code foreach} 批量：parameterObject 是 {@code MapperMethod.ParamMap}，
- *       递归遍历 values 找到真实 entity</li>
- *   <li>批量集合：{@code saveBatch(List)} 或自定义 {@code int insertAll(List<SysUser>)}</li>
- *   <li><b>DTO 包装类参数</b>：{@code insert(UserRequestDTO dto)}，dto 内嵌套 entity，
- *       递归进 POJO 字段找到嵌套的 @Crypto 字段</li>
- *   <li><b>MyBatis-Plus JSON 字段嵌 @Crypto</b>：entity 的 JSON 列（{@code @TableField(typeHandler=JacksonTypeHandler)}）
- *       在 Java 层是对象，其内部 @Crypto 字段会被递归处理。写时 Interceptor 在 TypeHandler 序列化<b>之前</b>
- *       加密；读时 Interceptor 在 TypeHandler 反序列化<b>之后</b>解密，时序均成立</li>
+ *   <li>加密失败：抛 {@link RuntimeException} 使事务回滚——<b>绝不允许明文落库</b></li>
+ *   <li>解密失败：记 error 日志 + 字段降级为 null——<b>不让脏数据把整页列表 500</b></li>
  * </ul>
  *
- * <p> <b>循环引用防御</b>：双向关联（如 {@code User.dept} ↔ {@code Department.manager}）会导致无限递归。
- * 用基于对象身份的 {@link IdentityHashMap} visited set 在进入前判重，断开环。每条 SQL 调用新建一个 visited，
- * 不跨请求共享，线程安全。
+ * <p><b>启用约定（防重入）</b>：启用后业务代码<b>禁止</b>再手动调用
+ * {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则双重加密导致数据无法解回。
  *
- * <p> <b>深度兜底</b>：非循环的深嵌套（理论上存在但实际罕见）由 {@link #MAX_DEPTH} 强制截断，防止异常数据结构拖垮栈。
+ * <p><b>注册</b>：本类不标 {@code @Component}（业务模块扫不到 yeed-common 包），
+ * 由 {@code MybatisPlusConfig} 以 {@code @Bean} 注册，MyBatis-Plus 自动收集容器中的
+ * {@link Interceptor} Bean 注入所有 SqlSessionFactory。
  *
- * <p> <b>异常分级</b>：
- * <ul>
- *   <li>加密失败：抛 {@link RuntimeException}，事务回滚——<b>绝不允许明文落库</b></li>
- *   <li>解密失败：记录 error 日志 + 字段降级为 null——<b>不让一条脏数据把整页列表 500</b></li>
- * </ul>
- *
- * <p> <b>启用约定（防重入）</b>：启用本拦截器后，业务代码（Service/Mapper 调用方）
- * <b>禁止</b>再手动调用 {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则会双重加密导致数据无法解回。
- * 防重入依靠"删干净手动调用 + CR"，不加运行时判定，零运行时开销。
- *
- * <p> <b>注册</b>：本类不标 {@code @Component}（yeed-common 是 starter，业务模块的
- * {@code @SpringBootApplication} 扫不到 {@code com.yeungzhy.yeed.common.*} 包），改由
- * {@code MybatisPlusConfig} 以 {@code @Bean} 方式注册。MyBatis-Plus 会自动收集容器中的
- * {@link Interceptor} Bean 注入到所有 {@code SqlSessionFactory}。
- *
- * @author YangZhaoHuang at 2026-05-22 10:17
- * @author yeungzhy at 2026-08-07 重构：去硬编码 key、完整递归、循环引用防御、异常分级
+ * @author YangZhaoHuang
+ * @author yeungzhy（2026-08-07 重构：去硬编码 key、完整递归、循环引用防御、异常分级）
+ * @since 2026-05-22
  */
 @Slf4j
 @Intercepts({
@@ -78,7 +65,7 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 递归最大深度（兜底，防止异常数据结构导致栈溢出）
-     * <p> 加密字段嵌套超过 5 层几乎不存在；如确有需要可改为配置项
+     * <p>加密字段嵌套超过 5 层几乎不存在；如确有需要可改为配置项
      */
     private static final int MAX_DEPTH = 5;
 
@@ -87,14 +74,14 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 类 → 该类（含父类继承链）中标注 {@link Crypto} 的字段列表（带缓存，反射扫描只做一次）
-     * <p> 空列表表示该类无 @Crypto 字段，下次直接跳过
+     * <p>空列表表示该类无 @Crypto 字段，下次直接跳过
      */
     private static final ConcurrentHashMap<Class<?>, List<Field>> CACHED_CRYPTO_FIELDS = new ConcurrentHashMap<>();
 
     /**
      * 类 → 该类（含父类继承链）中需要递归处理的非基本类型字段（带缓存）
-     * <p> 用于递归进 POJO 嵌套字段寻找 @Crypto，避免每次递归都反射 getDeclaredFields
-     * <p> 跳过 static / transient / 基本类型字段
+     * <p>用于递归进 POJO 嵌套字段寻找 @Crypto，避免每次递归都反射 getDeclaredFields
+     * <p>跳过 static / transient / 基本类型字段
      */
     private static final ConcurrentHashMap<Class<?>, List<Field>> CACHED_RECURSIVE_FIELDS = new ConcurrentHashMap<>();
 
@@ -204,7 +191,7 @@ public class FieldCryptoInterceptor implements Interceptor {
     /**
      * 对单个 {@link Crypto} 字段执行加/解密
      *
-     * <p> <b>异常分级</b>：
+     * <p><b>异常分级</b>：
      * <ul>
      *   <li>加密失败：抛 {@link RuntimeException} 让事务回滚——绝不能让明文落库</li>
      *   <li>解密失败：记 error 日志 + 字段降级为 null——不让一条脏数据把整页列表 500</li>
@@ -250,7 +237,7 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 获取类（含父类继承链）中标注 {@link Crypto} 的字段列表（带缓存）
-     * <p> 遍历继承链以支持父类标注 @Crypto 的场景（如 BaseEntity 未来加 @Crypto 字段）
+     * <p>遍历继承链以支持父类标注 @Crypto 的场景（如 BaseEntity 未来加 @Crypto 字段）
      */
     private List<Field> getCryptoFields(Class<?> clazz) {
         return CACHED_CRYPTO_FIELDS.computeIfAbsent(clazz, c -> {
@@ -271,7 +258,7 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 获取类（含父类继承链）中需要递归处理的非基本类型字段（带缓存）
-     * <p> 跳过 static / transient / 基本类型 / 包装类 / String 字段：
+     * <p>跳过 static / transient / 基本类型 / 包装类 / String 字段：
      * <ul>
      *   <li>static：类共享，不参与实例加解密</li>
      *   <li>transient：不参与序列化，加密它无意义</li>
@@ -302,7 +289,7 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 判断是否为基本类型、包装类或 String——这些类型绝不递归，也绝不含 @Crypto 字段
-     * <p> 注意：Map / Collection 不在此列，它们在 {@link #handleObject} 中单独分支处理
+     * <p>注意：Map / Collection 不在此列，它们在 {@link #handleObject} 中单独分支处理
      */
     private boolean isSimpleType(Class<?> clazz) {
         return clazz.isPrimitive()
@@ -314,15 +301,15 @@ public class FieldCryptoInterceptor implements Interceptor {
 
     /**
      * 判断是否为 JDK / 第三方库的命名模块类型
-     * <p> 命名模块（如 {@code java.base}）的类（{@code java.time.LocalDateTime}、{@code java.util.Date}、
+     * <p>命名模块（如 {@code java.base}）的类（{@code java.time.LocalDateTime}、{@code java.util.Date}、
      * {@code java.math.BigDecimal} 等）：
      * <ul>
      *   <li>内部不可能标注 {@link Crypto}（用户无法给 JDK 类加注解）</li>
      *   <li>JDK 17+ 强模块系统禁止反射其私有字段，{@code setAccessible} 抛
      *       {@code InaccessibleObjectException}</li>
      * </ul>
-     * <p> 用户自定义类属于 unnamed module（{@code isNamed()=false}），正常递归。
-     * <p> 注意：{@code java.util.HashMap} 等容器型也是命名模块，但它们在 {@link #handleObject}
+     * <p>用户自定义类属于 unnamed module（{@code isNamed()=false}），正常递归。
+     * <p>注意：{@code java.util.HashMap} 等容器型也是命名模块，但它们在 {@link #handleObject}
      * 的 Map / Collection 分支单独处理，入口判断已排除容器型。
      */
     private boolean isInternalType(Class<?> clazz) {

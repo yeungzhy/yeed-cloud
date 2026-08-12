@@ -3,6 +3,18 @@ package com.yeungzhy.yeed.common.core.security;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 登录用户信息静态访问入口
+ *
+ * <p>由 {@link LoginUserContextBinder} 在容器启动时绑定生效的 {@link LoginUserContext}，
+ * 业务代码无需注入 Bean，直接静态调用本类方法即可获取当前登录用户信息。
+ *
+ * <p>未绑定上下文（common-core 单独使用）或未登录时，派生方法统一返回 null / 空集合，不抛异常；
+ * 需要强制登录的场景使用 {@link #requireUserId()}。
+ *
+ * @see LoginUserContextBinder
+ * @see LoginUserContext
+ */
 public final class LoginUserHolder {
 
     private static volatile LoginUserContext context;
@@ -36,7 +48,7 @@ public final class LoginUserHolder {
 
     /**
      * 获取当前登录用户 ID，未登录时返回 defaultValue
-     * <p> 用于 AutoFillFieldHandler 等非登录场景（如定时任务批量插入）的兜底填充，
+     * <p>用于 AutoFillFieldHandler 等非登录场景（如定时任务批量插入）的兜底填充，
      * 行为与 StpUtil.getLoginId(defaultValue) 一致——不抛异常，直接返回兜底值
      *
      * @param defaultValue 未登录时的兜底值
@@ -49,8 +61,8 @@ public final class LoginUserHolder {
 
     /**
      * 获取当前登录用户 ID，未登录时抛异常
-     * <p> 行为与 StpUtil.getLoginIdAsLong() 一致——未登录直接抛异常，不返回 null
-     * <p> 用于 BaseMapper.deleteByIdAutoFill 等必须登录的场景；
+     * <p>行为与 StpUtil.getLoginIdAsLong() 一致——未登录直接抛异常，不返回 null
+     * <p>用于 BaseMapper.deleteByIdAutoFill 等必须登录的场景；
      * 非登录场景（定时任务等）请使用 {@link #getUserId(Long)} 传兜底值，
      * 或绕过 AutoFill 方法显式传 deleteBy
      *
@@ -121,7 +133,5 @@ public final class LoginUserHolder {
         }
         return false;
     }
-
-
 
 }

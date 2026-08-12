@@ -18,14 +18,16 @@ import java.util.Base64;
 
 /**
  * AES 工具类 - JDK 标准实现，约定参数（方便多端统一）：
- * <li>Algorithm: AES</li>
- * <li>Mode: GCM</li>
- * <li>Padding: NoPadding（GCM 不需要填充）</li>
- * <li>Key Size: 256 bit</li>
- * <li>IV Length: 12 byte (96 bit)</li>
- * <li>Tag Length: 128 bit (16 byte)</li>
- * <li>Charset: UTF-8</li>
- * <li>密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )</li>
+ * <ul>
+ *   <li>Algorithm: AES</li>
+ *   <li>Mode: GCM</li>
+ *   <li>Padding: NoPadding（GCM 不需要填充）</li>
+ *   <li>Key Size: 256 bit</li>
+ *   <li>IV Length: 12 byte (96 bit)</li>
+ *   <li>Tag Length: 128 bit (16 byte)</li>
+ *   <li>Charset: UTF-8</li>
+ *   <li>密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )</li>
+ * </ul>
  */
 public class AesUtil {
     private AesUtil() {}

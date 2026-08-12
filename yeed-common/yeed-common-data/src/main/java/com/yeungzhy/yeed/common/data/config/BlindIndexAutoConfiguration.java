@@ -8,16 +8,16 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 数据库盲索引自动装配
+ * 数据库盲索引自动装配。
  *
- * <p> 基于 common-core 的 {@link CryptoProperties} 注册 data 层专用的盲索引 Bean，
+ * <p>基于 common-core 的 {@link CryptoProperties} 注册 data 层专用的盲索引 Bean，
  * 供 {@code FieldCryptoInterceptor} 入库加密、Service 层等值查询条件转换使用。
  *
- * <p> 归属说明：盲索引的"算法工具类" {@link BlindIndexProvider} 在 common-core，
- * 但"具体字段的盲索引 Bean"是数据库场景专用，注册在 common-data；
- * 依赖 CryptoProperties Bean（由 {@link CryptoAutoConfiguration} 注册），故显式声明加载顺序。
+ * <p>归属说明：盲索引的"算法工具类" {@link BlindIndexProvider} 在 common-core，
+ * "具体字段的盲索引 Bean"是数据库场景专用，注册在 common-data；
+ * 依赖 {@link CryptoAutoConfiguration} 注册的 CryptoProperties Bean，故显式声明加载顺序。
  *
- * <p> 当前预设 idCard / phone / email 三个 PII 字段；如需扩展（如 bankCard），
+ * <p>当前预设 idCard / phone / email 三个 PII 字段；如需扩展（如 bankCard），
  * 可在业务模块自定义 {@code @Configuration} 追加 {@code BlindIndexProvider} Bean。
  *
  * @author yeungzhy

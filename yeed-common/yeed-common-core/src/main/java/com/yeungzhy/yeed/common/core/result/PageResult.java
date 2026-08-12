@@ -7,6 +7,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * 通用分页返回体（与 ORM 框架解耦）
+ *
+ * <p>通过 {@link #of} 系列静态工厂构造；如需从 MyBatis-Plus 的 IPage 转换，
+ * 请使用 common-data 的 {@code MybatisPageConverters.toPageResult}。
+ */
 @Data
 @Accessors(chain = true)
 public class PageResult<T> {
@@ -49,8 +55,8 @@ public class PageResult<T> {
     }
 
     /**
-     * 把 PageResult&lt;ENTITY&gt; 转成 PageResult&lt;VO&gt;，常用：entity 列表转成 vo 列表
-     * <p> 纯 POJO 转换，不耦合任何 ORM 框架；如需从 MyBatis-Plus 的 IPage 转换，
+     * 把 {@code PageResult<E>} 转成 {@code PageResult<V>}，常用：entity 列表转成 vo 列表
+     * <p>纯 POJO 转换，不耦合任何 ORM 框架；如需从 MyBatis-Plus 的 IPage 转换，
      * 请使用 common-data 中的 {@code MybatisPageConverters.toPageResult}
      *
      * @param source 原始分页结果

@@ -8,37 +8,21 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * 本地开发环境检查监听器，在以下场景会终止 JVM（退出码 1）：
  * <ol>
  *   <li>激活的 profile 为 {@code test(pord)}，且未设置部署模式标识（即 {@code DEPLOY_MODE != "server"}）
- *       <p> 防止在本地开发时误连公共环境，即使缺少部分网络关系
- *   </li>
- *
+ *       <p>防止在本地开发时误连公共环境，即使缺少部分网络关系</li>
  *   <li>激活的 profile 为 {@code dev}，且 Nacos 服务发现组名也为 {@code dev}
- *       <p> 强制要求开发环境使用非默认分组，避免服务注册冲突
- *   </li>
+ *       <p>强制要求开发环境使用非默认分组，避免服务注册冲突</li>
  * </ol>
  *
- * <h3>SPI 注册方式</h3>
- * <p>
- * 本监听器通过 {@code META-INF/spring.factories} 注册，key 为
- * {@code org.springframework.context.ApplicationListener}，value 为当前类的全限定名。
- * </p>
- *
- * <h4>为什么要这样做？</h4>
- * <p>
- * Spring Boot 在启动早期（{@link ApplicationEnvironmentPreparedEvent} 发布前）就需要加载并注册
- * {@link ApplicationListener}，以便在环境准备阶段就能执行检查逻辑。而
- * {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports} 中的类是在自动配置处理阶段（较晚）才被加载的，
- * 其设计目标仅为 {@link org.springframework.boot.autoconfigure.AutoConfiguration} 类。
- * 因此，监听器若放在该文件中，会被完全忽略。
- * </p>
- * <p>
- * 虽然 Spring Boot 3.x 已废弃 {@code spring.factories} 中
- * {@code EnableAutoConfiguration} 的注册方式，但对于
- * {@code ApplicationListener}、{@code EnvironmentPostProcessor} 等早期扩展点，
- * {@code spring.factories} 仍然是官方唯一支持的 SPI 机制。
- * </p>
+ * <p><b>SPI 注册方式</b>：通过 {@code META-INF/spring.factories} 注册（key 为
+ * {@code org.springframework.context.ApplicationListener}），而非 {@code AutoConfiguration.imports}。
+ * 原因：{@link ApplicationListener} 需在启动早期（{@link ApplicationEnvironmentPreparedEvent} 发布前）
+ * 完成注册才能生效，而 imports 文件到自动配置阶段（较晚）才被加载，且仅用于
+ * {@link org.springframework.boot.autoconfigure.AutoConfiguration} 类；虽然 Spring Boot 3.x
+ * 已废弃 spring.factories 中的 EnableAutoConfiguration 注册，但 ApplicationListener /
+ * EnvironmentPostProcessor 等早期扩展点仍只能走该机制。
  *
  * @author yeungzhy
- * @date 2026-08-02 18:19
+ * @since 2026-08-02
  */
 public class EnvCheckListener implements ApplicationListener<ApplicationEnvironmentPreparedEvent> {
 

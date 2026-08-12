@@ -57,6 +57,9 @@ import java.util.function.Consumer;
  *   <li><b>可测试性</b>：作为 Bean 可在测试中用 {@code @MockBean} 替换或注入自定义白名单子类，
  *       比直接 {@code new} 或 static 更灵活。</li>
  * </ul>
+ *
+ * @author yeungzhy
+ * @since 2026-08-08
  */
 public abstract class BaseSorts<T extends BaseEntity> {
 
@@ -67,7 +70,7 @@ public abstract class BaseSorts<T extends BaseEntity> {
 
     /**
      * 构造器 - Consumer lambda 形式（紧凑写法）
-     * <p> 例：{@code super(SysUser.class, b -> b.add("x", X::getX).add("y", X::getY)); }
+     * <p>例：{@code super(SysUser.class, b -> b.add("x", X::getX).add("y", X::getY)); }
      */
     protected BaseSorts(Class<T> entityClass, Consumer<Builder<T>> config) {
         this.entityClass = entityClass;
@@ -78,7 +81,7 @@ public abstract class BaseSorts<T extends BaseEntity> {
 
     /**
      * 构造器 - 显式 Builder 形式（更直观）
-     * <p> 例：{@code super(SysUser.class, new BaseSorts.Builder<SysUser>().add(...).add(...)); }
+     * <p>例：{@code super(SysUser.class, new BaseSorts.Builder<SysUser>().add(...).add(...)); }
      */
     protected BaseSorts(Class<T> entityClass, Builder<T> builder) {
         this.entityClass = entityClass;
@@ -119,8 +122,8 @@ public abstract class BaseSorts<T extends BaseEntity> {
 
     /**
      * 应用多字段排序（兼容 PageRequest 的「单字段 + 多字段」两套接口）。
-     * <p> 执行顺序：<b>先单字段 → 再多字段（列表顺序）</b>，符合 SQL ORDER BY a, b, c 的直觉。
-     * <p> isAsc 为 null 或 orders 内 isAsc 为 null → <b>默认降序</b>。
+     * <p>执行顺序：<b>先单字段 → 再多字段（列表顺序）</b>，符合 SQL ORDER BY a, b, c 的直觉。
+     * <p>isAsc 为 null 或 orders 内 isAsc 为 null → <b>默认降序</b>。
      *
      * @param orderField 单字段（便捷接口，可 null）
      * @param isAsc      单字段方向（可 null）
