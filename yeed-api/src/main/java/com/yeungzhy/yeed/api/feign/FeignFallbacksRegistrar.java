@@ -24,25 +24,35 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Feign 兜底实现注册器：核心扫描与注册逻辑。
+ * Feign 兜底实现注册器：{@link EnableFeignFallbacks} 的核心扫描与注册逻辑。
  *
- * <p>本类由 {@link EnableFeignFallbacks} 通过 {@code @Import} 导入，在 Spring 容器初始化时执行：
+ * <p>由 {@code @EnableFeignFallbacks} 经 {@code @Import} 引入，实现
+ * {@link ImportBeanDefinitionRegistrar} 与 {@link EnvironmentAware}：
+ * <ul>
+ *   <li><b>执行时机</b>：容器 refresh 阶段，{@code ConfigurationClassPostProcessor} 处理配置类时
+ *       即被调用（先于普通 Bean 实例化）。此时可向容器动态注册 BeanDefinition，
+ *       适合"扫描发现 + 批量注册"，比 {@code @Bean} 方法更灵活</li>
+ *   <li><b>为何实现 {@link EnvironmentAware}</b>：{@link ClassPathScanningCandidateComponentProvider}
+ *       构造需要 {@link Environment} 以解析候选类元数据（如注解属性中的占位符）</li>
+ * </ul>
+ *
+ * <p>执行流程（{@link #registerBeanDefinitions}）：
  * <ol>
- *   <li>读取 {@link EnableFeignFallbacks#basePackages()} 确定扫描范围</li>
- *   <li>用 {@link ClassPathScanningCandidateComponentProvider} 扫描带 {@link FeignFallback} 注解的具体类</li>
- *   <li>解析并校验 fallback 类对应的 Feign 客户端接口（显式优先，未指定则自动推断）</li>
- *   <li>将扫描到的类注册为 Bean，供 {@code @FeignClient(fallback = ...)} 引用</li>
+ *   <li>读取 {@code @EnableFeignFallbacks} 的 basePackages / value 确定扫描范围（见 {@link #getBasePackages}）</li>
+ *   <li>用 {@link ClassPathScanningCandidateComponentProvider} 扫描标注 {@link FeignFallback}
+ *       的具体独立类（关闭默认过滤器，避免误扫 {@code @Component}）</li>
+ *   <li>逐个解析并强校验兜底目标 Feign 接口（见 {@link #resolveFeignClientInterface}）</li>
+ *   <li>注册为普通 Bean，beanName 与 {@code @Component} 命名规则一致（类名首字母小写），
+ *       供 {@code @FeignClient(fallback / fallbackFactory = ...)} 按类引用</li>
  * </ol>
  *
- * <p>本机制借鉴 Spring Cloud OpenFeign 的 {@code FeignClientsRegistrar}，实现思路一致：
- * 自定义注解 + {@link ImportBeanDefinitionRegistrar} + 类路径扫描。
- *
- * <p>{@link ImportBeanDefinitionRegistrar} 的执行时机：在所有 {@code @Configuration} 类解析完成后、
- * Bean 实例化之前。此时可以动态向容器注册 BeanDefinition，比 {@code @Bean} 方法更灵活，
- * 适合"扫描发现 + 批量注册"的场景。
+ * <p>设计借鉴 Spring Cloud OpenFeign 的 {@code FeignClientsRegistrar}（自定义注解 +
+ * ImportBeanDefinitionRegistrar + 类路径扫描），实现思路一致。
  *
  * @author yeungzhy
  * @since 2026-08-10
+ * @see EnableFeignFallbacks
+ * @see FeignFallback
  */
 public class FeignFallbacksRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
@@ -55,6 +65,15 @@ public class FeignFallbacksRegistrar implements ImportBeanDefinitionRegistrar, E
         this.environment = environment;
     }
 
+    /**
+     * 扫描并注册所有 {@link FeignFallback} 兜底类。
+     *
+     * <p>由 Spring 在配置类解析阶段调用，本方法不直接返回 Bean，而是通过
+     * {@link BeanDefinitionRegistry} 将扫描到的兜底类注册为 BeanDefinition。
+     *
+     * @param importingClassMetadata 标注了 {@link EnableFeignFallbacks} 的配置类元数据
+     * @param registry               BeanDefinition 注册表
+     */
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         // 1. 读取 @EnableFeignFallbacks 注解属性
@@ -111,40 +130,14 @@ public class FeignFallbacksRegistrar implements ImportBeanDefinitionRegistrar, E
     /**
      * 注册单个 fallback / fallbackFactory 类为 Bean。
      *
-     * <p>支持两种标注场景：
+     * <p>注册前先解析兜底目标 Feign 接口（显式优先、未指定则自动推断，推断规则详见
+     * {@link #resolveFeignClientInterface}），再做契约强校验（启动期 fail-fast，不可关闭）：
      * <ul>
-     *   <li><b>普通 Fallback 类</b>：直接 implements 目标 {@code @FeignClient} 接口</li>
-     *   <li><b>FallbackFactory 类</b>：implements {@link FallbackFactory FallbackFactory&lt;T&gt;}，T 为目标
-     *       {@code @FeignClient} 接口。Factory 在 {@code create(Throwable)} 中能拿到原始异常，
-     *       便于记录错误日志、区分失败原因。</li>
+     *   <li>普通 Fallback：必须 implements 目标 {@code @FeignClient} 接口</li>
+     *   <li>FallbackFactory：泛型参数 T 必须等于目标接口，且类确实实现 {@code FallbackFactory<T>}</li>
      * </ul>
-     *
-     * <p>注册前会解析并校验兜底目标 Feign 客户端接口：
-     * <ol>
-     *   <li>若 {@link FeignFallback#value()} 显式指定，直接采用（向后兼容）</li>
-     *   <li>否则自动推断：
-     *       <ul>
-     *         <li>FallbackFactory：解析泛型参数 T，T 即为目标接口；并校验 T 标注了 {@code @FeignClient}</li>
-     *         <li>普通 Fallback：扫描实现的接口，找出被 {@code @FeignClient} 标注的接口
-     *             <ul>
-     *               <li>0 个 → 抛 {@link IllegalStateException}（未实现任何 Feign 契约）</li>
-     *               <li>1 个 → 推断成功</li>
-     *               <li>多个 → 抛 {@link IllegalStateException}（歧义，要求显式指定）</li>
-     *             </ul>
-     *         </li>
-     *       </ul>
-     *   </li>
-     * </ol>
-     *
-     * <p>无论显式还是推断得到，均强校验：
-     * <ul>
-     *   <li>普通 Fallback：必须 implements 目标 Feign 接口</li>
-     *   <li>FallbackFactory：泛型参数 T 必须是目标 Feign 接口，且 Factory 实现 FallbackFactory<T></li>
-     * </ul>
-     * 校验在启动期执行（fail-fast），无运行时开销。
-     *
-     * <p>beanName 使用 {@link AnnotationBeanNameGenerator}（类名首字母小写），
-     * 与 {@code @Component} 的默认命名规则一致，便于排查问题。
+     * 校验通过后以普通 Bean 形式注册，beanName 与 {@code @Component} 默认命名规则一致（类名首字母小写），
+     * 便于排查问题。
      */
     private void registerFallbackBean(BeanDefinition candidate, BeanDefinitionRegistry registry) {
         String beanClassName = candidate.getBeanClassName();

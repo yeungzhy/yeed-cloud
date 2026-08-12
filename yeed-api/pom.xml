@@ -29,13 +29,16 @@
     <build>
         <plugins>
             <!--
-                引用父 POM pluginManagement 中的配置。
-                因为父 POM 已经配置了 repackage goal 和 excludes，
-                这里可以极度简化，甚至只写 groupId + artifactId。
+                父 POM pluginManagement 中配置了 repackage goal，但 yeed-api 是纯契约 jar，
+                不是 Spring Boot 应用（无 main class），必须跳过 repackage，否则 install 阶段报错
+                "Unable to find main class"
             -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>
