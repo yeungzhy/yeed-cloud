@@ -3,7 +3,7 @@ package ${package.Service};
 import ${dtoPackage}.${entity}DTO;
 import ${dtoPackage}.${entity}PageDTO;
 import ${voPackage}.${entity}VO;
-import com.yeungzhy.yeed.common.result.PageResult;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 
 /**
  * $!{table.comment} 服务类

@@ -157,11 +157,12 @@ public class GeneratorApplication {
                 )
                 // ========== 3.5 注入配置（自定义生成 DTO/VO/Sorts） ==========
                 .injectionConfig(builder -> builder
-                        // 注入 dto/vo/sorts/entity 包名，供模板 ${dtoPackage} / ${voPackage} / ${sortsPackage} / ${entityFullPackage} 使用
+                        // 注入 dto/vo/sorts/convert/entity 包名，供模板 ${dtoPackage} / ${voPackage} / ${sortsPackage} / ${servicePackage} / ${entityFullPackage} 使用
                         .customMap(Map.of(
                                 "dtoPackage", fullPackage + ".dto",
                                 "voPackage", fullPackage + ".vo",
                                 "sortsPackage", fullPackage + ".service",
+                                "servicePackage", fullPackage + ".service",
                                 "entityFullPackage", fullPackage + ".entity"
                         ))
                         // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxPageDTO/XxxVO/XxxSorts），packageName 决定输出子包
@@ -184,6 +185,11 @@ public class GeneratorApplication {
                                 new CustomFile.Builder()
                                         .fileName("Sorts.java")
                                         .templatePath("/templates/yeed-sorts.java.vm")
+                                        .packageName("service")
+                                        .build(),
+                                new CustomFile.Builder()
+                                        .fileName("Convert.java")
+                                        .templatePath("/templates/yeed-convert.java.vm")
                                         .packageName("service")
                                         .build()
                         ))

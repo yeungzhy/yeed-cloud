@@ -76,6 +76,7 @@
         <poi.version>5.4.0</poi.version>
         <poi-ooxml.version>5.4.0</poi-ooxml.version>
         <mockito.version>4.11.0</mockito.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
 
     <dependencyManagement>
@@ -240,6 +241,18 @@
                 <scope>compile</scope>
             </dependency>
 
+            <!-- MapStruct：对象字段映射（生成器 Convert 接口，实现类由编译期注解处理器生成） -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -291,6 +304,12 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
+                        </path>
+                        <!-- MapStruct 注解处理器须排在 Lombok 之后：需读取 Lombok 生成的 getter/setter 做字段映射 -->
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

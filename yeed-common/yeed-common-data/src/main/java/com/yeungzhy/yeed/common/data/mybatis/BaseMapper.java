@@ -1,5 +1,7 @@
 package com.yeungzhy.yeed.common.data.mybatis;
 
+import com.yeungzhy.yeed.common.core.request.PageRequest;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -7,7 +9,9 @@ import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.injector.methods.AlwaysUpdateSomeColumnById;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yeungzhy.yeed.common.data.mybatis.injector.*;
+import com.yeungzhy.yeed.common.data.support.MybatisPageConverters;
 import org.apache.ibatis.annotations.Param;
 
 import java.io.Serializable;
@@ -16,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * 项目统一 Mapper：在 MyBatis-Plus {@link com.baomidou.mybatisplus.core.mapper.BaseMapper} 之上集中提供项目扩展能力
@@ -27,6 +32,8 @@ import java.util.function.Consumer;
  *         仅 @TableLogic 且实体含 deleteBy 字段的表可用</li>
  *     <li>逻辑删除逃逸: {@code physicalDeleteById}/{@code physicalDelete}/{@code selectListWithDeleted}/{@code restoreById},
  *         仅 @TableLogic 表可用, 支撑"回收站列表 + 恢复 + 彻底删除"场景</li>
+ *     <li>分页查询: {@code selectPageVo}/{@code selectPageResult}, 所有表可用,
+ *         一行完成"入参→IPage→查询→PageResult", 可选 Entity→VO 元素转换</li>
  * </ul>
  * <p>用法: 业务 Mapper 继承本接口即可, 例如:
  * {@code public interface SysUserMapper extends BaseMapper<SysUser> {}}
@@ -274,6 +281,47 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * @since 2026-08-08
      */
     int restoreById(Serializable id);
+
+
+    // ==================================================================================
+    // 五、分页查询（基于 MyBatis-Plus 内置 selectPage 封装, 所有表可用）
+    //     PageRequest / PageResult 为 common-core 纯 POJO, 业务侧无需接触 ORM 分页类型
+    // ==================================================================================
+
+    /**
+     * 分页查询并直接返回 VO 分页结果（一行完成"入参→IPage→查询→PageResult"三步）
+     * <p>详述: 内部依次完成 PageRequest → MyBatis-Plus Page、selectPage 查询、Page → PageResult,
+     * 页码/条数/总记录数的字段搬运全部收敛于此, 并始终基于 selectPage 返回结果组装,
+     * 不会误用入参对象的旧数据; records 元素由 mapper 逐条转换
+     * <p>注意: 元素转换（Entity→VO）通常传生成器产出的 XxxConvert::toVo;
+     * 无需转换的场景请用 {@link #selectPageResult(PageRequest, Wrapper)}
+     *
+     * @param pageRequest  分页请求（pageNum / pageSize; 支持子类, 如 XxxPageDTO）
+     * @param queryWrapper 查询条件（可空, 空则查全表）
+     * @param mapper       Entity → VO 转换函数
+     * @param <V>          VO 类型
+     * @return 分页结果（records 已通过 mapper 转换为 VO）
+     * @since 2026-08-12
+     */
+    default <V> PageResult<V> selectPageVO(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+        Page<T> page = MybatisPageConverters.toMybatisPlusPage(pageRequest);
+        return MybatisPageConverters.toPageResult(selectPage(page, queryWrapper), mapper);
+    }
+
+
+    /**
+     * 分页查询并直接返回实体分页结果（无需元素转换时的便捷入口）
+     * <p>详述: 等价于 {@code selectPageVo(pageRequest, queryWrapper, Function.identity())},
+     * 元素不转换直接返回; 如需 Entity→VO 转换请用 {@link #selectPageVO(PageRequest, Wrapper, Function)}
+     *
+     * @param pageRequest  分页请求（pageNum / pageSize; 支持子类, 如 XxxPageDTO）
+     * @param queryWrapper 查询条件（可空, 空则查全表）
+     * @return 分页结果（records 为实体列表）
+     * @since 2026-08-12
+     */
+    default PageResult<T> selectPageResult(PageRequest pageRequest, Wrapper<T> queryWrapper) {
+        return selectPageVO(pageRequest, queryWrapper, Function.identity());
+    }
 
 }
 

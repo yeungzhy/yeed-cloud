@@ -14,14 +14,11 @@ import java.util.function.Function;
  * <p><b>职责</b>：将 "与 MyBatis-Plus 的互相转换" 集中在 common-data 层，
  * 使 common-core 的 PageRequest/PageResult 不耦合任何 ORM 框架。
  *
- * <p><b>用法</b>：
+ * <p><b>用法</b>：业务侧一般不直接调用本工具，统一走
+ * {@link com.yeungzhy.yeed.common.data.mybatis.BaseMapper#selectPageVO(PageRequest, com.baomidou.mybatisplus.core.conditions.Wrapper, Function)}
+ * 一行完成分页查询，本工具是该方法内部的底层转换器：
  * <pre>
- * // 构造 MyBatis-Plus 分页对象
- * Page&lt;SysUser&gt; page = MybatisPageConverters.toMybatisPlusPage(dto);
- * sysUserMapper.selectPage(page, lambdaQuery);
- *
- * // 从 MyBatis-Plus 的 IPage 转成 PageResult
- * return MybatisPageConverters.toPageResult(page, entity -> new SysUserVO());
+ * return sysUserMapper.selectPageVo(dto, lambdaQuery, sysUserConvert::toVo);
  * </pre>
  *
  * @author yeungzhy

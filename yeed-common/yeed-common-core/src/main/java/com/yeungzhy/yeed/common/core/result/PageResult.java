@@ -5,13 +5,13 @@ import lombok.experimental.Accessors;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * 通用分页返回体（与 ORM 框架解耦）
  *
- * <p>通过 {@link #of} 系列静态工厂构造；如需从 MyBatis-Plus 的 IPage 转换，
- * 请使用 common-data 的 {@code MybatisPageConverters.toPageResult}。
+ * <p>仅通过 {@link #empty()} 或 {@link #of(long, long, long, List)} 构造；
+ * 如需从 MyBatis-Plus 的 IPage 转换，请使用 common-data 的 {@code MybatisPageConverters.toPageResult}，
+ * 切勿在此处引入 ORM 类型或提供"records 元素变换"方法（变换由 MapStruct 生成的 XxxConvert 在组装前完成）。
  */
 @Data
 @Accessors(chain = true)
@@ -52,25 +52,6 @@ public class PageResult<T> {
                 .setPageSize(pageSize)
                 .setTotal(total)
                 .setRecords(records == null ? Collections.emptyList() : records);
-    }
-
-    /**
-     * 把 {@code PageResult<E>} 转成 {@code PageResult<V>}，常用：entity 列表转成 vo 列表
-     * <p>纯 POJO 转换，不耦合任何 ORM 框架；如需从 MyBatis-Plus 的 IPage 转换，
-     * 请使用 common-data 中的 {@code MybatisPageConverters.toPageResult}
-     *
-     * @param source 原始分页结果
-     * @param mapper entity → vo 转换函数
-     */
-    public static <E, V> PageResult<V> of(PageResult<E> source, Function<E, V> mapper) {
-        List<V> voList = source.getRecords() == null
-                ? Collections.emptyList()
-                : source.getRecords().stream().map(mapper).toList();
-        return new PageResult<V>()
-                .setPageNum(source.getPageNum())
-                .setPageSize(source.getPageSize())
-                .setTotal(source.getTotal())
-                .setRecords(voList);
     }
 
 }
