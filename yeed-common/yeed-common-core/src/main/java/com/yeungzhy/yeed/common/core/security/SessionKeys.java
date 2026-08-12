@@ -11,7 +11,7 @@ package com.yeungzhy.yeed.common.core.security;
 public final class SessionKeys {
     private SessionKeys() {}
 
-    /** session 中存放登录身份包（{@link LoginUserVO}）的 key */
-    public static final String LOGIN_USER = "yeed:loginUser";
+    /** session 中存放登录身份包（{@link LoginUserInfo}）的 key */
+    public static final String LOGIN_USER = "yeed:security:loginUser";
 
 }

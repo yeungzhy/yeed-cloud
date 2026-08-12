@@ -6,24 +6,24 @@ import java.util.List;
 /**
  * 登录用户信息静态访问入口
  *
- * <p>由 {@link LoginUserContextBinder} 在容器启动时绑定生效的 {@link LoginUserContext}，
+ * <p>由 {@link LoginUserProviderRegistrar} 在容器启动时绑定生效的 {@link LoginUserProvider}，
  * 业务代码无需注入 Bean，直接静态调用本类方法即可获取当前登录用户信息。
  *
  * <p>未绑定上下文（common-core 单独使用）或未登录时，派生方法统一返回 null / 空集合，不抛异常；
  * 需要强制登录的场景使用 {@link #requireUserId()}。
  *
- * @see LoginUserContextBinder
- * @see LoginUserContext
+ * @see LoginUserProviderRegistrar
+ * @see LoginUserProvider
  */
-public final class LoginUserHolder {
+public final class LoginUserHelper {
 
-    private static volatile LoginUserContext context;
+    private static volatile LoginUserProvider context;
 
-    private LoginUserHolder() {}
+    private LoginUserHelper() {}
 
     /** 由 LoginUserContextBinder 在容器启动时调用（package-private） */
-    static void bind(LoginUserContext context) {
-        LoginUserHolder.context = context;
+    static void bind(LoginUserProvider context) {
+        LoginUserHelper.context = context;
     }
 
     // ==================== 核心方法 ====================
@@ -34,7 +34,7 @@ public final class LoginUserHolder {
     }
 
     /** 获取完整登录身份包 */
-    public static LoginUserVO getLoginUser() {
+    public static LoginUserInfo getLoginUser() {
         return context != null ? context.getLoginUser() : null;
     }
 
@@ -42,7 +42,7 @@ public final class LoginUserHolder {
     // 每个方法内部只调一次 getLoginUser()，避免重复读取
 
     public static Long getUserId() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getUserId() : null;
     }
 
@@ -55,7 +55,7 @@ public final class LoginUserHolder {
      * @return 登录用户 ID，或 defaultValue
      */
     public static Long getUserId(Long defaultValue) {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getUserId() : defaultValue;
     }
 
@@ -78,27 +78,27 @@ public final class LoginUserHolder {
     }
 
     public static String getUsername() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getUsername() : null;
     }
 
     public static String getRealName() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getRealName() : null;
     }
 
     public static String getEmployeeNo() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getEmployeeNo() : null;
     }
 
     public static List<String> getRoleCodes() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getRoleCodes() : Collections.emptyList();
     }
 
     public static List<String> getPerms() {
-        LoginUserVO user = getLoginUser();
+        LoginUserInfo user = getLoginUser();
         return user != null ? user.getPerms() : Collections.emptyList();
     }
 

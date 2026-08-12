@@ -1,6 +1,6 @@
 package com.yeungzhy.yeed.common.data.mybatis;
 
-import com.yeungzhy.yeed.common.core.security.LoginUserHolder;
+import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
@@ -158,7 +158,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * @since 2026-08-08
      */
     default boolean deleteByIdAutoFill(Long id) {
-        return logicDeleteById(id, nanoEpoch(), LoginUserHolder.requireUserId()) > 0;
+        return logicDeleteById(id, nanoEpoch(), LoginUserHelper.requireUserId()) > 0;
     }
 
 
@@ -203,7 +203,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
             return 0;
         }
         long deleteTime = nanoEpoch();
-        Long deleteBy = LoginUserHolder.requireUserId();
+        Long deleteBy = LoginUserHelper.requireUserId();
         if (ids.size() <= Constants.DEFAULT_BATCH_SIZE) {
             return logicDeleteByIds(ids, deleteTime, deleteBy);
         }

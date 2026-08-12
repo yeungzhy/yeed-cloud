@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
-public class LoginUserVO {
+public class LoginUserInfo {
 
     /** 用户主键 */
     private Long userId;

@@ -8,5 +8,5 @@
 
 com.yeungzhy.yeed.common.core.config.CryptoAutoConfiguration
 com.yeungzhy.yeed.common.core.config.JacksonAutoConfiguration
-com.yeungzhy.yeed.common.core.config.LoginUserContextAutoConfiguration
+com.yeungzhy.yeed.common.core.config.LoginUserProviderAutoConfiguration
 com.yeungzhy.yeed.common.core.config.StartupInfoPrinterAutoConfiguration

@@ -1,8 +1,8 @@
 package com.yeungzhy.yeed.common.core.config;
 
-import com.yeungzhy.yeed.common.core.security.DefaultLoginUserContext;
-import com.yeungzhy.yeed.common.core.security.LoginUserContext;
-import com.yeungzhy.yeed.common.core.security.LoginUserContextBinder;
+import com.yeungzhy.yeed.common.core.security.DefaultLoginUserProvider;
+import com.yeungzhy.yeed.common.core.security.LoginUserProvider;
+import com.yeungzhy.yeed.common.core.security.LoginUserProviderRegistrar;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -10,20 +10,20 @@ import org.springframework.context.annotation.Bean;
 /**
  * 登录用户上下文自动装配
  *
- * <p>注册 {@link LoginUserContext} 的兜底实现 {@link DefaultLoginUserContext} 与
- * {@link LoginUserContextBinder}：
+ * <p>注册 {@link LoginUserProvider} 的兜底实现 {@link DefaultLoginUserProvider} 与
+ * {@link LoginUserProviderRegistrar}：
  * <ul>
  *   <li>{@code defaultLoginUserContext}：{@code @ConditionalOnMissingBean} 兜底，引入 common-security 后
  *       SaTokenLoginUserContext 先注册，本 Bean 自动让位；</li>
- *   <li>{@code loginUserContextBinder}：无论哪种实现生效，统一绑定到 {@link LoginUserHolder} 静态字段，
+ *   <li>{@code loginUserContextBinder}：无论哪种实现生效，统一绑定到 {@link com.yeungzhy.yeed.common.core.security.LoginUserHelper} 静态字段，
  *       业务代码通过静态方法访问登录信息。</li>
  * </ul>
  *
- * @see com.yeungzhy.yeed.common.core.security.DefaultLoginUserContext
- * @see com.yeungzhy.yeed.common.core.security.LoginUserContextBinder
+ * @see DefaultLoginUserProvider
+ * @see LoginUserProviderRegistrar
  */
 @AutoConfiguration
-public class LoginUserContextAutoConfiguration {
+public class LoginUserProviderAutoConfiguration {
 
     /**
      * 兜底实现：仅当容器中没有其他 LoginUserContext Bean 时注册
@@ -31,17 +31,17 @@ public class LoginUserContextAutoConfiguration {
      * 此 Bean 因 @ConditionalOnMissingBean 跳过
      */
     @Bean
-    @ConditionalOnMissingBean(LoginUserContext.class)
-    public LoginUserContext defaultLoginUserContext() {
-        return new DefaultLoginUserContext();
+    @ConditionalOnMissingBean(LoginUserProvider.class)
+    public LoginUserProvider defaultLoginUserProvider() {
+        return new DefaultLoginUserProvider();
     }
 
     /**
      * 不管是默认实现还是 sa-token 实现，统一由 Binder 绑定到静态字段
      */
     @Bean
-    public LoginUserContextBinder loginUserContextBinder(LoginUserContext context) {
-        return new LoginUserContextBinder(context);
+    public LoginUserProviderRegistrar loginUserProviderRegistrar(LoginUserProvider context) {
+        return new LoginUserProviderRegistrar(context);
     }
 
 }
