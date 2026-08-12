@@ -15,8 +15,9 @@ import java.util.List;
  * <ul>
  *     <li>{@link ExistsByWrapper}: EXISTS 高性能存在性判断, 所有表可用</li>
  *     <li>{@link AlwaysUpdateSomeColumnById}: MyBatis-Plus 官方的"全字段更新（含 null）", 所有表可用</li>
- *     <li>{@link PhysicalDeleteById}/{@link PhysicalDelete}/{@link SelectListWithDeleted}/{@link RestoreById}:
- *         逻辑删除逃逸四件套（物理删除、带删查询、恢复）, 仅注入配置了 @TableLogic 的逻辑删除表</li>
+ *     <li>{@link PhysicalDeleteById}/{@link PhysicalDelete}/{@link SelectListWithDeleted}/
+ *         {@link SelectPageWithDeleted}/{@link RestoreById}:
+ *         逻辑删除逃逸五件套（物理删除、带删列表/分页查询、恢复）, 仅注入配置了 @TableLogic 的逻辑删除表</li>
  *     <li>{@link LogicDeleteById}: 根据主键逻辑删除（固定 SQL, 删除时间戳/删除人由调用方传参）,
  *         仅注入配置了 @TableLogic 且实体含 deleteBy 字段的表</li>
  *     <li>{@link LogicDeleteByIds}: 根据主键集合批量逻辑删除（IN 固定 SQL, 删除时间戳/删除人由调用方传参）,
@@ -40,6 +41,7 @@ public class CustomSqlInjector extends DefaultSqlInjector {
             methodList.add(new PhysicalDeleteById());
             methodList.add(new PhysicalDelete());
             methodList.add(new SelectListWithDeleted());
+            methodList.add(new SelectPageWithDeleted());
             methodList.add(new RestoreById());
         }
         return methodList;

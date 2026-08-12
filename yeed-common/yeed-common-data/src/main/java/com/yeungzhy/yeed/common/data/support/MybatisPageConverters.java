@@ -18,7 +18,7 @@ import java.util.function.Function;
  * {@link com.yeungzhy.yeed.common.data.mybatis.BaseMapper#selectPageVO(PageRequest, com.baomidou.mybatisplus.core.conditions.Wrapper, Function)}
  * 一行完成分页查询，本工具是该方法内部的底层转换器：
  * <pre>
- * return sysUserMapper.selectPageVo(dto, lambdaQuery, sysUserConvert::toVo);
+ * return sysUserMapper.selectPageVO(dto, lambdaQuery, sysUserConvert::toVo);
  * </pre>
  *
  * @author yeungzhy

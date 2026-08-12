@@ -5,10 +5,12 @@ import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.injector.methods.AlwaysUpdateSomeColumnById;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yeungzhy.yeed.common.data.mybatis.injector.*;
 import com.yeungzhy.yeed.common.data.support.MybatisPageConverters;
@@ -30,10 +32,11 @@ import java.util.function.Function;
  *     <li>全字段更新: {@code alwaysUpdateSomeColumnById}, 所有表可用</li>
  *     <li>逻辑删除: {@code deleteByIdAutoFill}/{@code deleteByIdsAutoFill},
  *         仅 @TableLogic 且实体含 deleteBy 字段的表可用</li>
- *     <li>逻辑删除逃逸: {@code physicalDeleteById}/{@code physicalDelete}/{@code selectListWithDeleted}/{@code restoreById},
- *         仅 @TableLogic 表可用, 支撑"回收站列表 + 恢复 + 彻底删除"场景</li>
- *     <li>分页查询: {@code selectPageVo}/{@code selectPageResult}, 所有表可用,
- *         一行完成"入参→IPage→查询→PageResult", 可选 Entity→VO 元素转换</li>
+ *     <li>逻辑删除逃逸: {@code physicalDeleteById}/{@code physicalDelete}/{@code selectListWithDeleted}/
+ *         {@code selectPageWithDeleted}/{@code restoreById},
+ *         仅 @TableLogic 表可用, 支撑"回收站分页 + 恢复 + 彻底删除"场景</li>
+ *     <li>分页查询: {@code selectPageVO}/{@code selectPageResult}/{@code selectPageVOWithDeleted}, 所有表可用,
+ *         一行完成"入参→IPage→查询→PageResult", 可选 Entity→VO 元素转换; WithDeleted 变体不滤已删数据</li>
  * </ul>
  * <p>用法: 业务 Mapper 继承本接口即可, 例如:
  * {@code public interface SysUserMapper extends BaseMapper<SysUser> {}}
@@ -271,6 +274,22 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
 
     /**
+     * 根据 Wrapper 条件分页查询（包含已逻辑删除的数据）
+     * <p>详述: 由 {@link SelectPageWithDeleted} 注入, 不带 delete_time 未删除条件;
+     * 方法签名携带 {@link IPage} 参数, 由 {@link PaginationInnerInterceptor} 自动完成分页,
+     * 适合"回收站分页列表"场景; 业务侧一般不直接调用,
+     * 统一走 {@link #selectPageVOWithDeleted(PageRequest, Wrapper, Function)} 便捷入口
+     * <p>注意: 条件请全部通过 Wrapper 方法构建（Wrapper 上设置的 entity 条件不生效）
+     *
+     * @param page         分页参数（current/size）
+     * @param queryWrapper 查询条件
+     * @return 分页结果（含已删数据）
+     * @since 2026-08-13
+     */
+    IPage<T> selectPageWithDeleted(IPage<T> page, @Param(Constants.WRAPPER) Wrapper<T> queryWrapper);
+
+
+    /**
      * 根据主键恢复已逻辑删除的数据（逻辑删除列置回未删除值, 删除人一并置 NULL）
      * <p>详述: 由 {@link RestoreById} 注入, WHERE 携带"已删除"条件, 对未删除数据执行返回 0, 天然幂等;
      * 删除人一并置 NULL, 避免恢复后残留删除痕迹
@@ -311,7 +330,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
     /**
      * 分页查询并直接返回实体分页结果（无需元素转换时的便捷入口）
-     * <p>详述: 等价于 {@code selectPageVo(pageRequest, queryWrapper, Function.identity())},
+     * <p>详述: 等价于 {@code selectPageVO(pageRequest, queryWrapper, Function.identity())},
      * 元素不转换直接返回; 如需 Entity→VO 转换请用 {@link #selectPageVO(PageRequest, Wrapper, Function)}
      *
      * @param pageRequest  分页请求（pageNum / pageSize; 支持子类, 如 XxxPageDTO）
@@ -321,6 +340,26 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      */
     default PageResult<T> selectPageResult(PageRequest pageRequest, Wrapper<T> queryWrapper) {
         return selectPageVO(pageRequest, queryWrapper, Function.identity());
+    }
+
+
+    /**
+     * 分页查询（包含已逻辑删除的数据）并直接返回 VO 分页结果
+     * <p>详述: 与 {@link #selectPageVO(PageRequest, Wrapper, Function)} 行为一致, 唯一区别是不带
+     * delete_time 未删除过滤, 用于"回收站分页列表"场景; 内部依次完成 PageRequest → IPage、
+     * {@link #selectPageWithDeleted(IPage, Wrapper)} 查询、IPage → PageResult, 元素由 mapper 逐条转换
+     * <p>注意: 仅 @TableLogic 表可用（否则对应方法未注入, 调用将抛 BindingException）
+     *
+     * @param pageRequest  分页请求（pageNum / pageSize; 支持子类, 如 XxxPageDTO）
+     * @param queryWrapper 查询条件（可空, 空则查全表含已删）
+     * @param mapper       Entity → VO 转换函数
+     * @param <V>          VO 类型
+     * @return 分页结果（records 已通过 mapper 转换为 VO, 含已删数据）
+     * @since 2026-08-13
+     */
+    default <V> PageResult<V> selectPageVOWithDeleted(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+        Page<T> page = MybatisPageConverters.toMybatisPlusPage(pageRequest);
+        return MybatisPageConverters.toPageResult(selectPageWithDeleted(page, queryWrapper), mapper);
     }
 
 }
