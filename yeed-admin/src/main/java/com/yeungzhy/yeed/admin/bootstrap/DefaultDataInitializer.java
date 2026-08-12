@@ -7,7 +7,7 @@ import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
-import com.yeungzhy.yeed.common.core.enums.SysRoleEnum;
+import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -23,10 +23,9 @@ import org.springframework.util.StringUtils;
  *
  * <p>在应用启动完成后，按需初始化默认角色与默认超管账号：
  * <ul>
- *     <li>角色编码等结构性数据定义在代码常量（{@link SysRoleEnum}），随版本发布，不进配置中心；</li>
- *     <li>超管账号密码属环境敏感信息，从配置中心读取（{@code app.init.default-data}），不同环境各自维护；</li>
- *     <li>全部走 MyBatis-Plus 插入，复用雪花 ID、审计填充、字段加密等现有管线，
- *         email 等敏感字段若后续新增，加密与盲索引也会随当前环境密钥自动生效；</li>
+ *     <li>角色编码等结构性数据定义在代码常量（{@link BuiltinRoleEnum}），随版本发布，不进配置中心；</li>
+ *     <li>超管账号密码属环境敏感信息，从配置中心读取（{@link DefaultDataProperties}，{@code app.init.default-data}），
+ *         不同环境各自维护；</li>
  *     <li>「先查后插」保证幂等；多实例并发首启的竞态由唯一索引兜底，
  *         捕获 {@link DuplicateKeyException} 视为其他实例已完成初始化；</li>
  *     <li>预期外异常不捕获，直接抛出终止启动（fail-fast），默认数据缺失时系统本就不应提供服务。</li>
@@ -74,6 +73,9 @@ public class DefaultDataInitializer implements ApplicationRunner {
 
     /**
      * 初始化默认超管账号
+     *
+     * <p>密码经 Argon2 单向哈希后落库，与业务新增用户一致、不依赖环境密钥；
+     * 先查后插保证幂等，并发首启的插队竞态由唯一索引兜底（{@link DuplicateKeyException}）。
      */
     private void initSuperAdmin(DefaultDataProperties.SuperAdmin superAdmin) {
         String username = superAdmin.getUsername();
@@ -86,6 +88,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
 
         SysUser sysUser = SysUser.builder()
                 .username(username)
+                // 超管固定工号
                 .employeeNo("1")
                 // Argon2 单向哈希，与业务新增用户完全一致；不依赖环境密钥
                 .password(argon2PwdEncoder.encode(superAdmin.getDefaultPassword()))
@@ -104,9 +107,12 @@ public class DefaultDataInitializer implements ApplicationRunner {
 
     /**
      * 初始化默认角色
+     *
+     * <p>数据源为 {@link BuiltinRoleEnum} 全量枚举，保证各环境角色编码与代码版本强一致；
+     * 幂等与并发兜底策略同 {@link #initSuperAdmin(DefaultDataProperties.SuperAdmin)}。
      */
     private void initRoles() {
-        for (SysRoleEnum roleEnum : SysRoleEnum.values()) {
+        for (BuiltinRoleEnum roleEnum : BuiltinRoleEnum.values()) {
             boolean exists = sysRoleMapper.existsByColumn(SysRole::getRoleCode, roleEnum.getRoleCode());
             if (exists) {
                 log.info("默认角色已存在，跳过: code={}", roleEnum.getRoleCode());
@@ -133,14 +139,17 @@ public class DefaultDataInitializer implements ApplicationRunner {
 
 
     /**
-     * 初始化超管用户-角色关联（超管 → SUPER_ADMIN）
+     * 初始化超管用户-角色关联（超管 → {@link BuiltinRoleEnum#SUPER_ADMIN}）
+     *
+     * <p>按用户名/角色编码反查主键后落关联；任一侧缺失直接 fail-fast，
+     * 否则超管登录后将无角色可用（等同系统不可用）。
      */
     private void initUserRoles() {
         String username = defaultDataProperties.getSuperAdmin().getUsername();
         SysUser admin = sysUserMapper.selectOne(Wrappers.<SysUser>lambdaQuery()
                 .eq(SysUser::getUsername, username));
         SysRole superAdminRole = sysRoleMapper.selectOne(Wrappers.<SysRole>lambdaQuery()
-                .eq(SysRole::getRoleCode, SysRoleEnum.SUPER_ADMIN.getRoleCode()));
+                .eq(SysRole::getRoleCode, BuiltinRoleEnum.SUPER_ADMIN.getRoleCode()));
 
         // 防御性 fail-fast：关联缺失将导致超管登录后无角色可用，系统等同不可用
         if (admin == null || superAdminRole == null) {

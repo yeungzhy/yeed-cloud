@@ -46,7 +46,7 @@
         <!--
             mybatis-plus-annotation：仅含 @EnumValue/@TableName 等注解定义，零传递依赖。
             供 com.yeungzhy.yeed.common.core.enums.CommonStatusEnum 标注 DB 持久化字段，
-            使该系统级语义枚举可下沉到 core 层（与 SysRoleEnum 同级），而不必拖入整个 ORM starter。
+            使该系统级语义枚举可下沉到 core 层（与 BuiltinRoleEnum 同级），而不必拖入整个 ORM starter。
             版本由根 POM 的 mybatis-plus-bom 统一管理。
         -->
         <dependency>
