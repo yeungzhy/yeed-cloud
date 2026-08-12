@@ -23,10 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
  * @author ${author}
  * @since ${date}
  */
+## URL 前缀由表名推导，无需手动修改：去除表前缀后按下划线分割为路径段 yeed_sys_user -> /sys/user
+#set($controllerMapping = $!{table.name})
+#if($controllerMapping.startsWith($tablePrefix))
+#set($controllerMapping = $controllerMapping.substring($tablePrefix.length()))
+#end
+#set($controllerMapping = $controllerMapping.toLowerCase().replace("_", "/"))
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("#if(${package.ModuleName})/${package.ModuleName}#end/#if(${controllerMappingHyphenStyle})${controllerMappingHyphen}#else${table.entityPath}#end")
+@RequestMapping("/${controllerMapping}")
 public class ${table.controllerName} {
 
     @Resource

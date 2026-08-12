@@ -23,7 +23,7 @@ public class GeneratorApplication {
     // ==================== 开发者配置区（请根据实际需求修改以下配置项） ====================
 
     // ---------- 数据库连接 ----------
-    private static final String DB_URL = "jdbc:mysql://192.168.22.155:3306/yeed?useUnicode=true&characterEncoding=UTF-8&useSSL=false&tinyInt1isBit=false";
+    private static final String DB_URL = "jdbc:mysql://192.168.22.155:3306/yeed?useUnicode=true&characterEncoding=UTF-8&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true";
     private static final String DB_USERNAME = "yeed";
     private static final String DB_PASSWORD = "yeed123";
 
@@ -138,7 +138,9 @@ public class GeneratorApplication {
                         .controllerBuilder()
                         .template("/templates/yeed-controller.java.vm") // 自定义 Controller 模板
                         .enableRestStyle()                  // 生成 @RestController
-                        .enableHyphenStyle()                // 开启驼峰转连字符（可选）
+                        // 注意：@RequestMapping 不走 MP 默认的 ModuleName + 驼峰转连字符拼接，
+                        // 改由模板内从表名推导（去前缀 + 下划线转斜杠，yeed_sys_user -> /sys/user），
+                        // 因此不再开启 enableHyphenStyle()，详见 yeed-controller.java.vm 顶部注释
 
                         // ----- Service 策略 -----
                         .serviceBuilder()
@@ -157,13 +159,15 @@ public class GeneratorApplication {
                 )
                 // ========== 3.5 注入配置（自定义生成 DTO/VO/Sorts） ==========
                 .injectionConfig(builder -> builder
-                        // 注入 dto/vo/sorts/convert/entity 包名，供模板 ${dtoPackage} / ${voPackage} / ${sortsPackage} / ${servicePackage} / ${entityFullPackage} 使用
+                        // 注入 dto/vo/sorts/convert/entity 包名与表前缀，供模板使用
+                        // （${dtoPackage} / ${voPackage} / ${sortsPackage} / ${servicePackage} / ${entityFullPackage} / $tablePrefix）
                         .customMap(Map.of(
                                 "dtoPackage", fullPackage + ".dto",
                                 "voPackage", fullPackage + ".vo",
                                 "sortsPackage", fullPackage + ".service",
                                 "servicePackage", fullPackage + ".service",
-                                "entityFullPackage", fullPackage + ".entity"
+                                "entityFullPackage", fullPackage + ".entity",
+                                "tablePrefix", TABLE_PREFIX // 供 controller 模板自算 @RequestMapping URL
                         ))
                         // 自定义输出文件：fileName 作为 entityName 后缀拼接（生成 XxxDTO/XxxPageDTO/XxxVO/XxxSorts），packageName 决定输出子包
                         .customFile(List.of(
