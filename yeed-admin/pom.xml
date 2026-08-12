@@ -77,6 +77,12 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <!-- MapStruct：对象字段映射（SysXxxConvert 由生成器生成，实现类编译期自动生成） -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
     </dependencies>
 
 

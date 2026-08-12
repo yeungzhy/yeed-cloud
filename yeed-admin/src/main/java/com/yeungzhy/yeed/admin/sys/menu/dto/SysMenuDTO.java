@@ -10,7 +10,7 @@ import java.util.Map;
  * 系统菜单权限表 DTO（前端入参）
  *
  * @author yeungzhy
- * @since 2026-08-09 10:26:00
+ * @since 2026-08-13 06:55:30
  */
 @Data
 @Accessors(chain = true)

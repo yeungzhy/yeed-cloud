@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * 系统用户 排序字段白名单
  *
  * @author yeungzhy
- * @since 2026-08-09 11:55:36
+ * @since 2026-08-13 06:48:01
  */
 @Component
 public class SysUserSorts extends BaseSorts<SysUser> {

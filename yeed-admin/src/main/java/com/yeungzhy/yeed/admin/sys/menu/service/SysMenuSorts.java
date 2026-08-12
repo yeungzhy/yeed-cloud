@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * 系统菜单权限表 排序字段白名单
  *
  * @author yeungzhy
- * @since 2026-08-09 10:26:00
+ * @since 2026-08-13 06:55:30
  */
 @Component
 public class SysMenuSorts extends BaseSorts<SysMenu> {

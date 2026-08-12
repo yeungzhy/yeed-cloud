@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
  * 系统菜单权限表 分页查询 DTO（前端入参）
  *
  * @author yeungzhy
- * @since 2026-08-09 16:03:30
+ * @since 2026-08-13 06:55:30
  */
 @Data
 @Accessors(chain = true)
