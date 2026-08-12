@@ -24,6 +24,19 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
+
+        <!--
+            jakarta.validation-api：仅含 @NotBlank/@Valid 等校验注解定义，零传递依赖。
+            供跨服务共享入参/出参声明校验契约。
+            provided 范围：编译期需要，运行期由消费方（admin/auth 等）的 starter-validation 提供实现。
+            版本由根 POM 的 spring-boot-dependencies BOM 统一管理。
+        -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

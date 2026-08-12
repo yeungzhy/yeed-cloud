@@ -1,9 +1,10 @@
 package com.yeungzhy.yeed.common.core.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.hibernate.validator.constraints.Range;
 
 import java.util.List;
 
@@ -19,12 +20,14 @@ public class PageRequest {
 
     /** 页码 */
     @NotNull(message = "页码不能为空")
-    @Range(min = 1, max = 3000, message = "页码必须在 1-3000 之间")
+    @Min(value = 1, message = "页码必须在 1-3000 之间")
+    @Max(value = 3000, message = "页码必须在 1-3000 之间")
     private Integer pageNum = 1;
 
     /** 每页条数 */
     @NotNull(message = "每页条数不能为空")
-    @Range(min = 1, max = 2000, message = "每页条数必须在 1-2000 之间")
+    @Min(value = 1, message = "每页条数必须在 1-2000 之间")
+    @Max(value = 2000, message = "每页条数必须在 1-2000 之间")
     private Integer pageSize = 10;
 
     /* ============ 排序：两套接口并存 ============ */
