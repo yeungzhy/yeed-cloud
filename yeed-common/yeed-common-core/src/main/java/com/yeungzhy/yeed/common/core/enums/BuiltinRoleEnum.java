@@ -3,6 +3,10 @@ package com.yeungzhy.yeed.common.core.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * 内置角色编码常量（跨服务共享的角色语义契约）
  *
@@ -42,5 +46,28 @@ public enum BuiltinRoleEnum {
     private final String roleName;
     private final String roleCode;
     private final String description;
+
+
+    /** 编码 → 枚举反向索引（静态初始化一次，避免每次遍历 values() 克隆数组） */
+    private static final Map<String, BuiltinRoleEnum> CODE_MAP = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(e -> e.roleCode, e -> e));
+
+    /**
+     * 查询角色编码是否命中内置白名单（开放域查询语义）
+     *
+     * <p>与 {@link CommonStatusEnum#parse} 的"封闭域解析、范围外抛异常"不同：
+     * {@code roleCode} 是开放的，绝大多数角色为数据库动态数据，未命中内置白名单
+     * 是正常状态而非错误，故未匹配返回 {@code null}，由调用方决定如何处理。
+     *
+     * <p>基于 {@link #CODE_MAP} 静态反查表：以 {@code roleCode} 字段为单一数据源，
+     * 新增/改名内置角色零维护。
+     *
+     * @param roleCode 角色编码
+     * @return 命中的内置角色枚举；入参为 null 或未命中时返回 null
+     */
+    public static BuiltinRoleEnum fromCodeOrNull(String roleCode) {
+        return roleCode == null ? null : CODE_MAP.get(roleCode);
+    }
+
 
 }

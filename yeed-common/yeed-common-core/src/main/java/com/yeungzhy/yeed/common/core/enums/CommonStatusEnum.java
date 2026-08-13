@@ -15,7 +15,7 @@ import lombok.Getter;
  *   <li>序列化层：Jackson 用 {@link JsonValue} 返回整数 0/1 给前端（保持接口契约不变）</li>
  * </ul>
  * <p>禁止在任何业务代码中散落裸数字 0/1 判断"启用/禁用"语义，
- * 一律使用 {@link #ENABLED} / {@link #DISABLED} 枚举或 {@link #fromCode(Integer)} 做转换。
+ * 一律使用 {@link #ENABLED} / {@link #DISABLED} 枚举或 {@link #parse(Integer)} 做转换。
  *
  * @author yeungzhy
  * @since 2026-08-09
@@ -53,20 +53,21 @@ public enum CommonStatusEnum implements IEnum<Integer> {
     }
 
     /**
-     * 根据数据库值反查枚举（DTO(Integer) → Entity(Enum) 转换使用）
-     * <p>约定：{@code null} 入参返回 {@code null}，便于"前端不传就不修改"语义；
-     * 非法值抛出 {@link IllegalArgumentException}，及早暴露脏数据/错误调用。
+     * 解析数据库值（DTO/前端入参的 Integer → 枚举）
+     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
+     * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露。
      *
      * @param code 数据库存储值（0/1）
-     * @return 对应枚举或 null
+     * @return 对应枚举；入参为 null 时返回 null
      * @throws IllegalArgumentException code 非法且非 null
      */
-    public static CommonStatusEnum fromCode(Integer code) {
+    public static CommonStatusEnum parse(Integer code) {
         if (code == null) {
             return null;
         }
         // 固定两个分支时用 switch 比 for 循环 + values() clone 更省；
         // 编译器会把 case 0/1 编译为 tableswitch（O(1)跳转），零额外堆内存。
+        // String switch 不是 tableswitch
         return switch (code) {
             case 0 -> DISABLED;
             case 1 -> ENABLED;

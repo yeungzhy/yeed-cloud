@@ -68,7 +68,7 @@ public abstract class BaseEntity {
      * 逻辑删除标识：0-未删，纳秒级时间戳-已删。
      * <p>用纳秒时间戳作删除标记（而非 1/0），避免高并发下同一秒删除造成唯一约束冲突；
      * 删除时由 {@link BaseMapper#deleteByIdAutoFill(Long)} 填充，精度高于 UNIX_TIMESTAMP() 的秒级。
-     * <p>全局逻辑删除配置见 application.yaml：
+     * <p>全局逻辑删除配置见 datasource.yaml：
      * <pre>
      * mybatis-plus.global-config.db-config:
      *   logic-delete-field: deleteTime
