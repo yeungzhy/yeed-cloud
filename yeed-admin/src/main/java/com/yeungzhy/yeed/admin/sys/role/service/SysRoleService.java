@@ -2,12 +2,11 @@ package com.yeungzhy.yeed.admin.sys.role.service;
 
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRolePageDTO;
-import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * 系统角色 服务类
@@ -37,6 +36,15 @@ public interface SysRoleService {
      * @since 2026-08-13 06:55:14
      */
     void update(SysRoleDTO dto);
+
+    /**
+     * 更新状态
+     *
+     * @param dto 入参
+     * @author yeungzhy
+     * @since 2026-08-13 07:53
+     */
+    void updateStatus(StatusRequest dto);
 
 
     // ==================== 标准查询（R） ====================

@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.role.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.data.model.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,5 +33,12 @@ public class SysRole extends BaseEntity {
     private String description;
     /** 状态：0-禁用，1-启用 */
     private Integer status;
+
+
+    /** 是否为内置角色 */
+    public boolean isBuiltin() {
+        return BuiltinRoleEnum.fromCodeOrNull(this.roleCode) != null;
+    }
+
 
 }

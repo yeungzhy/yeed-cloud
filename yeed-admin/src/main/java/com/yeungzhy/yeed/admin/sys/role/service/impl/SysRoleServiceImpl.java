@@ -2,22 +2,22 @@ package com.yeungzhy.yeed.admin.sys.role.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-
-import java.util.Collection;
-
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRolePageDTO;
 import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
 import com.yeungzhy.yeed.admin.sys.role.mapper.SysRoleMapper;
+import com.yeungzhy.yeed.admin.sys.role.service.SysRoleConvert;
 import com.yeungzhy.yeed.admin.sys.role.service.SysRoleService;
 import com.yeungzhy.yeed.admin.sys.role.service.SysRoleSorts;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
-import com.yeungzhy.yeed.admin.sys.role.service.SysRoleConvert;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
 
 /**
  * 系统角色 服务实现类
@@ -54,6 +54,20 @@ public class SysRoleServiceImpl implements SysRoleService {
         sysRoleMapper.updateById(entity);
     }
 
+    @Override
+    public void updateStatus(StatusRequest dto) {
+        BizAssert.notNull(dto.getId(), "ID 不能为空");
+        BizAssert.notNull(dto.getStatus(), "目标状态不能为空");
+        SysRole sysRole = sysRoleMapper.selectById(dto.getId());
+        BizAssert.notNull(sysRole, "记录不存在");
+        // 内置角色禁改
+        BizAssert.isFalse(sysRole.isBuiltin(), "内置角色禁止修改状态");
+        SysRole updateEntity = SysRole.builder()
+                .id(dto.getId())
+                .status(dto.getStatus().getCode())
+                .build();
+        sysRoleMapper.updateById(updateEntity);
+    }
 
     @Override
     public SysRoleVO detail(Long id) {

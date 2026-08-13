@@ -6,6 +6,7 @@ import com.yeungzhy.yeed.admin.sys.role.service.SysRoleService;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
 import com.yeungzhy.yeed.common.core.request.IdRequest;
 import com.yeungzhy.yeed.common.core.request.IdsRequest;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.annotation.Resource;
@@ -58,6 +59,20 @@ public class SysRoleController {
     @PostMapping("/update")
     public ApiResult<Boolean> update(@Valid @RequestBody SysRoleDTO dto) {
         sysRoleService.update(dto);
+        return ApiResult.ok();
+    }
+
+    /**
+     * 更新状态
+     *
+     * @param dto 入参
+     * @return 操作结果
+     * @author yeungzhy
+     * @since 2026-08-13 18:29
+     */
+    @PostMapping("/update-status")
+    public ApiResult<Boolean> updateStatus(@Valid @RequestBody StatusRequest dto) {
+        sysRoleService.updateStatus(dto);
         return ApiResult.ok();
     }
 
