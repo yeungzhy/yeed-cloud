@@ -8,6 +8,7 @@ import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
 import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -93,7 +94,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
                 .employeeNo("1")
                 // Argon2 单向哈希，与业务新增用户完全一致；不依赖环境密钥
                 .password(argon2PwdEncoder.encode(superAdmin.getDefaultPassword()))
-                .status(1)
+                .status(EnableStatusEnum.ENABLED)
                 .createBy(0L)
                 .build();
         try {
@@ -124,7 +125,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
                     .roleCode(roleEnum.getRoleCode())
                     .roleName(roleEnum.getRoleName())
                     .description(roleEnum.getDescription())
-                    .status(1)
+                    .status(EnableStatusEnum.ENABLED)
                     // 系统引导数据，无登录上下文，固定 0 表示系统创建（避免自动填充随机值）
                     .createBy(0L)
                     .build();
