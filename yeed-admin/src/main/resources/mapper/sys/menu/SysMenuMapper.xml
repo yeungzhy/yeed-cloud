@@ -12,8 +12,7 @@
         <result column="perms" property="perms" />
         <result column="sort" property="sort" />
         <result column="visible" property="visible" />
-        <result column="status" property="status" />
-        <result column="create_by" property="createBy" />
+         <result column="create_by" property="createBy" />
         <result column="create_time" property="createTime" />
         <result column="update_by" property="updateBy" />
         <result column="update_time" property="updateTime" />

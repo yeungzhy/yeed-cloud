@@ -1,8 +1,10 @@
 package com.yeungzhy.yeed.admin.sys.menu.service;
 
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuMoveDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuPageDTO;
-import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
+import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
+import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 
@@ -38,6 +40,13 @@ public interface SysMenuService {
      */
     void update(SysMenuDTO dto);
 
+    /**
+     * 拖拽调整层级（移动菜单到新的父级下，防循环依赖）
+     *
+     * @param dto 移动入参（id + 目标 parentId）
+     */
+    void move(SysMenuMoveDTO dto);
+
 
     // ==================== 标准查询（R） ====================
 
@@ -55,11 +64,20 @@ public interface SysMenuService {
      * 分页查询
      *
      * @param dto 分页查询入参
-     * @return 分页结果
+     * @return 分页结果（仅业务字段，不含审计字段）
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
-    PageResult<SysMenuVO> page(SysMenuPageDTO dto);
+    PageResult<SysMenuPageVO> page(SysMenuPageDTO dto);
+
+    /**
+     * 菜单树（菜单管理页 / 角色授权树形选择器共用）
+     * <p>返回含按钮权限点的完整树，按 sort 升序；树节点仅承载业务字段。
+     * 侧边栏渲染不依赖本接口——侧边栏菜单由用户拥有的角色权限动态组装。
+     *
+     * @return 完整菜单树
+     */
+    List<SysMenuTreeVO> tree();
 
 
     // ==================== 标准删除（逻辑删除） ====================
@@ -82,34 +100,5 @@ public interface SysMenuService {
      */
     void delete(Collection<Long> ids);
 
-
-    // ==================== 特殊操作（回收站 & 危险操作） ====================
-
-    /**
-     * 分页查询已逻辑删除的数据，如回收站列表
-     *
-     * @return 分页结果
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:30
-     */
-    PageResult<SysMenuVO> pageWithDeleted(SysMenuPageDTO dto);
-
-    /**
-     * 恢复已逻辑删除的数据
-     *
-     * @param id 主键 ID
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:30
-     */
-    void restoreById(Long id);
-
-    /**
-     * 物理删除（真 DELETE，不可恢复，仅用于"回收站彻底删除"等场景）
-     *
-     * @param id 主键 ID
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:30
-     */
-    void physicalDeleteById(Long id);
 
 }
