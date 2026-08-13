@@ -17,7 +17,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class SysMenuSaveDTO {
 
-    /** 父菜单ID，0-顶级菜单 */
+    /** 父菜单ID，0-顶级菜单（必填，不存在 null） */
     private Long parentId;
     /** 菜单名称（入库前去除全部空白字符） */
     private String menuName;

@@ -19,7 +19,7 @@ public class SysMenuMoveDTO {
     /** 被移动的菜单 ID */
     private Long id;
 
-    /** 目标父级 ID；null 或 0 表示移动到顶级 */
+    /** 目标父级 ID；0 表示移动到顶级（必填，不存在 null） */
     private Long parentId;
 
 }

@@ -5,21 +5,21 @@ import com.yeungzhy.yeed.admin.sys.menu.enums.MenuVisibleEnum;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 
 /**
- * 系统菜单 详情出参 VO（编辑回显）
+ * 系统菜单 树节点出参 VO（菜单管理页 / 角色授权树形选择器）
  *
- * <p>含审计字段与乐观锁 version（update 时回传做并发控制）；分页列表与树接口
- * 的前端不需要这些字段，分别用 {@link SysMenuPageVO}、{@link SysMenuTreeVO} 表达。
+ * <p>仅承载树节点展示所需业务字段；children 由 Service 调用 {@link com.yeungzhy.yeed.common.core.support.TreeUtil}
+ * 组装，非 {@link com.yeungzhy.yeed.admin.sys.menu.service.SysMenuConvert} 转换职责。
+ * 审计字段不在树接口暴露（见 {@link SysMenuVO}）。
  *
  * @author yeungzhy
  * @since 2026-08-13 06:55:30
  */
 @Data
 @Accessors(chain = true)
-public class SysMenuVO {
+public class SysMenuTreeVO {
 
     // ================== 主键 ==================
     /** 雪花ID主键 */
@@ -40,23 +40,7 @@ public class SysMenuVO {
     private Integer sort;
     /** 是否可见（侧边栏显示/隐藏） */
     private MenuVisibleEnum visible;
-
-    // ================== 审计字段 ==================
-    /** 创建人 */
-    private Long createBy;
-    /** 创建时间 */
-    private LocalDateTime createTime;
-    /** 更新人 */
-    private Long updateBy;
-    /** 更新时间 */
-    private LocalDateTime updateTime;
-    /** 删除人 */
-    private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
-    private Long deleteTime;
-    /** 乐观锁 */
-    private Integer version;
-    /** 扩展信息 */
-    private Map<String, Object> extra;
+    /** 子菜单（由 Service 组装树时填充） */
+    private List<SysMenuTreeVO> children;
 
 }

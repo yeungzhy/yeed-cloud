@@ -11,7 +11,6 @@ import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
-import java.beans.Transient;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +30,7 @@ import java.util.Set;
 @TableName(value = "yeed_sys_menu", autoResultMap = true)
 public class SysMenu extends BaseEntity {
 
-    /** 父菜单ID，0-顶级菜单 */
+    /** 父菜单ID，0-顶级菜单（项目约定不存在 null） */
     private Long parentId;
     /** 菜单名称 */
     private String menuName;
@@ -55,21 +54,12 @@ public class SysMenu extends BaseEntity {
     // ==================== 充血方法（仅承载业务规则） ====================
 
     /**
-     * 目标父级是否为顶级（null 或 0）
-     * <p>供树构建（root 判定）、父级合法性校验等"对值判断"场景复用，单一实现体。
+     * 目标父级是否为顶级（仅 0）
+     * <p>项目约定 parentId 不存在 null，顶级一律存 0；
+     * 供树构建（root 判定）、父级合法性校验等"对值判断"场景复用，单一实现体。
      */
     public static boolean isRoot(Long parentId) {
-        return parentId == null || ROOT_PARENT_ID.equals(parentId);
-    }
-
-    /**
-     * 当前菜单是否为顶级菜单（parentId 为 null 或 0）
-     * <p>布尔 getter 命名（isXxx）会被 Jackson 识别为属性而序列化，
-     * 用 JDK 标准 {@link Transient} 声明"非持久化"忽略，避免 POJO 依赖具体 JSON 框架注解。
-     */
-    @Transient
-    public boolean isRoot() {
-        return isRoot(this.parentId);
+        return ROOT_PARENT_ID.equals(parentId);
     }
 
     /**
@@ -87,7 +77,7 @@ public class SysMenu extends BaseEntity {
      * @return true=安全；false=会形成环
      */
     public boolean canChangeParentTo(Long targetParentId, Map<Long, Long> parentIdById) {
-        // 顶级父级（null/0）永远安全
+        // 顶级父级（0）永远安全
         if (isRoot(targetParentId)) {
             return true;
         }

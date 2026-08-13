@@ -70,7 +70,7 @@ public class SysMenuController {
 
     /**
      * 拖拽调整层级（移动菜单到新的父级下）
-     * <p>仅更新 parentId；目标父级为 null/0 表示移动到顶级，
+     * <p>仅更新 parentId；目标父级为 0 表示移动到顶级（项目约定不存在 null），
      * 目标父级存在性 + 防循环依赖（直接/间接自环）由 Service 校验。
      *
      * @param dto 移动入参（id + 目标 parentId）

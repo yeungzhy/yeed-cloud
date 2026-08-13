@@ -65,6 +65,8 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 按钮权限点完全由 perms 承载，强制必填
         assertButtonPerms(dto.getMenuType(), dto.getPerms());
 
+        // parentId 必填：项目约定仅 0 表示顶级、不存在 null，从入参即杜绝 null 语义
+        BizAssert.notNull(dto.getParentId(), "父菜单ID不能为空（顶级传0）");
         // 非顶级菜单：校验父级存在性（新建节点 id 为空，挂到存在的父级下不可能成环，无需防环校验）
         if (!SysMenu.isRoot(dto.getParentId())) {
             BizAssert.notNull(sysMenuMapper.selectById(dto.getParentId()), "父级菜单不存在");
@@ -92,6 +94,8 @@ public class SysMenuServiceImpl implements SysMenuService {
         SysMenu dbEntity = sysMenuMapper.selectById(dto.getId());
         BizAssert.notNull(dbEntity, "记录不存在");
 
+        // parentId 必填：项目约定仅 0 表示顶级、不存在 null，从入参即杜绝 null 语义
+        BizAssert.notNull(dto.getParentId(), "父菜单ID不能为空（顶级传0）");
         // 目标父级：存在性 + 防自环（直接/间接）
         assertValidParent(dbEntity, dto.getParentId());
         // 同一父级下菜单名称唯一（排除自身）
@@ -106,13 +110,15 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public void move(SysMenuMoveDTO dto) {
         BizAssert.notNull(dto.getId(), "ID 不能为空");
+        // parentId 必填：项目约定仅 0 表示顶级、不存在 null，从入参即杜绝 null 语义
+        BizAssert.notNull(dto.getParentId(), "父菜单ID不能为空（顶级传0）");
         SysMenu dbEntity = sysMenuMapper.selectById(dto.getId());
         BizAssert.notNull(dbEntity, "记录不存在");
 
         // 目标父级：存在性 + 防自环（直接/间接）
         assertValidParent(dbEntity, dto.getParentId());
 
-        // 显式 set parentId：updateById 会忽略 null 字段，而"移到顶级"（parentId=null）必须显式置空
+        // 显式 set parentId：仅更新层级字段（移到顶级传 0，update 不承载 null 语义）
         sysMenuMapper.update(null, Wrappers.<SysMenu>lambdaUpdate()
                 .set(SysMenu::getParentId, dto.getParentId())
                 .eq(SysMenu::getId, dto.getId()));
@@ -224,7 +230,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 校验目标父级合法（存在 + 不构成环），update / move 共用
      */
     private void assertValidParent(SysMenu dbEntity, Long targetParentId) {
-        // 目标为顶级（null/0）：无需父级存在性校验，也不可能成环
+        // 目标为顶级（0）：无需父级存在性校验，也不可能成环
         if (SysMenu.isRoot(targetParentId)) {
             return;
         }
@@ -238,21 +244,19 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 一次性载入全量 id→parentId 映射，供祖先链查环（菜单量小，整表载入可接受）
      */
     private Map<Long, Long> loadParentIdMap() {
+        // 项目约定 parentId 不存在 null（0=顶级），全量直载入映射
         return sysMenuMapper.selectList(null).stream()
-                .filter(m -> m.getParentId() != null)
                 .collect(Collectors.toMap(SysMenu::getId, SysMenu::getParentId));
     }
 
 
     /**
      * 校验同一父级下菜单名称唯一
-     * <p>null/0 都会被归一化到 ROOT_PARENT_ID（充血常量）再查询，
-     * 避免 DB 层因为 null != 0 而漏掉唯一约束校验。
+     * <p>项目约定 parentId 不存在 null（仅 0 为顶级），直接以入参精确匹配即可，无需归一化。
      */
     private void checkMenuNameUnique(Long parentId, String menuName, Long excludeId) {
-        Long finalParentId = SysMenu.isRoot(parentId) ? SysMenu.ROOT_PARENT_ID : parentId;
         boolean exists = sysMenuMapper.existsByCondition(q -> {
-            q.eq(SysMenu::getParentId, finalParentId)
+            q.eq(SysMenu::getParentId, parentId)
                     .eq(SysMenu::getMenuName, menuName);
             if (excludeId != null) {
                 q.ne(SysMenu::getId, excludeId);
@@ -269,11 +273,10 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 迭代式 TreeUtil 构建也不会栈溢出，这里负责把存量脏数据显性化。
      */
     private void warnIfCycle(List<SysMenu> menus) {
+        // 项目约定 parentId 不存在 null，直载入映射（映射缺 id 时 get 返回 null，祖先链自然终止）
         Map<Long, Long> parentIdById = new HashMap<>();
         for (SysMenu m : menus) {
-            if (m.getParentId() != null) {
-                parentIdById.put(m.getId(), m.getParentId());
-            }
+            parentIdById.put(m.getId(), m.getParentId());
         }
         Set<Long> visited = new HashSet<>();
         for (SysMenu m : menus) {
