@@ -2,24 +2,23 @@ package ${package.ServiceImpl};
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-
-import java.util.Collection;
-
 import ${dtoPackage}.${entity}DTO;
 import ${dtoPackage}.${entity}PageDTO;
 import ${entityFullPackage}.${entity};
 import ${package.Mapper}.${table.mapperName};
+import ${servicePackage}.${entity}Convert;
 #if(${generateService})
 import ${package.Service}.${table.serviceName};
 #end
 import ${sortsPackage}.${entity}Sorts;
 import ${voPackage}.${entity}VO;
-import ${servicePackage}.${entity}Convert;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
 
 /**
  * $!{table.comment} 服务实现类
