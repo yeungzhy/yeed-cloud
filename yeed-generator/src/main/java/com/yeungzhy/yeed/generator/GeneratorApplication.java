@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.generator.config.OutputFile;
 import com.baomidou.mybatisplus.generator.config.builder.CustomFile;
 import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
+import com.baomidou.mybatisplus.generator.config.rules.IColumnType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
 import com.yeungzhy.yeed.common.data.model.BaseEntity;
@@ -34,6 +35,18 @@ public class GeneratorApplication {
     private static final String OUTPUT_MODULE = "yeed-admin";
     /** 应用基础包：完整包与 XML 子目录均以此为基准派生，使 XML 目录与 Java 包结构保持一致 */
     private static final String BASE_PACKAGE = "com.yeungzhy.yeed.admin";
+
+    /**
+     * 业务枚举列映射表：DB 列名(小写) → 枚举全限定名。
+     * <p>TINYINT 且列名命中映射时，属性类型生成对应枚举（而非 Integer），import 由
+     * MyBatis-Plus 按 {@link IColumnType#getPkg()} 自动并入模板 ${importEntityJavaPackages}，
+     * entity/dto/vo 模板零改动。新增强制语义列（如字典模块 storage_type）只需在此追加一行。
+     */
+    private static final Map<String, String> ENUM_COLUMN_MAP = Map.of(
+            "status", "com.yeungzhy.yeed.common.core.enums.EnableStatusEnum",
+            "menuType", "com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum",
+            "visible", "com.yeungzhy.yeed.admin.sys.menu.enums.MenuVisibleEnum"
+    );
 
 
     // ---------- 每次生成按需修改 ----------
@@ -80,6 +93,11 @@ public class GeneratorApplication {
                         .typeConvertHandler((globalConfig, typeRegistry, metaInfo) -> {
 
                             if (JdbcType.TINYINT == metaInfo.getJdbcType()) {
+                                // 命中业务枚举映射（如 status -> EnableStatusEnum）：TINYINT 语义列直接生成枚举类型
+                                String enumClass = ENUM_COLUMN_MAP.get(metaInfo.getColumnName().toLowerCase());
+                                if (enumClass != null) {
+                                    return new EnumColumnType(enumClass);
+                                }
                                 // 如果字段名不是以 'is' 开头，将其映射为 Integer
                                 // 如果是布尔字段，建议保持 Boolean
                                 if (!metaInfo.getColumnName().toLowerCase().startsWith("is")) {
@@ -230,6 +248,24 @@ public class GeneratorApplication {
             throw new IllegalStateException("无法定位项目根目录，请检查 yeed-generator 与 " + OUTPUT_MODULE + " 是否为同级模块");
         } catch (URISyntaxException e) {
             throw new IllegalStateException("无法定位项目根目录", e);
+        }
+    }
+
+    /**
+     * 业务枚举列类型：{@link IColumnType} 最小实现。
+     * <p>{@link #getPkg()} 返回全限定类名，MyBatis-Plus 构造 TableInfo 时自动并入
+     * importEntityJavaPackages，模板 ${importEntityJavaPackages} 迭代即补全 import。
+     */
+    private record EnumColumnType(String enumFullName) implements IColumnType {
+
+        @Override
+        public String getType() {
+            return enumFullName.substring(enumFullName.lastIndexOf('.') + 1);
+        }
+
+        @Override
+        public String getPkg() {
+            return enumFullName;
         }
     }
 
