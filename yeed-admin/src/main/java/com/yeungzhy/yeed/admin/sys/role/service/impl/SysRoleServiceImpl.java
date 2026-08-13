@@ -139,12 +139,14 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         // 全量覆盖式授权：先清空旧关联，再批量写入新关联（关联表无审计字段，物理删插即可）
         sysRoleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, dto.getRoleId()));
-        for (Long menuId : menuIds) {
-            sysRoleMenuMapper.insert(SysRoleMenu.builder()
-                    .roleId(dto.getRoleId())
-                    .menuId(menuId)
-                    .build());
-        }
+        // 构造关联列表后批量插入，一条 SQL 写入（菜单数量可能较大，避免循环单条插入的 N 次网络往返）
+        List<SysRoleMenu> roleMenus = menuIds.stream()
+                .map(menuId -> SysRoleMenu.builder()
+                        .roleId(dto.getRoleId())
+                        .menuId(menuId)
+                        .build())
+                .toList();
+        sysRoleMenuMapper.insert(roleMenus);
     }
 
 
