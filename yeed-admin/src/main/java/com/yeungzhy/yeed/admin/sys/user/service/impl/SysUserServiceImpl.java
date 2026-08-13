@@ -2,11 +2,16 @@ package com.yeungzhy.yeed.admin.sys.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
+import com.yeungzhy.yeed.admin.sys.role.mapper.SysRoleMapper;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
+import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
+import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserConvert;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserSorts;
@@ -19,8 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -43,6 +50,10 @@ public class SysUserServiceImpl implements SysUserService {
     private SysUserConvert sysUserConvert;
     @Resource
     private BlindIndexProvider emailBlindIndex;
+    @Resource
+    private SysUserRoleMapper sysUserRoleMapper;
+    @Resource
+    private SysRoleMapper sysRoleMapper;
 
 
     @Override
@@ -129,6 +140,39 @@ public class SysUserServiceImpl implements SysUserService {
 
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void grantRoles(SysUserRoleGrantDTO dto) {
+        BizAssert.notNull(dto.getUserId(), "用户ID不能为空");
+        BizAssert.notEmpty(dto.getRoleIds(), "角色ID集合不能为空");
+        // 用户必须存在，防止授权到不存在的用户上
+        BizAssert.notNull(sysUserMapper.selectById(dto.getUserId()), "用户不存在");
+        // 角色必须全部存在（去重后数量比对；角色为逻辑删除表，selectCount 自动滤已删数据）
+        List<Long> roleIds = dto.getRoleIds().stream().distinct().toList();
+        Long roleCount = sysRoleMapper.selectCount(Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds));
+        BizAssert.isTrue(roleCount == roleIds.size(), "存在不存在的角色ID");
+
+        // 全量覆盖式授权：先清空旧关联，再批量写入新关联（关联表无审计字段，物理删插即可）
+        sysUserRoleMapper.delete(Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getUserId, dto.getUserId()));
+        List<SysUserRole> userRoles = roleIds.stream()
+                .map(roleId -> SysUserRole.builder()
+                        .userId(dto.getUserId())
+                        .roleId(roleId)
+                        .build())
+                .toList();
+        sysUserRoleMapper.insert(userRoles);
+    }
+
+
+    @Override
+    public List<Long> listRoleIdsByUser(Long userId) {
+        BizAssert.notNull(userId, "用户ID不能为空");
+        return sysUserRoleMapper.selectList(Wrappers.<SysUserRole>lambdaQuery()
+                        .eq(SysUserRole::getUserId, userId))
+                .stream().map(SysUserRole::getRoleId).toList();
+    }
+
+
+    @Override
     public void delete(Long id) {
         BizAssert.notNull(id, "ID 不能为空");
         sysUserMapper.deleteByIdAutoFill(id);
@@ -140,35 +184,6 @@ public class SysUserServiceImpl implements SysUserService {
         BizAssert.notEmpty(ids, "ID 集合不能为空");
         // 批量逻辑删除：空集合不触库，超量自动分片，删除人自动填充
         sysUserMapper.deleteByIdsAutoFill(ids);
-    }
-
-
-    @Override
-    public PageResult<SysUserVO> pageWithDeleted(SysUserPageDTO dto) {
-        // TODO 构建查询条件
-        LambdaQueryWrapper<SysUser> lambdaQuery = Wrappers.<SysUser>lambdaQuery();
-
-        // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
-        sysUserSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
-
-        // 回收站分页：查询包含已逻辑删除的数据（与 page 的区别是不携带条件 delete_time = 0）
-        return sysUserMapper.selectPageVOWithDeleted(dto, lambdaQuery, sysUserConvert::toVO);
-    }
-
-
-    @Override
-    public void restoreById(Long id) {
-        BizAssert.notNull(id, "ID 不能为空");
-        // 恢复已逻辑删除的数据；对未删除数据执行返回 0（天然幂等）
-        BizAssert.isTrue(sysUserMapper.restoreById(id) > 0, "记录不存在或未删除");
-    }
-
-
-    @Override
-    public void physicalDeleteById(Long id) {
-        BizAssert.notNull(id, "ID 不能为空");
-        // 物理删除（真 DELETE）：不可恢复，仅用于"回收站彻底删除"等场景
-        sysUserMapper.physicalDeleteById(id);
     }
 
 

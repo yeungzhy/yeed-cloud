@@ -2,11 +2,13 @@ package com.yeungzhy.yeed.admin.sys.user.service;
 
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * 系统用户 服务类
@@ -61,6 +63,29 @@ public interface SysUserService {
     PageResult<SysUserVO> page(SysUserPageDTO dto);
 
 
+    // ==================== 用户角色授权 ====================
+
+    /**
+     * 保存用户角色授权（全量覆盖）
+     * <p>roleIds 为该用户最终的完整角色集合：先清空旧关联，再批量写入新关联。
+     *
+     * @param dto 授权入参（用户ID + 角色ID集合）
+     * @author yeungzhy
+     * @since 2026-08-13 06:48:01
+     */
+    void grantRoles(SysUserRoleGrantDTO dto);
+
+    /**
+     * 查询用户已分配的角色 ID 集合（授权页回显）
+     *
+     * @param userId 用户 ID
+     * @return 已分配角色 ID 集合
+     * @author yeungzhy
+     * @since 2026-08-13 06:48:01
+     */
+    List<Long> listRoleIdsByUser(Long userId);
+
+
     // ==================== 标准删除（逻辑删除） ====================
 
     /**
@@ -81,34 +106,5 @@ public interface SysUserService {
      */
     void delete(Collection<Long> ids);
 
-
-    // ==================== 特殊操作（回收站 & 危险操作） ====================
-
-    /**
-     * 分页查询已逻辑删除的数据，如回收站列表
-     *
-     * @return 分页结果
-     * @author yeungzhy
-     * @since 2026-08-13 06:48:01
-     */
-    PageResult<SysUserVO> pageWithDeleted(SysUserPageDTO dto);
-
-    /**
-     * 恢复已逻辑删除的数据
-     *
-     * @param id 主键 ID
-     * @author yeungzhy
-     * @since 2026-08-13 06:48:01
-     */
-    void restoreById(Long id);
-
-    /**
-     * 物理删除（真 DELETE，不可恢复，仅用于"回收站彻底删除"等场景）
-     *
-     * @param id 主键 ID
-     * @author yeungzhy
-     * @since 2026-08-13 06:48:01
-     */
-    void physicalDeleteById(Long id);
 
 }

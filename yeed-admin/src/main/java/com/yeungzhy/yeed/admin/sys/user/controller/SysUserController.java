@@ -3,6 +3,7 @@ package com.yeungzhy.yeed.admin.sys.user.controller;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -92,6 +94,36 @@ public class SysUserController {
     @PostMapping("/page")
     public ApiResult<PageResult<SysUserVO>> page(@Valid @RequestBody SysUserPageDTO dto) {
         return ApiResult.ok(sysUserService.page(dto));
+    }
+
+
+    /**
+     * 保存用户角色授权（全量覆盖）
+     * <p>roleIds 为该用户最终的完整角色集合：先清空旧关联，再批量写入新关联。
+     *
+     * @param dto 授权入参（用户ID + 角色ID集合）
+     * @return 操作结果
+     * @author yeungzhy
+     * @since 2026-08-13 06:51:56
+     */
+    @PostMapping("/grant-roles")
+    public ApiResult<Boolean> grantRoles(@Valid @RequestBody SysUserRoleGrantDTO dto) {
+        sysUserService.grantRoles(dto);
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 查询用户已分配的角色 ID 集合（授权页回显）
+     *
+     * @param id 用户 ID
+     * @return 已分配角色 ID 集合
+     * @author yeungzhy
+     * @since 2026-08-13 06:51:56
+     */
+    @PostMapping("/role-ids")
+    public ApiResult<List<Long>> roleIds(@Valid @RequestBody IdRequest id) {
+        return ApiResult.ok(sysUserService.listRoleIdsByUser(id.getId()));
     }
 
 
