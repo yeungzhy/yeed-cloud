@@ -1,8 +1,10 @@
 package com.yeungzhy.yeed.admin.sys.role.controller;
 
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
+import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleMenuGrantDTO;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRolePageDTO;
 import com.yeungzhy.yeed.admin.sys.role.service.SysRoleService;
+import com.yeungzhy.yeed.admin.sys.role.vo.SysRolePageVO;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
 import com.yeungzhy.yeed.common.core.request.IdRequest;
 import com.yeungzhy.yeed.common.core.request.IdsRequest;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 系统角色 前端控制器
@@ -95,13 +99,43 @@ public class SysRoleController {
      * 分页查询
      *
      * @param dto 分页查询入参
-     * @return 分页结果
+     * @return 分页结果（仅业务字段，不含审计字段）
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
     @PostMapping("/page")
-    public ApiResult<PageResult<SysRoleVO>> page(@Valid @RequestBody SysRolePageDTO dto) {
+    public ApiResult<PageResult<SysRolePageVO>> page(@Valid @RequestBody SysRolePageDTO dto) {
         return ApiResult.ok(sysRoleService.page(dto));
+    }
+
+
+    /**
+     * 保存角色菜单授权（全量覆盖）
+     * <p>menuIds 为该角色最终的完整权限集合（含按钮权限点）：先清空旧关联，再批量写入新关联。
+     *
+     * @param dto 授权入参（角色ID + 菜单ID集合）
+     * @return 操作结果
+     * @author yeungzhy
+     * @since 2026-08-13 18:29
+     */
+    @PostMapping("/grant-menus")
+    public ApiResult<Boolean> grantMenus(@Valid @RequestBody SysRoleMenuGrantDTO dto) {
+        sysRoleService.grantMenus(dto);
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 查询角色已授权的菜单 ID 集合（授权页回显）
+     *
+     * @param id 角色 ID
+     * @return 已授权菜单 ID 集合
+     * @author yeungzhy
+     * @since 2026-08-13 18:29
+     */
+    @PostMapping("/menu-ids")
+    public ApiResult<List<Long>> menuIds(@Valid @RequestBody IdRequest id) {
+        return ApiResult.ok(sysRoleService.listMenuIdsByRole(id.getId()));
     }
 
 
@@ -134,49 +168,6 @@ public class SysRoleController {
         return ApiResult.ok();
     }
 
-
-    /**
-     * 回收站分页（包含已逻辑删除的数据）
-     *
-     * @param dto 分页查询入参
-     * @return 分页结果
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:14
-     */
-    @PostMapping("/recycle/page")
-    public ApiResult<PageResult<SysRoleVO>> pageWithDeleted(@Valid @RequestBody SysRolePageDTO dto) {
-        return ApiResult.ok(sysRoleService.pageWithDeleted(dto));
-    }
-
-
-    /**
-     * 恢复已逻辑删除的数据
-     *
-     * @param id 主键 ID
-     * @return 操作结果
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:14
-     */
-    @PostMapping("/restore")
-    public ApiResult<Boolean> restore(@Valid @RequestBody IdRequest id) {
-        sysRoleService.restoreById(id.getId());
-        return ApiResult.ok();
-    }
-
-
-    /**
-     * 物理删除（真 DELETE，不可恢复，仅用于"回收站彻底删除"等场景）
-     *
-     * @param id 主键 ID
-     * @return 操作结果
-     * @author yeungzhy
-     * @since 2026-08-13 06:55:14
-     */
-    @PostMapping("/physical-delete")
-    public ApiResult<Boolean> physicalDelete(@Valid @RequestBody IdRequest id) {
-        sysRoleService.physicalDeleteById(id.getId());
-        return ApiResult.ok();
-    }
 
 
 }

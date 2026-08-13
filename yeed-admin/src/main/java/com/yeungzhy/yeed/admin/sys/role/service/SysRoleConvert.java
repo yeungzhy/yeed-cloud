@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.admin.sys.role.service;
 
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
 import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
+import com.yeungzhy.yeed.admin.sys.role.vo.SysRolePageVO;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
 import org.mapstruct.Mapper;
 
@@ -18,8 +19,11 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface SysRoleConvert {
 
-    /** Entity → VO（详情 / 分页列表出参） */
+    /** Entity → VO（详情出参，含审计字段与 version，供编辑回显） */
     SysRoleVO toVO(SysRole entity);
+
+    /** Entity → PageVO（分页列表出参，仅业务字段） */
+    SysRolePageVO toPageVO(SysRole entity);
 
     /** DTO → Entity（save / update 入参） */
     SysRole toEntity(SysRoleDTO dto);
