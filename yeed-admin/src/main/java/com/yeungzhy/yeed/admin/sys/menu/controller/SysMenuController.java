@@ -1,8 +1,9 @@
 package com.yeungzhy.yeed.admin.sys.menu.controller;
 
-import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuMoveDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuPageDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuSaveDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuService;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
@@ -47,7 +48,7 @@ public class SysMenuController {
      * @since 2026-08-13 06:55:30
      */
     @PostMapping("/save")
-    public ApiResult<Long> save(@Valid @RequestBody SysMenuDTO dto) {
+    public ApiResult<Long> save(@Valid @RequestBody SysMenuSaveDTO dto) {
         return ApiResult.ok(sysMenuService.save(dto));
     }
 
@@ -61,7 +62,7 @@ public class SysMenuController {
      * @since 2026-08-13 06:55:30
      */
     @PostMapping("/update")
-    public ApiResult<Boolean> update(@Valid @RequestBody SysMenuDTO dto) {
+    public ApiResult<Boolean> update(@Valid @RequestBody SysMenuUpdateDTO dto) {
         sysMenuService.update(dto);
         return ApiResult.ok();
     }

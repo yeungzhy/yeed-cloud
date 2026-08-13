@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 /**
  * 菜单拖拽调整层级入参（仅更新 parentId）
  *
- * <p>与整表单 {@link SysMenuDTO} 语义不同：move 只做层级移动、不触碰其它字段，
+ * <p>与整表单 {@link SysMenuSaveDTO} 语义不同：move 只做层级移动、不触碰其它字段，
  * 按"接口参数隔离"约定独立成类，避免把无关字段暴露给前端。
  *
  * @author yeungzhy

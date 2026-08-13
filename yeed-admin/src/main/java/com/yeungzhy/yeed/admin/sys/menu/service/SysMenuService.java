@@ -1,8 +1,9 @@
 package com.yeungzhy.yeed.admin.sys.menu.service;
 
-import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuMoveDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuPageDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuSaveDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
@@ -24,21 +25,21 @@ public interface SysMenuService {
     /**
      * 新增
      *
-     * @param dto 入参
+     * @param dto 新增入参（仅业务字段，不含 id/审计字段）
      * @return 新增记录的主键 ID
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
-    Long save(SysMenuDTO dto);
+    Long save(SysMenuSaveDTO dto);
 
     /**
      * 更新
      *
-     * @param dto 入参
+     * @param dto 更新入参（含 id 与 version 乐观锁）
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
-    void update(SysMenuDTO dto);
+    void update(SysMenuUpdateDTO dto);
 
     /**
      * 拖拽调整层级（移动菜单到新的父级下，防循环依赖）

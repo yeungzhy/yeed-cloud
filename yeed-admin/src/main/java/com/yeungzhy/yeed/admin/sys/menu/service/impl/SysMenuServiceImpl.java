@@ -3,10 +3,12 @@ package com.yeungzhy.yeed.admin.sys.menu.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuMoveDTO;
 import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuPageDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuSaveDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
+import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
 import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuConvert;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuService;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +43,11 @@ import java.util.stream.Collectors;
 @Service
 public class SysMenuServiceImpl implements SysMenuService {
 
+    /**
+     * 不可见字符（空白）正则：用户输入归一化用，去除全部空白字符（空格/Tab/换行等）
+     */
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
     @Resource
     private SysMenuSorts sysMenuSorts;
     @Resource
@@ -49,9 +57,13 @@ public class SysMenuServiceImpl implements SysMenuService {
 
 
     @Override
-    public Long save(SysMenuDTO dto) {
+    public Long save(SysMenuSaveDTO dto) {
+        // 字符串字段归一化（去除多余空白），避免脏数据入库
+        normalizeBizFields(dto);
         BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         BizAssert.notNull(dto.getMenuType(), "菜单类型不能为空");
+        // 按钮权限点完全由 perms 承载，强制必填
+        assertButtonPerms(dto.getMenuType(), dto.getPerms());
 
         // 非顶级菜单：校验父级存在性（新建节点 id 为空，挂到存在的父级下不可能成环，无需防环校验）
         if (!SysMenu.isRoot(dto.getParentId())) {
@@ -68,10 +80,14 @@ public class SysMenuServiceImpl implements SysMenuService {
 
 
     @Override
-    public void update(SysMenuDTO dto) {
+    public void update(SysMenuUpdateDTO dto) {
+        // 字符串字段归一化（去除多余空白），避免脏数据入库
+        normalizeBizFields(dto);
         BizAssert.notNull(dto.getId(), "ID 不能为空");
         BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         BizAssert.notNull(dto.getMenuType(), "菜单类型不能为空");
+        // 按钮权限点完全由 perms 承载，强制必填
+        assertButtonPerms(dto.getMenuType(), dto.getPerms());
 
         SysMenu dbEntity = sysMenuMapper.selectById(dto.getId());
         BizAssert.notNull(dbEntity, "记录不存在");
@@ -159,6 +175,29 @@ public class SysMenuServiceImpl implements SysMenuService {
 
 
     /**
+     * 入参字符串归一化（防脏数据入库）
+     * <p>统一去除全部空白字符（{@link #WHITESPACE_PATTERN}）：
+     * <ul>
+     *   <li>{@code perms}/{@code path}：编码类字段，内部空白必为脏数据
+     *       （如 {@code "sys: user:list"} 会导致授权匹配失败且肉眼难查）；</li>
+     *   <li>{@code menuName}：名称类字段同规则——内部空白无语义，且会造成
+     *       "同名不同空格"绕过同一父级下名称唯一校验。</li>
+     * </ul>
+     */
+    private void normalizeBizFields(SysMenuSaveDTO dto) {
+        if (dto.getMenuName() != null) {
+            dto.setMenuName(WHITESPACE_PATTERN.matcher(dto.getMenuName()).replaceAll(""));
+        }
+        if (dto.getPath() != null) {
+            dto.setPath(WHITESPACE_PATTERN.matcher(dto.getPath()).replaceAll(""));
+        }
+        if (dto.getPerms() != null) {
+            dto.setPerms(WHITESPACE_PATTERN.matcher(dto.getPerms()).replaceAll(""));
+        }
+    }
+
+
+    /**
      * 构建查询条件（菜单名称模糊 / 类型、可见性精确匹配）
      */
     private LambdaQueryWrapper<SysMenu> buildQueryWrapper(SysMenuPageDTO dto) {
@@ -166,6 +205,18 @@ public class SysMenuServiceImpl implements SysMenuService {
                 .like(StringUtils.isNotBlank(dto.getMenuName()), SysMenu::getMenuName, dto.getMenuName())
                 .eq(Objects.nonNull(dto.getMenuType()), SysMenu::getMenuType, dto.getMenuType())
                 .eq(Objects.nonNull(dto.getVisible()), SysMenu::getVisible, dto.getVisible());
+    }
+
+
+    /**
+     * 校验按钮必须填写权限标识符
+     * <p>按钮（BUTTON）无路由地址，权限点完全由 perms 承载；
+     * perms 为空时角色授权后按钮无实际权限，故强制必填（归一化已去除全部空白，纯空格同样被拦截）。
+     */
+    private void assertButtonPerms(MenuTypeEnum menuType, String perms) {
+        if (menuType == MenuTypeEnum.BUTTON) {
+            BizAssert.notBlank(perms, "按钮类型必须填写权限标识符");
+        }
     }
 
 

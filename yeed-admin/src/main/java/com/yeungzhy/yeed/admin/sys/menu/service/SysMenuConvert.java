@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.admin.sys.menu.service;
 
-import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuSaveDTO;
+import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
@@ -29,7 +30,10 @@ public interface SysMenuConvert {
     /** Entity → TreeVO（树节点出参，仅业务字段；children 由 Service 组装） */
     SysMenuTreeVO toTreeVO(SysMenu entity);
 
-    /** DTO → Entity（save / update 入参） */
-    SysMenu toEntity(SysMenuDTO dto);
+    /** SaveDTO → Entity（新增入参，无 id/审计字段，审计字段由框架自动填充） */
+    SysMenu toEntity(SysMenuSaveDTO dto);
+
+    /** UpdateDTO → Entity（更新入参，含 id 与 version 乐观锁） */
+    SysMenu toEntity(SysMenuUpdateDTO dto);
 
 }
