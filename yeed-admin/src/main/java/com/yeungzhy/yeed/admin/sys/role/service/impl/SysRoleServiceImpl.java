@@ -28,8 +28,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 系统角色 服务实现类
@@ -139,8 +144,28 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         // 全量覆盖式授权：先清空旧关联，再批量写入新关联（关联表无审计字段，物理删插即可）
         sysRoleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, dto.getRoleId()));
+        // 服务端强制补链（数据不变量）：沿 parentId 上溯补全祖先节点，菜单树完整性不依赖前端联动提交；
+        // 前端已联动提交完整集时补链幂等无害，前端绕过/漏传时兜底。脏数据断链即停止，不插入悬空关联
+        Map<Long, Long> parentIdMap = sysMenuMapper.selectList(
+                        Wrappers.<SysMenu>lambdaQuery().select(SysMenu::getId, SysMenu::getParentId))
+                .stream()
+                .collect(Collectors.toMap(SysMenu::getId, SysMenu::getParentId));
+        // LinkedHashSet 保序去重：先授权菜单，再按提交顺序补其祖先
+        Set<Long> allMenuIds = new LinkedHashSet<>(menuIds);
+        for (Long menuId : menuIds) {
+            Long parentId = parentIdMap.get(menuId);
+            Set<Long> visited = new HashSet<>();
+            while (parentId != null && visited.add(parentId)) {
+                // 父级为根(0)或不在菜单表中（脏数据断链）：停止补链
+                if (SysMenu.isRoot(parentId) || !parentIdMap.containsKey(parentId)) {
+                    break;
+                }
+                allMenuIds.add(parentId);
+                parentId = parentIdMap.get(parentId);
+            }
+        }
         // 构造关联列表后批量插入，一条 SQL 写入（菜单数量可能较大，避免循环单条插入的 N 次网络往返）
-        List<SysRoleMenu> roleMenus = menuIds.stream()
+        List<SysRoleMenu> roleMenus = allMenuIds.stream()
                 .map(menuId -> SysRoleMenu.builder()
                         .roleId(dto.getRoleId())
                         .menuId(menuId)
