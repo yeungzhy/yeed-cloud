@@ -2,7 +2,11 @@ package com.yeungzhy.yeed.admin.sys.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
+import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
+import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
 import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
+import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.admin.sys.role.mapper.SysRoleMapper;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
@@ -16,9 +20,13 @@ import com.yeungzhy.yeed.admin.sys.user.service.SysUserConvert;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserSorts;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
 import com.yeungzhy.yeed.common.core.crypto.BlindIndexProvider;
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.support.TreeUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +62,8 @@ public class SysUserServiceImpl implements SysUserService {
     private SysUserRoleMapper sysUserRoleMapper;
     @Resource
     private SysRoleMapper sysRoleMapper;
+    @Resource
+    private SysMenuMapper sysMenuMapper;
 
 
     @Override
@@ -138,6 +148,57 @@ public class SysUserServiceImpl implements SysUserService {
         return sysUserMapper.selectPageVO(dto, lambdaQuery, sysUserConvert::toVO);
     }
 
+
+    @Override
+    public LoginUserInfo verify(UserVerifyDTO dto) {
+        BizAssert.notBlank(dto.getAccount(), "账号不能为空");
+        BizAssert.notBlank(dto.getPassword(), "密码不能为空");
+
+        SysUser user = sysUserMapper.selectOne(Wrappers.<SysUser>lambdaQuery()
+                .eq(SysUser::getStatus, EnableStatusEnum.ENABLED)
+                .and(w ->
+                        w.eq(SysUser::getUsername, dto.getAccount())
+                         .or()
+                         .eq(SysUser::getEmployeeNo, dto.getAccount())));
+
+        BizAssert.notNull(user, "账号不存在");
+        BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
+
+        // 装配身份包：角色编码 + 菜单行（一次查询，投影出 perms 串与菜单树）
+        List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(user.getId());
+        // 超管代码级短路：不依赖数据库授权配置（逃生通道——权限配置被改坏仍可登录修复），菜单行取全量
+        boolean superAdmin = roleCodes.contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode());
+        List<SysMenu> menus = superAdmin
+                ? sysMenuMapper.selectList(Wrappers.<SysMenu>lambdaQuery().orderByAsc(SysMenu::getSort))
+                : sysUserMapper.selectMenusByUserId(user.getId());
+
+        // perms：含按钮 type=3，perms 非空、去重
+        List<String> perms = menus.stream()
+                .map(SysMenu::getPerms)
+                .filter(StringUtils::isNotEmpty)
+                .distinct()
+                .toList();
+
+        // 菜单树：仅目录/菜单节点建树（按钮不承载路由），根判定仅 0（与 SysMenu.isRoot 约定一致）
+        List<LoginUserInfo.MenuTreeInfo> menuTree = TreeUtil.buildTree(
+                menus.stream()
+                        .filter(m -> MenuTypeEnum.DIRECTORY == m.getMenuType() || MenuTypeEnum.MENU_PAGE == m.getMenuType())
+                        .map(sysUserConvert::toMenuTreeInfo)
+                        .toList(),
+                LoginUserInfo.MenuTreeInfo::getParentId,
+                LoginUserInfo.MenuTreeInfo::getId,
+                m -> SysMenu.isRoot(m.getParentId()),
+                LoginUserInfo.MenuTreeInfo::setChildren);
+
+        return new LoginUserInfo()
+                .setUserId(user.getId())
+                .setRealName(user.getRealName())
+                .setUsername(user.getUsername())
+                .setEmployeeNo(user.getEmployeeNo())
+                .setRoleCodes(roleCodes)
+                .setPerms(perms)
+                .setMenus(menuTree);
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

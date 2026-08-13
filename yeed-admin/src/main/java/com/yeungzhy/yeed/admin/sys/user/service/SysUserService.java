@@ -5,7 +5,9 @@ import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -61,6 +63,17 @@ public interface SysUserService {
      * @since 2026-08-13 06:48:01
      */
     PageResult<SysUserVO> page(SysUserPageDTO dto);
+
+
+    /**
+     * 凭据校验：校验账号密码，校验通过返回登录身份包
+     *
+     * @param dto 账号 + 密码
+     * @return 登录身份包
+     * @author yeungzhy
+     * @since 2026-08-09
+     */
+    LoginUserInfo verify(UserVerifyDTO dto);
 
 
     // ==================== 用户角色授权 ====================

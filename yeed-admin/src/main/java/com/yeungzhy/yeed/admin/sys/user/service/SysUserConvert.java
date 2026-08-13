@@ -1,10 +1,15 @@
 package com.yeungzhy.yeed.admin.sys.user.service;
 
+import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
+import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
+import com.yeungzhy.yeed.admin.sys.menu.enums.MenuVisibleEnum;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * 系统用户 对象字段映射器（编译期生成实现类）
@@ -27,5 +32,22 @@ public interface SysUserConvert {
 
     /** DTO → Entity（update 入参） */
     SysUser toEntity(SysUserUpdateDTO dto);
+
+    /**
+     * Entity → 登录菜单树节点（verify 身份包出参）
+     * <p>children 由 {@link com.yeungzhy.yeed.common.core.support.TreeUtil} 建树填充，此处显式忽略。
+     */
+    @Mapping(target = "children", ignore = true)
+    LoginUserInfo.MenuTreeInfo toMenuTreeInfo(SysMenu entity);
+
+    /** 菜单类型枚举 → 整数 code（MapStruct 转换钩子，枚举不能自动映射到 Integer） */
+    default Integer menuTypeToCode(MenuTypeEnum type) {
+        return type == null ? null : type.getCode();
+    }
+
+    /** 可见性枚举 → 整数 code（MapStruct 转换钩子，枚举不能自动映射到 Integer） */
+    default Integer menuVisibleToCode(MenuVisibleEnum visible) {
+        return visible == null ? null : visible.getCode();
+    }
 
 }
