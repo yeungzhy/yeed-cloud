@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.user.dto;
 
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,7 +24,7 @@ public class SysUserPageDTO extends PageRequest {
     /** 邮箱 */
     private String email;
     /** 状态：0-禁用，1-启用 */
-    private Integer status;
+    private EnableStatusEnum status;
 
     /** 创建时间 */
     private LocalDateTime createTime;

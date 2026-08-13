@@ -45,7 +45,7 @@
 
         <!--
             mybatis-plus-annotation：仅含 @EnumValue/@TableName 等注解定义，零传递依赖。
-            供 com.yeungzhy.yeed.common.core.enums.CommonStatusEnum 标注 DB 持久化字段，
+            供 com.yeungzhy.yeed.common.core.enums.EnableStatusEnum 标注 DB 持久化字段，
             使该系统级语义枚举可下沉到 core 层（与 BuiltinRoleEnum 同级），而不必拖入整个 ORM starter。
             版本由根 POM 的 mybatis-plus-bom 统一管理。
         -->
@@ -56,7 +56,7 @@
 
         <!--
             jackson-annotations：仅含 @JsonValue 等注解定义。
-            供 CommonStatusEnum 声明序列化契约（前端拿到整数 0/1）。
+            供 EnableStatusEnum 声明序列化契约（前端拿到整数 0/1）。
             provided 范围：编译期需要，运行期由使用方（web 模块等）的 jackson-databind 提供。
             版本由根 POM 的 jackson-bom 统一管理。
         -->

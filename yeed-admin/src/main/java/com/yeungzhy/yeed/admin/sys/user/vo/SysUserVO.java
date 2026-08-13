@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.user.vo;
 
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -34,7 +35,7 @@ public class SysUserVO {
     /** 邮箱盲索引 */
     private String emailBidx;
     /** 状态：0-禁用，1-启用 */
-    private Integer status;
+    private EnableStatusEnum status;
 
     // ================== 审计字段 ==================
     /** 创建人 */

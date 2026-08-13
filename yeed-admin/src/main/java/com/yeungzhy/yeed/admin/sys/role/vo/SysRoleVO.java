@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.role.vo;
 
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -28,7 +29,7 @@ public class SysRoleVO {
     /** 角色描述 */
     private String description;
     /** 状态：0-禁用，1-启用 */
-    private Integer status;
+    private EnableStatusEnum status;
 
     // ================== 审计字段 ==================
     /** 创建人 */

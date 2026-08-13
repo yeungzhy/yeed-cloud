@@ -7,12 +7,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 通用"启用/禁用"状态枚举（全系统唯一真相源）
+ * "启用/禁用"状态枚举（全系统唯一真相源）
  * <p>所有业务实体的 {@code status} 字段统一使用本枚举承载语义：
  * <ul>
  *   <li>DB 层：通过 {@link #code}（0/1）与数据库 TINYINT/INT 列互转（{@link EnumValue} 标注）</li>
  *   <li>ORM 层：MyBatis-Plus 识别 {@link IEnum} / {@link EnumValue}，Lambda Wrapper 直接用枚举即可</li>
- *   <li>序列化层：Jackson 用 {@link JsonValue} 返回整数 0/1 给前端（保持接口契约不变）</li>
+ *   <li>序列化层：Jackson 的 {@link JsonValue} 双向生效，入参与出参均为整数 0/1（接口契约不变）</li>
  * </ul>
  * <p>禁止在任何业务代码中散落裸数字 0/1 判断"启用/禁用"语义，
  * 一律使用 {@link #ENABLED} / {@link #DISABLED} 枚举或 {@link #parse(Integer)} 做转换。
@@ -22,7 +22,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum CommonStatusEnum implements IEnum<Integer> {
+public enum EnableStatusEnum implements IEnum<Integer> {
 
     /** 禁用（0） */
     DISABLED(0, "禁用"),
@@ -61,7 +61,7 @@ public enum CommonStatusEnum implements IEnum<Integer> {
      * @return 对应枚举；入参为 null 时返回 null
      * @throws IllegalArgumentException code 非法且非 null
      */
-    public static CommonStatusEnum parse(Integer code) {
+    public static EnableStatusEnum parse(Integer code) {
         if (code == null) {
             return null;
         }
@@ -71,21 +71,21 @@ public enum CommonStatusEnum implements IEnum<Integer> {
         return switch (code) {
             case 0 -> DISABLED;
             case 1 -> ENABLED;
-            default -> throw new IllegalArgumentException("未知的 CommonStatusEnum code: " + code);
+            default -> throw new IllegalArgumentException("未知的 EnableStatusEnum code: " + code);
         };
     }
 
     /**
      * 是否"启用"状态（空值视为非启用，便于防御式判断）
      */
-    public static boolean isEnabled(CommonStatusEnum status) {
+    public static boolean isEnabled(EnableStatusEnum status) {
         return status == ENABLED;
     }
 
     /**
      * 是否"禁用"状态（空值视为非禁用，便于防御式判断）
      */
-    public static boolean isDisabled(CommonStatusEnum status) {
+    public static boolean isDisabled(EnableStatusEnum status) {
         return status == DISABLED;
     }
 

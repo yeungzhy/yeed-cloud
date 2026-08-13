@@ -64,7 +64,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         BizAssert.isFalse(sysRole.isBuiltin(), "内置角色禁止修改状态");
         SysRole updateEntity = SysRole.builder()
                 .id(dto.getId())
-                .status(dto.getStatus().getCode())
+                .status(dto.getStatus())
                 .build();
         sysRoleMapper.updateById(updateEntity);
     }
