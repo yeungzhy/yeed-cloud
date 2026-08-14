@@ -35,6 +35,11 @@
         </dependency>
         <dependency>
             <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-cache</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
             <artifactId>yeed-api</artifactId>
             <version>20260501</version>
         </dependency>
