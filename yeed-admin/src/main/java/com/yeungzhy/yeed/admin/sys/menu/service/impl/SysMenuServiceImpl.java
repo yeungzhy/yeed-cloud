@@ -58,8 +58,11 @@ public class SysMenuServiceImpl implements SysMenuService {
     public Long save(SysMenuSaveDTO dto) {
         BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         BizAssert.notNull(dto.getMenuType(), "菜单类型不能为空");
-        // 按钮权限点完全由 perms 承载，强制必填
-        assertButtonPerms(dto.getMenuType(), dto.getPerms());
+        // 按钮 path 语义为调用接口路径（如 /sys/user/list），perms 由 path 派生，单一数据源
+        assertButtonPath(dto.getMenuType(), dto.getPath());
+        if (dto.getMenuType() == MenuTypeEnum.BUTTON) {
+            dto.setPerms(SysMenu.pathToPerm(dto.getPath()));
+        }
 
         // parentId 必填：项目约定仅 0 表示顶级、不存在 null，从入参即杜绝 null 语义
         BizAssert.notNull(dto.getParentId(), "父菜单ID不能为空（顶级传0）");
@@ -73,6 +76,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // DTO -> Entity：同名字段由 MapStruct 自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.insert(entity);
+        reloadPermsCache();
         return entity.getId();
     }
 
@@ -82,8 +86,11 @@ public class SysMenuServiceImpl implements SysMenuService {
         BizAssert.notNull(dto.getId(), "ID 不能为空");
         BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         BizAssert.notNull(dto.getMenuType(), "菜单类型不能为空");
-        // 按钮权限点完全由 perms 承载，强制必填
-        assertButtonPerms(dto.getMenuType(), dto.getPerms());
+        // 按钮 path 语义为调用接口路径（如 /sys/user/list），perms 由 path 派生，单一数据源
+        assertButtonPath(dto.getMenuType(), dto.getPath());
+        if (dto.getMenuType() == MenuTypeEnum.BUTTON) {
+            dto.setPerms(SysMenu.pathToPerm(dto.getPath()));
+        }
 
         SysMenu dbEntity = sysMenuMapper.selectById(dto.getId());
         BizAssert.notNull(dbEntity, "记录不存在");
@@ -98,6 +105,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // DTO -> Entity：id 与业务字段均自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.updateById(entity);
+        reloadPermsCache();
     }
 
 
@@ -141,6 +149,8 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public List<SysMenuTreeVO> tree() {
+        // 懒加载自愈：外部清库后首个菜单树请求即重建鉴权缓存（超管进菜单管理页即恢复）
+        reloadPermsCacheIfAbsent();
         List<SysMenu> menus = sysMenuMapper.selectList(
                 Wrappers.<SysMenu>lambdaQuery().orderByAsc(SysMenu::getSort));
         // 查询侧兜底：存量脏数据环不阻断（迭代式 buildTree 不会栈溢出），仅告警暴露待修数据
@@ -161,6 +171,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         boolean hasChildren = sysMenuMapper.existsByColumn(SysMenu::getParentId, id);
         BizAssert.isTrue(!hasChildren, "存在子菜单，不允许删除");
         sysMenuMapper.deleteByIdAutoFill(id);
+        reloadPermsCache();
     }
 
 
@@ -171,6 +182,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         BizAssert.isTrue(!hasChildren, "存在子菜单，不允许删除");
         // 批量逻辑删除：空集合不触库，超量自动分片，删除人自动填充
         sysMenuMapper.deleteByIdsAutoFill(ids);
+        reloadPermsCache();
     }
 
 
@@ -186,13 +198,17 @@ public class SysMenuServiceImpl implements SysMenuService {
 
 
     /**
-     * 校验按钮必须填写权限标识符
-     * <p>按钮（BUTTON）无路由地址，权限点完全由 perms 承载；
-     * perms 为空时角色授权后按钮无实际权限，故强制必填
+     * 校验按钮必须填写调用接口路径
+     * <p>按钮（BUTTON）的 path 语义为「调用接口路径」（如 /sys/user/list），
+     * 权限码由 path 派生（{@link SysMenu#pathToPerm(String)}），单一数据源，
+     * 前端无需传 perms；网关据此 Map&lt;接口路径, 权限码&gt; 做接口鉴权，
+     * path 缺失则接口无法被网关管控，故强制必填
      */
-    private void assertButtonPerms(MenuTypeEnum menuType, String perms) {
+    private void assertButtonPath(MenuTypeEnum menuType, String path) {
         if (menuType == MenuTypeEnum.BUTTON) {
-            BizAssert.notBlank(perms, "按钮类型必须填写权限标识符");
+            BizAssert.notBlank(path, "按钮类型必须填写调用接口路径（如 /sys/user/list）");
+        }
+    }
 
 
     // ==================== 接口权限缓存 ====================

@@ -36,9 +36,9 @@ public class SysMenu extends BaseEntity {
     private String menuName;
     /** 菜单类型（目录/菜单/按钮） */
     private MenuTypeEnum menuType;
-    /** 路由地址（目录/菜单页面对应前端路由，按钮可为空） */
+    /** 路由地址（目录/菜单对应用户端路由；按钮为调用接口路径 */
     private String path;
-    /** 权限标识符（如 sys:user:list，角色授权时使用） */
+    /** 权限标识符按钮由 path 派生 */
     private String perms;
     /** 显示排序 */
     private Integer sort;
@@ -60,6 +60,23 @@ public class SysMenu extends BaseEntity {
      */
     public static boolean isRoot(Long parentId) {
         return ROOT_PARENT_ID.equals(parentId);
+    }
+
+    /**
+     * 接口路径 → 权限标识符（按钮 path 语义为调用接口路径）
+     * <p>与项目权限编码约定一致：去前导 {@code /}、{@code /}→{@code :}
+     * （如 {@code /sys/user/list} → {@code sys:user:list}）。按钮的 perms 由此派生，
+     * 单一数据源；网关鉴权缓存（接口路径→权限码 Map）构建复用同一转换，两侧天然一致。
+     *
+     * @param path 调用接口路径（如 /sys/user/list）
+     * @return 权限标识符；入参为 null/空白时返回 null
+     */
+    public static String pathToPerm(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        String normalized = path.charAt(0) == '/' ? path.substring(1) : path;
+        return normalized.replace('/', ':');
     }
 
     /**
