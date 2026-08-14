@@ -16,6 +16,8 @@ import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuSorts;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
+import com.yeungzhy.yeed.common.cache.support.RedisHelper;
+import com.yeungzhy.yeed.common.core.constant.CacheConstant;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.support.TreeUtil;
@@ -48,6 +50,8 @@ public class SysMenuServiceImpl implements SysMenuService {
     private SysMenuMapper sysMenuMapper;
     @Resource
     private SysMenuConvert sysMenuConvert;
+    @Resource
+    private RedisHelper redisHelper;
 
 
     @Override
@@ -189,6 +193,27 @@ public class SysMenuServiceImpl implements SysMenuService {
     private void assertButtonPerms(MenuTypeEnum menuType, String perms) {
         if (menuType == MenuTypeEnum.BUTTON) {
             BizAssert.notBlank(perms, "按钮类型必须填写权限标识符");
+
+
+    // ==================== 接口权限缓存 ====================
+
+    @Override
+    public void reloadPermsCache() {
+        // 仅按钮进入网关鉴权 Map：目录/菜单 path 为用户端路由，不参与接口鉴权
+        Map<String, String> apiPermMap = sysMenuMapper.selectList(
+                        Wrappers.<SysMenu>lambdaQuery().eq(SysMenu::getMenuType, MenuTypeEnum.BUTTON)
+                                .isNotNull(SysMenu::getPath)
+                                .isNotNull(SysMenu::getPerms))
+                .stream()
+                .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
+        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, apiPermMap);
+        log.info("菜单接口权限缓存已重建：接口登记数={}", apiPermMap.size());
+    }
+
+    @Override
+    public void reloadPermsCacheIfAbsent() {
+        if (!redisHelper.hasKey(CacheConstant.SYS_MENU_API_PERMS_ALL)) {
+            reloadPermsCache();
         }
     }
 
