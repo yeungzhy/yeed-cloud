@@ -161,7 +161,7 @@ public class SysUserServiceImpl implements SysUserService {
                          .or()
                          .eq(SysUser::getEmployeeNo, dto.getAccount())));
 
-        BizAssert.notNull(user, "账号不存在");
+        BizAssert.notNull(user, "账号不存在或已被禁用");
         BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
 
         // 装配身份包：角色编码 + 菜单行（一次查询，投影出 perms 串与菜单树）
@@ -195,6 +195,7 @@ public class SysUserServiceImpl implements SysUserService {
                 .setRealName(user.getRealName())
                 .setUsername(user.getUsername())
                 .setEmployeeNo(user.getEmployeeNo())
+                .setStatus(user.getStatus())
                 .setRoleCodes(roleCodes)
                 .setPerms(perms)
                 .setMenus(menuTree);
