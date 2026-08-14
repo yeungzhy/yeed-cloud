@@ -23,6 +23,17 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
         </dependency>
+        <!--
+            commons-pool2：Lettuce 连接池实现。
+            spring-boot-starter-data-redis 默认不池化连接，spring.data.redis.lettuce.pool.*
+            配置需该类库在 classpath 才生效（Spring Boot 官方文档明确要求显式引入）。
+            本模块是 Redis 基础设施提供方（RedisAutoConfiguration 消费 RedisConnectionFactory），
+            故自带连接池能力，业务方无需重复引入。
+        -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
 
         <!-- RedisConfig 使用 GenericJackson2JsonRedisSerializer(objectMapper)，compile 保证自包含 -->
         <dependency>

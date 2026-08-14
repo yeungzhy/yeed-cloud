@@ -39,6 +39,17 @@
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-template</artifactId>
         </dependency>
+        <!--
+            commons-pool2：Lettuce 连接池实现。
+            sa-token-redis-template 传递 spring-boot-starter-data-redis，连接池配置
+            （spring.data.redis.lettuce.pool.*）需该类库在 classpath 才生效。
+            admin 等模块不引 common-cache，Redis 连接完全由本模块传递提供，故自带连接池能力。
+            与是否使用 Sa-Token 无关：若换 Spring Security 且会话仍存 Redis，连接池依旧需要。
+        -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

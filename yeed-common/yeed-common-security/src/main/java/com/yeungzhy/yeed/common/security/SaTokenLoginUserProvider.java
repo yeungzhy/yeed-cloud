@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yeungzhy.yeed.common.core.security.LoginUserProvider;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.SessionKeys;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 基于 Sa-Token 会话的 {@link LoginUserProvider} 实现。
@@ -19,6 +20,7 @@ import com.yeungzhy.yeed.common.core.security.SessionKeys;
  * @see com.yeungzhy.yeed.common.security.config.SecurityAutoConfiguration
  * @see LoginUserProvider
  */
+@Slf4j
 public class SaTokenLoginUserProvider implements LoginUserProvider {
 
     private final ObjectMapper objectMapper;
@@ -46,7 +48,7 @@ public class SaTokenLoginUserProvider implements LoginUserProvider {
             // 兜底：泛型擦除导致反序列化为 LinkedHashMap 时，用 Jackson 转回
             return objectMapper.convertValue(raw, LoginUserInfo.class);
         } catch (Exception e) {
-            // 未登录 / token 过期 / 无 sa-token 上下文（如定时任务线程）
+            log.error("从 Sa-Token 会话获取登录用户失败, 未登录 / token 过期 / 无 sa-token 上下文", e);
             return null;
         }
     }

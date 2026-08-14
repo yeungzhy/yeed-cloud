@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.common.core.security;
 
+import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -23,6 +24,8 @@ public class LoginUserInfo {
     private String username;
     /** 工号 */
     private String employeeNo;
+    /** 状态：0-禁用，1-启用 */
+    private EnableStatusEnum status;
     /** 角色编码集合 */
     private List<String> roleCodes;
     /** 有权限的菜单权限码集合 */
