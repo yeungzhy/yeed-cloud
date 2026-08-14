@@ -7,7 +7,7 @@ import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
-import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -34,11 +34,11 @@ public interface SysUserConvert {
     SysUser toEntity(SysUserUpdateDTO dto);
 
     /**
-     * Entity → 登录菜单树节点（verify 身份包出参）
+     * Entity → 用户菜单树节点（user-menus 出参）
      * <p>children 由 {@link com.yeungzhy.yeed.common.core.support.TreeUtil} 建树填充，此处显式忽略。
      */
     @Mapping(target = "children", ignore = true)
-    LoginUserInfo.MenuTreeInfo toMenuTreeInfo(SysMenu entity);
+    MenuTreeInfo toMenuTreeInfo(SysMenu entity);
 
     /** 菜单类型枚举 → 整数 code（MapStruct 转换钩子，枚举不能自动映射到 Integer） */
     default Integer menuTypeToCode(MenuTypeEnum type) {

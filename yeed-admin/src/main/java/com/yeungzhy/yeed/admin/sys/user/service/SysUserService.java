@@ -8,6 +8,7 @@ import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,12 +69,28 @@ public interface SysUserService {
     /**
      * 凭据校验：校验账号密码，校验通过返回登录身份包
      *
+     * <p>身份包只含"服务端鉴权所需"数据（用户信息 + 角色编码 + 权限标识）；
+     * 前端渲染用的菜单树由 {@link #listMenusByUserId} 单独装配，不进登录会话。
+     *
      * @param dto 账号 + 密码
      * @return 登录身份包
      * @author yeungzhy
      * @since 2026-08-09
      */
     LoginUserInfo verify(UserVerifyDTO dto);
+
+    /**
+     * 查询用户可见菜单树（登录响应/用户菜单接口出参）
+     *
+     * <p>仅目录/菜单节点建树（按钮不承载路由），超管取全量；属于前端渲染数据，
+     * 不写入登录会话（session 只存 {@link LoginUserInfo} 身份包）。
+     *
+     * @param userId 用户 ID
+     * @return 已建树的菜单树节点列表（顶级节点）
+     * @author yeungzhy
+     * @since 2026-08-15
+     */
+    List<MenuTreeInfo> listMenusByUserId(Long userId);
 
 
     // ==================== 用户角色授权 ====================

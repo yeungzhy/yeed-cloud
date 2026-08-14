@@ -26,6 +26,7 @@ import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import com.yeungzhy.yeed.common.core.support.TreeUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -164,31 +165,17 @@ public class SysUserServiceImpl implements SysUserService {
         BizAssert.notNull(user, "账号不存在或已被禁用");
         BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
 
-        // 装配身份包：角色编码 + 菜单行（一次查询，投影出 perms 串与菜单树）
+        // 装配身份包：角色编码 + 权限标识（菜单树由 listMenusByUserId 单独装配，会话不承载前端渲染数据）
         List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(user.getId());
-        // 超管代码级短路：不依赖数据库授权配置（逃生通道——权限配置被改坏仍可登录修复），菜单行取全量
+        // 超管代码级短路：不依赖数据库授权配置（权限配置被改坏仍可登录修复），菜单行取全量
         boolean superAdmin = roleCodes.contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode());
-        List<SysMenu> menus = superAdmin
-                ? sysMenuMapper.selectList(Wrappers.<SysMenu>lambdaQuery().orderByAsc(SysMenu::getSort))
-                : sysUserMapper.selectMenusByUserId(user.getId());
 
         // perms：含按钮 type=3，perms 非空、去重
-        List<String> perms = menus.stream()
+        List<String> perms = selectMenuRows(user.getId(), superAdmin).stream()
                 .map(SysMenu::getPerms)
                 .filter(StringUtils::isNotEmpty)
                 .distinct()
                 .toList();
-
-        // 菜单树：仅目录/菜单节点建树（按钮不承载路由），根判定仅 0（与 SysMenu.isRoot 约定一致）
-        List<LoginUserInfo.MenuTreeInfo> menuTree = TreeUtil.buildTree(
-                menus.stream()
-                        .filter(m -> MenuTypeEnum.DIRECTORY == m.getMenuType() || MenuTypeEnum.MENU_PAGE == m.getMenuType())
-                        .map(sysUserConvert::toMenuTreeInfo)
-                        .toList(),
-                LoginUserInfo.MenuTreeInfo::getParentId,
-                LoginUserInfo.MenuTreeInfo::getId,
-                m -> SysMenu.isRoot(m.getParentId()),
-                LoginUserInfo.MenuTreeInfo::setChildren);
 
         return new LoginUserInfo()
                 .setUserId(user.getId())
@@ -197,8 +184,41 @@ public class SysUserServiceImpl implements SysUserService {
                 .setEmployeeNo(user.getEmployeeNo())
                 .setStatus(user.getStatus())
                 .setRoleCodes(roleCodes)
-                .setPerms(perms)
-                .setMenus(menuTree);
+                .setPerms(perms);
+    }
+
+
+    @Override
+    public List<MenuTreeInfo> listMenusByUserId(Long userId) {
+        BizAssert.notNull(userId, "用户ID不能为空");
+
+        List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(userId);
+        // 超管代码级短路：不依赖数据库授权配置（权限配置被改坏仍可登录修复），菜单行取全量
+        boolean superAdmin = roleCodes.contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode());
+
+        // 菜单树：仅目录/菜单节点建树（按钮不承载路由），根判定仅 0（与 SysMenu.isRoot 约定一致）
+        return TreeUtil.buildTree(
+                selectMenuRows(userId, superAdmin).stream()
+                        .filter(m -> MenuTypeEnum.DIRECTORY == m.getMenuType() || MenuTypeEnum.MENU_PAGE == m.getMenuType())
+                        .map(sysUserConvert::toMenuTreeInfo)
+                        .toList(),
+                MenuTreeInfo::getParentId,
+                MenuTreeInfo::getId,
+                m -> SysMenu.isRoot(m.getParentId()),
+                MenuTreeInfo::setChildren);
+    }
+
+    /**
+     * 查询用户可访问的菜单行（超管取全量），供 perms 推导与菜单树装配共用
+     *
+     * @param userId     用户 ID
+     * @param superAdmin 是否超管（超管短路授权配置，取全量菜单行）
+     * @return 排序后的菜单行
+     */
+    private List<SysMenu> selectMenuRows(Long userId, boolean superAdmin) {
+        return superAdmin
+                ? sysMenuMapper.selectList(Wrappers.<SysMenu>lambdaQuery().orderByAsc(SysMenu::getSort))
+                : sysUserMapper.selectMenusByUserId(userId);
     }
 
     @Override

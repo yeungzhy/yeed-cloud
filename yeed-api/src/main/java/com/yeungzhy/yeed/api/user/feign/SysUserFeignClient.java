@@ -1,12 +1,16 @@
 package com.yeungzhy.yeed.api.user.feign;
 
+import com.yeungzhy.yeed.api.user.dto.UserMenuDTO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
 import com.yeungzhy.yeed.api.user.feign.fallback.SysUserFeignClientFallbackFactory;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 /**
  * 系统用户内部 Feign 契约（消费方：yeed-auth；提供方：yeed-admin）
@@ -38,5 +42,13 @@ public interface SysUserFeignClient {
     @PostMapping("/verify")
     ApiResult<LoginUserInfo> verify(@RequestBody UserVerifyDTO dto);
 
+    /**
+     * 查询用户可见菜单树（登录响应/前端侧边栏渲染）
+     *
+     * @param dto 用户 ID
+     * @return 已建树的菜单树节点；远程调用失败时走 Fallback 返回降级错误
+     */
+    @PostMapping("/user-menus")
+    ApiResult<List<MenuTreeInfo>> userMenus(@RequestBody UserMenuDTO dto);
 
 }

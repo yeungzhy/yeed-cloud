@@ -1,10 +1,14 @@
 package com.yeungzhy.yeed.api.user.feign.fallback;
 
 import com.yeungzhy.yeed.api.feign.FeignFallback;
+import com.yeungzhy.yeed.api.user.dto.UserMenuDTO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
 import com.yeungzhy.yeed.api.user.feign.SysUserFeignClient;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
+import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
+
+import java.util.List;
 
 /**
  * {@link SysUserFeignClient} 兜底降级实现。
@@ -29,6 +33,11 @@ public class SysUserFeignClientFallback implements SysUserFeignClient {
 
     @Override
     public ApiResult<LoginUserInfo> verify(UserVerifyDTO dto) {
+        return ApiResult.error(ApiResult.CommonCode.REMOTE_SERVICE_ERROR);
+    }
+
+    @Override
+    public ApiResult<List<MenuTreeInfo>> userMenus(UserMenuDTO dto) {
         return ApiResult.error(ApiResult.CommonCode.REMOTE_SERVICE_ERROR);
     }
 
