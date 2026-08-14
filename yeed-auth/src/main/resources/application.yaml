@@ -11,6 +11,9 @@ spring:
   # OpenFeign 底层 HTTP 客户端：Apache HttpClient 5（Spring Cloud 2025.0.x 默认启用），调优连接池与超时
   cloud:
     openfeign:
+      # 启用 CircuitBreaker 集成，使 @FeignClient(fallback = ...) 在远程调用失败时进入兜底实现
+      circuitbreaker:
+        enabled: true
       httpclient:
         hc5:
           enabled: true                       # 显式启用 Apache HttpClient 5（默认即 true）
