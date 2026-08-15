@@ -235,8 +235,11 @@ public class SysMenuServiceImpl implements SysMenuService {
                 .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
 
         // 初始化判据只认 ALL 键：ANT 键缺失一律视为空集合（无动态接口），不承载「未预热」语义
-        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, exactApiPermMap);
-        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL_ANT, antApiPermMap);
+        // 显式永久存储（timeout=null）：本缓存每次整体重建、无历史残留；且网关 fail-closed 依赖
+        // ALL 键存在性判定「未预热」，若随默认 TTL 过期将误判为未预热而拒绝所有请求，
+        // 生命周期必须完全由 reloadPermsCache 主动管理
+        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, exactApiPermMap, null);
+        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL_ANT, antApiPermMap, null);
         log.info("菜单接口权限缓存已重建：精确接口={}，动态接口={}", exactApiPermMap.size(), antApiPermMap.size());
     }
 
