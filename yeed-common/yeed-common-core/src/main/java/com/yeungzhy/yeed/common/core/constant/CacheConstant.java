@@ -23,7 +23,19 @@ public final class CacheConstant {
      * （如 {@code /sys/user/list}），value 为对应权限码（如 {@code sys:user:list}，
      * 由菜单实体 {@code pathToPerm} 派生）。网关据此按请求路径查权限码做接口鉴权；
      * admin 侧启动预热 + 菜单写操作自愈共同维护。
+     * <p>仅存不含通配符的精确接口路径；与 {@link #SYS_MENU_API_PERMS_ALL_ANT} 成对维护
+     * （重建/删除自愈必须同时写两个键）。本键同时承担「缓存已初始化」判据：
+     * 网关 fail-closed 仅检查本键存在性，ANT 键缺失一律视为无动态接口。
      */
     public static final String SYS_MENU_API_PERMS_ALL = "yeed:admin:menu:api-perms:all";
+
+    /**
+     * 菜单接口权限缓存-动态接口（Map&lt;Ant 模式路径, 权限码&gt;）
+     * <p>与 {@link #SYS_MENU_API_PERMS_ALL} 成对维护、仅存含通配符的登记
+     * （归一化后的带路径参数接口，如 {@code /yeed-admin/sys/user/}{@code *}{@code /avatar.svg}），
+     * 供网关在精确查找 miss 后做 Ant 模式匹配兜底。键缺失等价于「无动态接口」
+     * （空集合），不代表缓存未初始化——初始化判据见 {@link #SYS_MENU_API_PERMS_ALL}。
+     */
+    public static final String SYS_MENU_API_PERMS_ALL_ANT = "yeed:admin:menu:api-perms:all:ant";
 
 }

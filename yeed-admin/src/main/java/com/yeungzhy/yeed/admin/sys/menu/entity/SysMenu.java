@@ -14,6 +14,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * 系统菜单权限表
@@ -50,6 +51,9 @@ public class SysMenu extends BaseEntity {
     /** 根菜单的 parentId 标识 */
     public static final Long ROOT_PARENT_ID = 0L;
 
+    /** 按钮接口路径归一化正则：匹配形如 {id} 的路径变量段（不含 / 与 }，一个变量对位一个路径段） */
+    private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile("\\{[^/}]+\\}");
+
 
     // ==================== 充血方法（仅承载业务规则） ====================
 
@@ -77,6 +81,24 @@ public class SysMenu extends BaseEntity {
         }
         String normalized = path.charAt(0) == '/' ? path.substring(1) : path;
         return normalized.replace('/', ':');
+    }
+
+    /**
+     * 按钮接口路径归一化：Spring MVC 路径变量 {@code {xxx}} → Ant 通配符 {@code *}
+     * <p>前端按 MVC 风格提交接口路径（如 {@code /sys/user/{id}/avatar.svg}），
+     * 网关按 Ant 通配符匹配真实请求（如 {@code /sys/user/123/avatar.svg}）；
+     * 两者语义差异在此归一：{@code {id}} 表示「一个不含 / 的路径段」，与单个 {@code *} 对位。
+     * <p>仅替换形如 {@code {xxx}} 的路径变量段（不含 /），已含 {@code *} 的路径原样返回（幂等），
+     * 目录/菜单 path 为用户端路由、不含路径变量，本方法对其无副作用。
+     *
+     * @param path 按钮调用接口路径（可能含 MVC 路径变量）
+     * @return 归一化后的 Ant 模式路径；入参为 null/空白时返回 null
+     */
+    public static String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        return PATH_VARIABLE_PATTERN.matcher(path).replaceAll("*");
     }
 
     /**

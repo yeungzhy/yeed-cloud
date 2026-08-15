@@ -56,11 +56,13 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public Long save(SysMenuSaveDTO dto) {
-        BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         BizAssert.notNull(dto.getMenuType(), "菜单类型不能为空");
+        BizAssert.notBlank(dto.getMenuName(), "菜单名称不能为空");
         // 按钮 path 语义为调用接口路径（如 /sys/user/list），perms 由 path 派生，单一数据源
         assertButtonPath(dto.getMenuType(), dto.getPath());
         if (dto.getMenuType() == MenuTypeEnum.BUTTON) {
+            // 前端按 MVC 风格提交路径变量（{id}），入库统一归一化为 Ant 通配符（*），网关按模式匹配
+            dto.setPath(SysMenu.normalizePath(dto.getPath()));
             dto.setPerms(SysMenu.pathToPerm(dto.getPath()));
         }
 
@@ -89,6 +91,8 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 按钮 path 语义为调用接口路径（如 /sys/user/list），perms 由 path 派生，单一数据源
         assertButtonPath(dto.getMenuType(), dto.getPath());
         if (dto.getMenuType() == MenuTypeEnum.BUTTON) {
+            // 前端按 MVC 风格提交路径变量（{id}），入库统一归一化为 Ant 通配符（*），网关按模式匹配
+            dto.setPath(SysMenu.normalizePath(dto.getPath()));
             dto.setPerms(SysMenu.pathToPerm(dto.getPath()));
         }
 
@@ -215,15 +219,25 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public void reloadPermsCache() {
-        // 仅按钮进入网关鉴权 Map：目录/菜单 path 为用户端路由，不参与接口鉴权
-        Map<String, String> apiPermMap = sysMenuMapper.selectList(
+        // 仅按钮进入网关鉴权缓存：目录/菜单 path 为用户端路由，不参与接口鉴权
+        // 拆键分流：无通配符的精确路径入 ALL 键（网关 HGET O(1) 命中）；
+        // 含通配符的路径（归一化后的动态接口，见 normalizePath）入 ANT 键，网关精确 miss 后 Ant 匹配兜底
+        Map<Boolean, List<SysMenu>> partition = sysMenuMapper.selectList(
                         Wrappers.<SysMenu>lambdaQuery().eq(SysMenu::getMenuType, MenuTypeEnum.BUTTON)
                                 .isNotNull(SysMenu::getPath)
                                 .isNotNull(SysMenu::getPerms))
                 .stream()
+                .collect(Collectors.partitioningBy(m -> m.getPath().indexOf('*') >= 0));
+
+        Map<String, String> exactApiPermMap = partition.get(false).stream()
                 .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
-        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, apiPermMap);
-        log.info("菜单接口权限缓存已重建：接口登记数={}", apiPermMap.size());
+        Map<String, String> antApiPermMap = partition.get(true).stream()
+                .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
+
+        // 初始化判据只认 ALL 键：ANT 键缺失一律视为空集合（无动态接口），不承载「未预热」语义
+        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, exactApiPermMap);
+        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL_ANT, antApiPermMap);
+        log.info("菜单接口权限缓存已重建：精确接口={}，动态接口={}", exactApiPermMap.size(), antApiPermMap.size());
     }
 
     @Override

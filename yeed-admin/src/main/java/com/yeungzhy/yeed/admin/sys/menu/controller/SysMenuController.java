@@ -42,6 +42,9 @@ public class SysMenuController {
     /**
      * 新增
      *
+     * <p> 网关已开启 spring.cloud.gateway.server.webflux.routes[*].predicates[0]=Path=/微服务名(yee-admin/auth)/**
+     * <p> 所以添加/更新按钮类菜单时,前端入参的path 应该是带上微服务名的(yee-admin/auth)
+     *
      * @param dto 入参
      * @return 新增记录的主键 ID
      * @author yeungzhy
