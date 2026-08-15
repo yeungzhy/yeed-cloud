@@ -13,8 +13,12 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class SysUserAddDTO {
 
-    /** 用户名 */
+    /** 真实姓名(用于前台展示) */
+    private String realName;
+    /** 系统登录名 */
     private String username;
+    /** 工号 */
+    private String employeeNo;
     /** 密码 */
     private String password;
     /** 邮箱 */

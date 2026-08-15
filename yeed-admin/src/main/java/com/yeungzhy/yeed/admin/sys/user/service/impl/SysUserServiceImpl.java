@@ -70,14 +70,19 @@ public class SysUserServiceImpl implements SysUserService {
     @Override
     public Long save(SysUserAddDTO dto) {
         String username = dto.getUsername();
-        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getUsername, username), "用户名已存在");
+        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getUsername, username), "系统登录名已存在");
+
+        String employeeNo = dto.getEmployeeNo();
+        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmployeeNo, employeeNo), "工号已存在");
 
         String plaintextEmail = dto.getEmail();
         String emailBidx = emailBlindIndex.generateHex(plaintextEmail);
         BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
 
         SysUser sysUser = SysUser.builder()
+                .realName(dto.getRealName())
                 .username(username)
+                .employeeNo(employeeNo)
                 .password(argon2PwdEncoder.encode(dto.getPassword()))
                 // email 明文入库，由 FieldCryptoInterceptor 在写库前自动 AES 加密
                 .email(plaintextEmail)
