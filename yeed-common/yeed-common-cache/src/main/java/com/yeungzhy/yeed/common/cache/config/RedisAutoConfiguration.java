@@ -7,6 +7,7 @@ import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.spring.starter.RedissonAutoConfigurationCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -33,6 +34,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * @since 2026-08-11
  */
 @AutoConfiguration(before = org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class)
+@EnableConfigurationProperties(CacheProperties.class)
 public class RedisAutoConfiguration {
 
     @Resource
@@ -86,10 +88,13 @@ public class RedisAutoConfiguration {
 
     /**
      * 注册 {@link RedisHelper}，业务侧注入后即可使用封装的缓存操作
+     *
+     * <p>默认过期时间来自 {@link CacheProperties}（{@code yeed.cache.default-ttl}，
+     * 未配置默认 24 小时）：写方法不显式传过期时间时统一兜底，防止数据永久堆积
      */
     @Bean
-    public RedisHelper redisHelper(RedissonClient redissonClient) {
-        return new RedisHelper(redissonClient);
+    public RedisHelper redisHelper(RedissonClient redissonClient, CacheProperties cacheProperties) {
+        return new RedisHelper(redissonClient, cacheProperties.getDefaultTtl());
     }
 
 }
