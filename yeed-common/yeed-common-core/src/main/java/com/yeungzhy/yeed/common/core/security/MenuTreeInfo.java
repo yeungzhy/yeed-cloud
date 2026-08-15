@@ -8,10 +8,8 @@ import java.util.List;
 /**
  * 菜单树节点（前端渲染）
  *
- * <p>承载"用户可见菜单树"，随登录响应（{@code LoginResultVO.menus}）或用户菜单接口返回，
- * 仅供前端侧边栏/路由渲染。
- * <p><b>职责边界</b>：菜单树是前端 UI 数据，不属于服务端鉴权依据（鉴权只看权限码串），
- * 因此不得写入 Sa-Token session——会话只存 {@link LoginUserInfo} 身份包。
+ * <p> 菜单树是前端 UI 数据，不属于服务端鉴权依据（鉴权只看权限码串）
+ * <p> 因此会话 session 只存 {@link LoginUserInfo} 身份包
  *
  * @author yeungzhy
  * @since 2026-08-09
