@@ -240,7 +240,10 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 生命周期必须完全由 reloadPermsCache 主动管理
         redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, exactApiPermMap, null);
         redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL_ANT, antApiPermMap, null);
-        log.info("菜单接口权限缓存已重建：精确接口={}，动态接口={}", exactApiPermMap.size(), antApiPermMap.size());
+        // 发布变更事件：网关本地缓存（GatewayApiPermsCache）订阅后即时失效，权限变更精准生效；
+        // 发布失败不阻断重建（网关本地缓存有兜底 TTL 自愈，最坏延迟几分钟生效）
+        redisHelper.publish(CacheConstant.SYS_MENU_API_PERMS_CHANGED, String.valueOf(System.currentTimeMillis()));
+        log.info("菜单接口权限缓存已重建并发布变更事件：精确接口={}，动态接口={}", exactApiPermMap.size(), antApiPermMap.size());
     }
 
     @Override

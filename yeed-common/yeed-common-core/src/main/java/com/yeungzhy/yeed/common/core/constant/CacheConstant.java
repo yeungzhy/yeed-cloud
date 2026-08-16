@@ -38,4 +38,14 @@ public final class CacheConstant {
      */
     public static final String SYS_MENU_API_PERMS_ALL_ANT = "yeed:admin:menu:api-perms:all:ant";
 
+    /**
+     * 菜单接口权限缓存变更通知主题（pub/sub，非缓存键）
+     *
+     * <p>admin 每次重建菜单接口权限缓存（{@code reloadPermsCache}）后向该主题发布
+     * 变更事件，网关本地缓存（GatewayApiPermsCache）订阅后即时失效，实现权限变更
+     * 精准生效（无需等待 TTL）。命名沿用缓存键规范前缀 {@code yeed:admin:menu:api-perms:}，
+     * 末段用 {@code changed} 表达「变更事件」语义，与两个缓存键同前缀便于运维排查。
+     */
+    public static final String SYS_MENU_API_PERMS_CHANGED = "yeed:admin:menu:api-perms:changed";
+
 }
