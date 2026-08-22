@@ -41,7 +41,7 @@ public class AuthController {
     }
 
     /**
-     * 注销
+     * 注销登录
      *
      * @return 操作结果
      */
