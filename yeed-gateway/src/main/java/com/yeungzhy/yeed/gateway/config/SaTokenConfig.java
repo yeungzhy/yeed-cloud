@@ -9,6 +9,7 @@ import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
+import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.gateway.security.ApiPermsCache;
 import com.yeungzhy.yeed.gateway.security.ApiPermsSnapshot;
@@ -17,7 +18,10 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.RequestPath;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -84,6 +88,8 @@ public class SaTokenConfig {
                 log.error("菜单接口权限缓存不可用，SUPER_ADMIN 放行：path={}", path);
                 return;
             }
+            // 安全关键事件：在源头打 error 日志，handleAuthError 侧仅 warn 补充
+            log.error("菜单接口权限缓存不可用，拒绝访问：path={}", path);
             throw new NotPermissionException("获取权限失败，系统鉴权暂时不可用，请联系管理员");
         }
 
@@ -108,15 +114,28 @@ public class SaTokenConfig {
      */
     public SaResult handleAuthError(Throwable e) {
         ServerWebExchange exchange = SaReactorSyncHolder.getExchange();
-        exchange.getResponse().getHeaders().set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-        log.error("接口 [{}] 权限认证失败", exchange.getRequest().getPath(), e);
+        RequestPath requestPath = exchange.getRequest().getPath();
+        ServerHttpResponse response = exchange.getResponse();
+        response.getHeaders().set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 
+        /*
+         * 预期中的业务拒绝（未登录/无权限）：warn 级、不打印堆栈，避免刷屏淹没真实故障；
+         * 真异常才 error + 堆栈（缓存不可用的 fail-closed 已在上游单独打 error 日志）。
+         *
+         * 同时设置真实 HTTP 状态码
+         */
         if (e instanceof NotLoginException) {
-            return new SaResult(401, "未登录，请登录", null);
+            log.warn("接口未登录被拒 [{}]", requestPath);
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            return new SaResult(HttpStatus.UNAUTHORIZED.value(), ApiResult.CommonCode.UNAUTHORIZED.getMsg(), null);
         } else if (e instanceof NotPermissionException) {
-            return new SaResult(403, "无此权限", null);
+            log.warn("接口无权限被拒 [{}]", requestPath);
+            response.setStatusCode(HttpStatus.FORBIDDEN);
+            return new SaResult(HttpStatus.FORBIDDEN.value(), ApiResult.CommonCode.FORBIDDEN.getMsg(), null);
         } else {
-            return new SaResult(500, "登录状态失效，请重新登录", null);
+            log.error("接口权限认证异常 [{}]", requestPath, e);
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new SaResult(HttpStatus.INTERNAL_SERVER_ERROR.value(), ApiResult.CommonCode.SYSTEM_ERROR.getMsg(), null);
         }
     }
 
