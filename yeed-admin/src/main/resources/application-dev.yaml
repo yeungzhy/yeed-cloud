@@ -17,6 +17,7 @@ spring:
       - nacos:sa-token.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
       - nacos:redis.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
       - nacos:common.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:feign.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
       # 2. 导入主配置（主配置通常包含服务特有的覆盖项，排在最后可以覆盖掉共享配置中的默认值）
       - nacos:${spring.application.name}.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
 

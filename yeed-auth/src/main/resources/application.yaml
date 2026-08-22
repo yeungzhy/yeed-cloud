@@ -8,24 +8,6 @@ spring:
     banner-mode: off
   profiles:
     active: @spring.profiles.active@
-  # OpenFeign 底层 HTTP 客户端：Apache HttpClient 5（Spring Cloud 2025.0.x 默认启用），调优连接池与超时
-  cloud:
-    openfeign:
-      # 启用 CircuitBreaker 集成，使 @FeignClient(fallback = ...) 在远程调用失败时进入兜底实现
-      circuitbreaker:
-        enabled: true
-      httpclient:
-        hc5:
-          enabled: true                       # 显式启用 Apache HttpClient 5（默认即 true）
-          socket-timeout: 30                  # 响应读取超时
-          socket-timeout-unit: seconds
-          connection-request-timeout: 3       # 从连接池获取连接的等待超时
-          connection-request-timeout-unit: seconds
-        max-connections: 200                  # 连接池总连接数
-        max-connections-per-route: 50         # 单路由(域名)最大连接数
-        connection-timeout: 5000              # 建立连接超时(毫秒)
-        time-to-live: 300                     # 连接存活时长
-        time-to-live-unit: seconds
 
 logging:
   level:
