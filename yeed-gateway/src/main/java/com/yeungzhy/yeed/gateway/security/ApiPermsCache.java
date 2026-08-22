@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.gateway.config;
+package com.yeungzhy.yeed.gateway.security;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -33,7 +33,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-public class GatewayApiPermsCache {
+public class ApiPermsCache {
 
     /** 本地缓存兜底 TTL：事件正常时即时失效，仅防御事件丢失导致的永久陈旧 */
     private static final Duration FALLBACK_TTL = Duration.ofMinutes(5);
@@ -53,7 +53,7 @@ public class GatewayApiPermsCache {
     /** 最近一次回源失败时间戳（毫秒），用于失败退避 */
     private volatile long lastFailAt = 0L;
 
-    public GatewayApiPermsCache(RedisHelper redisHelper, RedissonClient redissonClient) {
+    public ApiPermsCache(RedisHelper redisHelper, RedissonClient redissonClient) {
         this.redisHelper = redisHelper;
         this.redissonClient = redissonClient;
         this.localCache = Caffeine.newBuilder()

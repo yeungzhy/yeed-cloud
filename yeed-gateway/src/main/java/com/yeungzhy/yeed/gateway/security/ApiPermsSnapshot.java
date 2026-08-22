@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.gateway.config;
+package com.yeungzhy.yeed.gateway.security;
 
 import cn.dev33.satoken.router.SaRouter;
 
@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 菜单接口权限快照（网关本地缓存的不可变值）
  *
- * <p>由 {@link GatewayApiPermsCache} 从 Redis 回源加载后生成，一次请求内多次鉴权
+ * <p>由 {@link ApiPermsCache} 从 Redis 回源加载后生成，一次请求内多次鉴权
  * （登录 + 权限校验）共用同一份内存副本，避免对 Redis 的重复远程调用：
  * <ul>
  *     <li>{@code exactPerms}：精确接口映射（ALL 键），路径按原样匹配，O(1) 命中；</li>

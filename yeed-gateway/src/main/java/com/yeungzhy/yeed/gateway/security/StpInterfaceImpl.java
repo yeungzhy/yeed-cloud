@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.gateway.config;
+package com.yeungzhy.yeed.gateway.security;
 
 import cn.dev33.satoken.stp.StpInterface;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;

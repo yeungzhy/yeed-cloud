@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.gateway.config;
+package com.yeungzhy.yeed.gateway.exception;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
