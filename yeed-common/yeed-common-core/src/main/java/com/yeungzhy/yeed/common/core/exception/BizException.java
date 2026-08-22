@@ -16,7 +16,7 @@ public class BizException extends RuntimeException {
 
     /** 错误码枚举 */
     private final ApiResult.CommonCode commonCode;
-    /** 自定义描述（可选，若为 null 则使用 commonCode.desc） */
+    /** 自定义描述（可选，若为 null 则使用 commonCode.msg） */
     private final String customDesc;
 
     public BizException(ApiResult.CommonCode commonCode) {
@@ -29,7 +29,7 @@ public class BizException extends RuntimeException {
 
     private BizException(ApiResult.CommonCode commonCode, String customDesc, Throwable cause) {
         // 将最终的错误描述传给父类（用于堆栈追踪和日志）
-        super(customDesc != null ? customDesc : commonCode.getDesc(), cause);
+        super(customDesc != null ? customDesc : commonCode.getMsg(), cause);
         this.commonCode = commonCode;
         this.customDesc = customDesc;
     }

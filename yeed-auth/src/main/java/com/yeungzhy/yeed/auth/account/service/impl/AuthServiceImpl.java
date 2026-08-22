@@ -56,8 +56,8 @@ public class AuthServiceImpl implements AuthService {
                         .setAccount(dto.getAccount())
                         .setPassword(dto.getPassword())
         );
-        // admin 凭据校验失败时 result.isOk()=false，desc 透传给前端
-        BizAssert.isTrue(result.succeed(), result.getDesc());
+        // admin 凭据校验失败时 result.isOk()=false，msg 透传给前端
+        BizAssert.isTrue(result.succeed(), result.getMsg());
 
         LoginUserInfo loginUser = result.getData();
         BizAssert.notNull(loginUser, "登录失败");
@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
     private List<MenuTreeInfo> listMenus(Long userId) {
         ApiResult<List<MenuTreeInfo>> result = sysUserFeignClient.userMenus(new UserMenuDTO().setUserId(userId));
         if (!result.succeed() || result.getData() == null) {
-            log.warn("获取用户菜单树失败，按空菜单降级 userId={} desc={}", userId, result.getDesc());
+            log.warn("获取用户菜单树失败，按空菜单降级 userId={} msg={}", userId, result.getMsg());
             return List.of();
         }
         return result.getData();

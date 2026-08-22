@@ -185,14 +185,16 @@ public class GlobalExceptionHandler {
 
     /* ================================================= 静态资源 ================================================ */
     /**
-     * 静态资源找不到（如浏览器自动请求的 favicon.ico）
-     * <p>返回干净 404，不走兜底 handleAll —— 这类请求是浏览器正常行为，不是系统 bug，
-     * 不需要记 ERROR 日志，也不应返回 JSON 格式的 ApiResult。
+     * 请求路径/静态资源不存在（如浏览器自动请求的 favicon.ico、访问不存在的接口）
+     * <p>返回统一响应体 + HTTP 404，与网关 404 契约一致（HTTP 状态码表达通用语义，
+     * body 统一为 ApiResult）；favicon.ico 等浏览器噪音请求同样返回 JSON body，
+     * 这是接受"统一响应体"的代价。不记日志：404 是正常 HTTP 语义，不是系统 bug。
      */
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(NoResourceFoundException.class)
-    public void handleNoResourceFound(NoResourceFoundException e) {
-        // 无需日志：favicon.ico 等请求频繁，404 是正常 HTTP 语义
+    public ApiResult<Void> handleNoResourceFound(NoResourceFoundException e) {
+        // 无需日志：404 是客户端错误
+        return ApiResult.error(ApiResult.CommonCode.NOT_FOUND);
     }
 
 
