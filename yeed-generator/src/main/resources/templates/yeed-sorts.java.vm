@@ -17,6 +17,8 @@ public class ${entity}Sorts extends BaseSorts<${entity}> {
     protected ${entity}Sorts() {
         super(${entity}.class, new BaseSorts.Builder<${entity}>()
                 .add(BaseEntity.Fields.createTime, ${entity}::getCreateTime)
+                // 多个字段排序时,要加上主键作为决胜字段,防止在其他字段相同的发生数据错乱或漏页
+                .add(BaseEntity.Fields.id, ${entity}::getId)
         );
     }
 
