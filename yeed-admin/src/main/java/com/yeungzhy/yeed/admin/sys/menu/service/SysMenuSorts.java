@@ -17,6 +17,8 @@ public class SysMenuSorts extends BaseSorts<SysMenu> {
     protected SysMenuSorts() {
         super(SysMenu.class, new BaseSorts.Builder<SysMenu>()
                 .add(BaseEntity.Fields.createTime, SysMenu::getCreateTime)
+                // 多个字段排序时,要加上主键作为决胜字段,防止在其他字段相同的发生数据错乱或漏页
+                .add(BaseEntity.Fields.id, SysMenu::getId)
         );
     }
 

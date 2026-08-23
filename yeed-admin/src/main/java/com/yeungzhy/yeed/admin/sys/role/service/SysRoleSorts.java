@@ -17,6 +17,8 @@ public class SysRoleSorts extends BaseSorts<SysRole> {
     protected SysRoleSorts() {
         super(SysRole.class, new BaseSorts.Builder<SysRole>()
                 .add(BaseEntity.Fields.createTime, SysRole::getCreateTime)
+                // 多个字段排序时,要加上主键作为决胜字段,防止在其他字段相同的发生数据错乱或漏页
+                .add(BaseEntity.Fields.id, SysRole::getId)
         );
     }
 
