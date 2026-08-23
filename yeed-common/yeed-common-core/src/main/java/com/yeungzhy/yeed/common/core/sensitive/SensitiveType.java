@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.common.web.sensitive;
+package com.yeungzhy.yeed.common.core.sensitive;
 
 /**
  * 敏感数据类型及掩码策略。
