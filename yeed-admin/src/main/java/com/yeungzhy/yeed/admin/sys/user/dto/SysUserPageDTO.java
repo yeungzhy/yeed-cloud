@@ -26,7 +26,15 @@ public class SysUserPageDTO extends PageRequest {
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;
 
-    /** 创建时间 */
-    private LocalDateTime createTime;
+    /** 创建时间 - 起始（含边界） */
+    private LocalDateTime createTimeStart;
+    /** 创建时间 - 结束（含边界） */
+    private LocalDateTime createTimeEnd;
+
+
+    /** 是否存在创建时间范围（start/end 必须成对，缺一则视为无范围过滤） */
+    public boolean hasCreateTimeRange() {
+        return createTimeStart != null && createTimeEnd != null;
+    }
 
 }

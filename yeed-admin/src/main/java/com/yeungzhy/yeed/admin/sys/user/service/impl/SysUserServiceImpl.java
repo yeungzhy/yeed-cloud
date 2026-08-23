@@ -136,7 +136,8 @@ public class SysUserServiceImpl implements SysUserService {
         LambdaQueryWrapper<SysUser> lambdaQuery = Wrappers.<SysUser>lambdaQuery()
                 .select(SysUser::getId, SysUser::getUsername, SysUser::getEmail, SysUser::getStatus, SysUser::getCreateTime)
                 .like(StringUtils.isNotEmpty(dto.getUsername()), SysUser::getUsername, dto.getUsername())
-                .eq(Objects.nonNull(dto.getStatus()), SysUser::getStatus, dto.getStatus());
+                .eq(Objects.nonNull(dto.getStatus()), SysUser::getStatus, dto.getStatus())
+                .between(dto.hasCreateTimeRange(), SysUser::getCreateTime, dto.getCreateTimeStart(), dto.getCreateTimeEnd());
         /*
          * 邮箱查询条件需要用邮箱信息生成盲索引进行查询。
          * 注意：不能用 .eq(condition, column, generateHex(...))
