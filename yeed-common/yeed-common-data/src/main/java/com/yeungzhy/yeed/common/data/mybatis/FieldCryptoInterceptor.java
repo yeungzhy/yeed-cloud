@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.common.data.mybatis;
 
 import com.yeungzhy.yeed.common.core.crypto.AesUtil;
+import com.yeungzhy.yeed.common.core.crypto.CipherEnvelope;
 import com.yeungzhy.yeed.common.core.crypto.Crypto;
 import com.yeungzhy.yeed.common.core.crypto.CryptoProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -15,13 +16,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,8 +40,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>解密失败：记 error 日志 + 字段降级为 null——<b>不让脏数据把整页列表 500</b></li>
  * </ul>
  *
- * <p><b>启用约定（防重入）</b>：启用后业务代码<b>禁止</b>再手动调用
- * {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则双重加密导致数据无法解回。
+ * <p><b>幂等性（防重入 / 防二次加密）</b>：入库值统一经 {@link CipherEnvelope} 套 {@code ENC(...)}
+ * 信封，加密前"已带信封则跳过"、解密仅处理带信封的值——即使 {@code setParameters} 被外部工具
+ * （如 SQL 日志 agent 为打印带参 SQL 而 mock 调用）重复触发，也不会对上一轮密文再次加密。
+ * 业务代码<b>禁止</b>再手动调用 {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则双重加密
+ * 导致数据无法解回。
  *
  * <p><b>注册</b>：本类不标 {@code @Component}（业务模块扫不到 yeed-common 包），
  * 由 {@code MybatisPlusConfig} 以 {@code @Bean} 注册，MyBatis-Plus 自动收集容器中的
@@ -208,9 +206,16 @@ public class FieldCryptoInterceptor implements Interceptor {
             if (!(value instanceof String strValue) || strValue.isEmpty()) return;
 
             String key = cryptoProperties.getAes().getKey();
-            String resultValue = isEncrypt
-                    ? AesUtil.encrypt(key, strValue)
-                    : AesUtil.decrypt(key, strValue);
+            String resultValue;
+            if (isEncrypt) {
+                // 幂等：已带密文信封（ENC(...)）的值视为已加密，直接跳过，防止 setParameters 被重复触发
+                if (CipherEnvelope.isWrapped(strValue)) return;
+                resultValue = CipherEnvelope.wrap(AesUtil.encrypt(key, strValue));
+            } else {
+                // 仅解密带信封的密文；明文 / 历史裸密文原样返回，不尝试解密
+                if (!CipherEnvelope.isWrapped(strValue)) return;
+                resultValue = AesUtil.decrypt(key, CipherEnvelope.unwrap(strValue));
+            }
 
             // 值未变化时不写回，减少反射开销
             if (!strValue.equals(resultValue)) {
