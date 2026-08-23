@@ -1,6 +1,8 @@
 package com.yeungzhy.yeed.admin.sys.user.vo;
 
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
+import com.yeungzhy.yeed.common.core.sensitive.Sensitive;
+import com.yeungzhy.yeed.common.core.sensitive.SensitiveType;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -31,6 +33,7 @@ public class SysUserVO {
     /** 密码 */
     private String password;
     /** 邮箱 */
+    @Sensitive(type = SensitiveType.EMAIL)
     private String email;
     /** 邮箱盲索引 */
     private String emailBidx;
