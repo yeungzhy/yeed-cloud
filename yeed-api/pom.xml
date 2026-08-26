@@ -37,6 +37,16 @@
             <scope>provided</scope>
         </dependency>
 
+        <!--
+            jakarta.servlet-api：仅编译期需要 HttpServletRequest
+            （FeignTokenRelayInterceptor 经 RequestContextHolder 取当前请求头）
+        -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

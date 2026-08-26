@@ -1,8 +1,10 @@
 package com.yeungzhy.yeed.api;
 
 import com.yeungzhy.yeed.api.feign.EnableFeignFallbacks;
+import com.yeungzhy.yeed.api.feign.interceptor.FeignTokenRelayInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.Bean;
 
 /**
  * Feign 客户端集中注册入口（自动配置类）。
@@ -33,4 +35,19 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @AutoConfiguration
 @EnableFeignFallbacks
 @EnableFeignClients("com.yeungzhy.yeed.api")
-public class FeignClientsAutoConfiguration { }
+public class FeignClientsAutoConfiguration {
+
+    /**
+     * 通用 Feign 请求头透传：把当前请求的 token 透传到下游 Feign 调用。
+     *
+     * <p>必须显式 {@code @Bean} 注册——yeed-api 为自动装配包，消费方组件扫描
+     * 扫不到本模块的 {@code @Component}，仅靠类上注解不会生效。
+     *
+     * @return 透传拦截器实例
+     */
+    @Bean
+    public FeignTokenRelayInterceptor feignTokenRelayInterceptor() {
+        return new FeignTokenRelayInterceptor();
+    }
+
+}
