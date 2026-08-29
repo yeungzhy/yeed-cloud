@@ -36,10 +36,16 @@ import static com.yeungzhy.yeed.common.core.constant.Constant.DATE_TIME_PATTERN;
 /**
  * 基于 {@link ObjectMapper} 的 JSON 操作静态工具类
  *
- * <p><b>异常策略</b>：底层异常统一捕获并包装为 {@link RuntimeException}（保留 cause），业务代码无需
- * 到处 try-catch；字段读取 {@code getXxx} 对"字段缺失 / 类型不匹配"返回 {@code null} 并记录 warn 日志，
- * <b>绝不静默返回默认值</b>（避免 {@code asInt()} 对非法文本返回 0、{@code asText()} 对对象节点返回空串、
- * 超范围整数截断等陷阱）。
+ * <p><b>异常策略</b>：底层异常统一捕获并包装为 {@link RuntimeException}（保留 cause），异常信息为英文且
+ * 只携带目标类型 / key / path 等元信息（<b>不含 JSON 报文内容</b>，避免手机号、邮箱等敏感数据落盘），
+ * 业务代码无需到处 try-catch。
+ * <ul>
+ *   <li><b>抛出路径不打印日志</b>：序列化 / 解析 / 转换失败一律 {@code throw}，由全局异常处理器统一记录，
+ *       避免同一异常在工具类和处理器中各打一次造成日志翻倍；
+ *   <li><b>吞掉路径才打印日志</b>：字段读取 {@code getXxx} 对"字段缺失 / 类型不匹配"返回 {@code null}
+ *       并记 warn（此处无异常可抛，不记则彻底失声），<b>绝不静默返回默认值</b>（避免 {@code asInt()}
+ *       对非法文本返回 0、{@code asText()} 对对象节点返回空串、超范围整数截断等陷阱）。
+ * </ul>
  *
  * <p><b>null 入参策略</b>：读方法（parseXxx / getXxx / convertValue / treeToValue）入参为 null 时返回
  * 安全默认值（null / 空集合），不抛异常；{@link #toJsonStr(Object)} 传入 null 返回字符串 {@code "null"}
@@ -122,8 +128,7 @@ public final class JacksonUtil {
         try {
             return mapper.writeValueAsString(obj);
         } catch (Exception e) {
-            log.error("Jackson 序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON serialization failed", e);
+            throw new RuntimeException(serializationFailed(obj), e);
         }
     }
 
@@ -135,8 +140,7 @@ public final class JacksonUtil {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (Exception e) {
-            log.error("Jackson 序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON serialization failed", e);
+            throw new RuntimeException(serializationFailed(obj), e);
         }
     }
 
@@ -147,8 +151,7 @@ public final class JacksonUtil {
         try {
             return mapper.writeValueAsBytes(obj);
         } catch (Exception e) {
-            log.error("Jackson 序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON serialization failed", e);
+            throw new RuntimeException(serializationFailed(obj), e);
         }
     }
 
@@ -165,8 +168,7 @@ public final class JacksonUtil {
         try {
             return mapper.readValue(json, clazz);
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(clazz.getName()), e);
         }
     }
 
@@ -181,8 +183,7 @@ public final class JacksonUtil {
         try {
             return mapper.readValue(json, typeReference);
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(typeReference.getType().getTypeName()), e);
         }
     }
 
@@ -196,8 +197,7 @@ public final class JacksonUtil {
         try {
             return mapper.readValue(bytes, clazz);
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(clazz.getName()), e);
         }
     }
 
@@ -211,8 +211,7 @@ public final class JacksonUtil {
         try {
             return mapper.readValue(bytes, typeReference);
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(typeReference.getType().getTypeName()), e);
         }
     }
 
@@ -227,8 +226,7 @@ public final class JacksonUtil {
             return mapper.readValue(json,
                     mapper.getTypeFactory().constructCollectionType(List.class, clazz));
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed("List<" + clazz.getName() + ">"), e);
         }
     }
 
@@ -236,14 +234,14 @@ public final class JacksonUtil {
      * JSON 字符串转原始 List（元素为 Map / 基础类型）
      */
     public static List<Object> parseArray(String json) {
-        return parseObject(json, new TypeReference<List<Object>>() {});
+        return parseObject(json, new TypeReference<>() {});
     }
 
     /**
      * JSON 字符串转 Map&lt;String, Object&gt;
      */
     public static Map<String, Object> parseMap(String json) {
-        return parseObject(json, new TypeReference<Map<String, Object>>() {});
+        return parseObject(json, new TypeReference<>() {});
     }
 
     /**
@@ -257,8 +255,8 @@ public final class JacksonUtil {
             return mapper.readValue(json,
                     mapper.getTypeFactory().constructMapType(Map.class, keyClass, valueClass));
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            String target = "Map<%s, %s>".formatted(keyClass.getName(), valueClass.getName());
+            throw new RuntimeException(deserializationFailed(target), e);
         }
     }
 
@@ -273,8 +271,7 @@ public final class JacksonUtil {
         try {
             return mapper.readTree(json);
         } catch (Exception e) {
-            log.error("Jackson 反序列化失败: {}", e.getMessage(), e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(JsonNode.class.getName()), e);
         }
     }
 
@@ -291,8 +288,8 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(fromValue, toValueType);
         } catch (Exception e) {
-            log.error("Jackson 类型转换失败, toType={}", toValueType, e);
-            throw new RuntimeException("JSON convert failed", e);
+            String message = conversionFailed(fromValue.getClass().getName(), toValueType.getName());
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -306,8 +303,8 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(fromValue, toValueTypeRef);
         } catch (Exception e) {
-            log.error("Jackson 类型转换失败, toType={}", toValueTypeRef, e);
-            throw new RuntimeException("JSON convert failed", e);
+            String message = conversionFailed(fromValue.getClass().getName(), toValueTypeRef.getType().getTypeName());
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -319,10 +316,10 @@ public final class JacksonUtil {
             return null;
         }
         try {
-            return mapper.convertValue(obj, new TypeReference<Map<String, Object>>() {});
+            return mapper.convertValue(obj, new TypeReference<>() {});
         } catch (Exception e) {
-            log.error("Jackson Bean 转 Map 失败", e);
-            throw new RuntimeException("JSON convert failed", e);
+            String message = conversionFailed(obj.getClass().getName(), "Map<String, Object>");
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -336,8 +333,8 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(map, clazz);
         } catch (Exception e) {
-            log.error("Jackson Map 转 Bean 失败, toType={}", clazz, e);
-            throw new RuntimeException("JSON convert failed", e);
+            String message = conversionFailed("Map<String, ?>", clazz.getName());
+            throw new RuntimeException(message, e);
         }
     }
 
@@ -351,8 +348,7 @@ public final class JacksonUtil {
         try {
             return mapper.treeToValue(node, clazz);
         } catch (Exception e) {
-            log.error("Jackson treeToValue 失败, toType={}", clazz, e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(clazz.getName()), e);
         }
     }
 
@@ -366,8 +362,7 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(node, typeReference);
         } catch (Exception e) {
-            log.error("Jackson treeToValue 失败, toType={}", typeReference, e);
-            throw new RuntimeException("JSON deserialization failed", e);
+            throw new RuntimeException(deserializationFailed(typeReference.getType().getTypeName()), e);
         }
     }
 
@@ -378,8 +373,7 @@ public final class JacksonUtil {
         try {
             return mapper.valueToTree(value);
         } catch (Exception e) {
-            log.error("Jackson valueToTree 失败", e);
-            throw new RuntimeException("JSON serialization failed", e);
+            throw new RuntimeException(serializationFailed(value), e);
         }
     }
 
@@ -432,7 +426,7 @@ public final class JacksonUtil {
         if (value.isValueNode()) {
             return value.asText();
         }
-        log.warn("Jackson getString 字段非标量值, key={}, value={}", key, value);
+        log.warn("Cannot read String from non-scalar node, key={}, value={}", key, value);
         return null;
     }
 
@@ -471,7 +465,7 @@ public final class JacksonUtil {
                 // 文本非数字，落入下方统一告警
             }
         }
-        log.warn("Jackson getInteger 字段无法安全转换为 int, key={}, value={}", key, value);
+        log.warn("Cannot read Integer from node, key={}, value={}", key, value);
         return null;
     }
 
@@ -509,7 +503,7 @@ public final class JacksonUtil {
                 // 文本非数字，落入下方统一告警
             }
         }
-        log.warn("Jackson getLong 字段无法安全转换为 long, key={}, value={}", key, value);
+        log.warn("Cannot read Long from node, key={}, value={}", key, value);
         return null;
     }
 
@@ -549,10 +543,10 @@ public final class JacksonUtil {
             if ("false".equalsIgnoreCase(text)) {
                 return Boolean.FALSE;
             }
-            log.warn("Jackson getBoolean 字段文本非布尔值, key={}, value={}", key, text);
+            log.warn("Cannot read Boolean from non-boolean text, key={}, value={}", key, text);
             return null;
         }
-        log.warn("Jackson getBoolean 字段非布尔类型, key={}, value={}", key, value);
+        log.warn("Cannot read Boolean from node, key={}, value={}", key, value);
         return null;
     }
 
@@ -586,12 +580,11 @@ public final class JacksonUtil {
         if (value.isTextual()) {
             try {
                 return Double.valueOf(value.asText());
-            } catch (NumberFormatException e) {
-                log.warn("Jackson getDouble 字段文本非数字, key={}, value={}", key, value.asText());
-                return null;
+            } catch (NumberFormatException ignored) {
+                // 文本非数字，落入下方统一告警
             }
         }
-        log.warn("Jackson getDouble 字段非数字类型, key={}, value={}", key, value);
+        log.warn("Cannot read Double from node, key={}, value={}", key, value);
         return null;
     }
 
@@ -617,12 +610,11 @@ public final class JacksonUtil {
         if (value.isTextual()) {
             try {
                 return new BigDecimal(value.asText());
-            } catch (NumberFormatException e) {
-                log.warn("Jackson getBigDecimal 字段文本非数字, key={}, value={}", key, value.asText());
-                return null;
+            } catch (NumberFormatException ignored) {
+                // 文本非数字，落入下方统一告警
             }
         }
-        log.warn("Jackson getBigDecimal 字段非数字类型, key={}, value={}", key, value);
+        log.warn("Cannot read BigDecimal from node, key={}, value={}", key, value);
         return null;
     }
 
@@ -653,8 +645,7 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(value, clazz);
         } catch (Exception e) {
-            log.error("Jackson getObject 转换失败, key={}, toType={}", key, clazz, e);
-            throw new RuntimeException("JSON convert failed", e);
+            throw new RuntimeException(readFailed("key=" + key, clazz.getName()), e);
         }
     }
 
@@ -676,8 +667,7 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(value, typeReference);
         } catch (Exception e) {
-            log.error("Jackson getObject 转换失败, key={}, toType={}", key, typeReference, e);
-            throw new RuntimeException("JSON convert failed", e);
+            throw new RuntimeException(readFailed("key=" + key, typeReference.getType().getTypeName()), e);
         }
     }
 
@@ -702,8 +692,7 @@ public final class JacksonUtil {
             return mapper.convertValue(value,
                     mapper.getTypeFactory().constructCollectionType(List.class, clazz));
         } catch (Exception e) {
-            log.error("Jackson getArray 转换失败, key={}, toType={}", key, clazz, e);
-            throw new RuntimeException("JSON convert failed", e);
+            throw new RuntimeException(readFailed("key=" + key, "List<" + clazz.getName() + ">"), e);
         }
     }
 
@@ -741,8 +730,7 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(node, clazz);
         } catch (Exception e) {
-            log.error("Jackson getByPath 转换失败, path={}, toType={}", path, clazz, e);
-            throw new RuntimeException("JSON convert failed", e);
+            throw new RuntimeException(readFailed("path=" + path, clazz.getName()), e);
         }
     }
 
@@ -757,8 +745,7 @@ public final class JacksonUtil {
         try {
             return mapper.convertValue(node, typeReference);
         } catch (Exception e) {
-            log.error("Jackson getByPath 转换失败, path={}, toType={}", path, typeReference, e);
-            throw new RuntimeException("JSON convert failed", e);
+            throw new RuntimeException(readFailed("path=" + path, typeReference.getType().getTypeName()), e);
         }
     }
 
@@ -803,6 +790,37 @@ public final class JacksonUtil {
 
 
     // ============ 内部辅助方法 ==================================
+    /**
+     * 构造序列化失败信息
+     * <p>异常信息统一由私有方法生成，保证全类文案、字段顺序、分隔符一致，且只携带类型等元信息
+     */
+    private static String serializationFailed(Object source) {
+        String sourceType = source == null ? "null" : source.getClass().getName();
+        return "JSON serialization failed, sourceType=" + sourceType;
+    }
+
+    /**
+     * 构造反序列化失败信息，{@code targetType} 为期望得到的目标类型（含泛型实参）
+     */
+    private static String deserializationFailed(String targetType) {
+        return "JSON deserialization failed, targetType=" + targetType;
+    }
+
+    /**
+     * 构造对象转换失败信息（{@code convertValue} / {@code beanToMap} / {@code mapToBean}）
+     */
+    private static String conversionFailed(String sourceType, String targetType) {
+        return "JSON convert failed, sourceType=" + sourceType + ", targetType=" + targetType;
+    }
+
+    /**
+     * 构造字段读取失败信息（{@code getObject} / {@code getArray} / {@code getByPath}）
+     * <p>{@code location} 为定位信息，如 {@code key=xxx}、{@code path=a.b.c}
+     */
+    private static String readFailed(String location, String targetType) {
+        return "JSON convert failed, " + location + ", targetType=" + targetType;
+    }
+
     private static JsonNode parseToNode(String json) {
         if (json == null || json.isBlank()) {
             return null;
