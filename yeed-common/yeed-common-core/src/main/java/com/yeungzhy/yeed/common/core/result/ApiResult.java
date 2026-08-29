@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.common.core.result;
 
 import lombok.*;
 import lombok.experimental.Accessors;
+import lombok.experimental.FieldNameConstants;
 
 /**
  * 统一API响应结果封装，确保所有接口返回一致的JSON结构：
@@ -22,6 +23,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @ToString
+@FieldNameConstants
 @Accessors(chain = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
