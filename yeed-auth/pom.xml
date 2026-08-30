@@ -40,6 +40,24 @@
             <version>20260501</version>
         </dependency>
 
+        <!-- 全链路追踪 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-micrometer</artifactId>
+        </dependency>
+
         <!-- Sa-Token Servlet 栈适配（security 模块已提供 core/jwt/redis-template） -->
         <dependency>
             <groupId>cn.dev33</groupId>
@@ -61,7 +79,7 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
-        <!-- Feign↔HttpClient5 桥接：使 OpenFeign 底层走 Apache HttpClient 5（hc5 默认启用需此类在 classpath） -->
+        <!-- Feign <-> HttpClient5 桥接：使 OpenFeign 底层走 Apache HttpClient 5（hc5 默认启用需此类在 classpath） -->
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-hc5</artifactId>

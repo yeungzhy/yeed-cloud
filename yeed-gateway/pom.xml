@@ -40,6 +40,24 @@
             <version>20260501</version>
         </dependency>
 
+        <!--
+            全链路追踪：版本由 spring-boot-dependencies 统一管理，此处不写 version
+            网关是链路起点（生成根 span 并向下游注入 traceparent），各下游服务同样需要引入
+            否则链路中途断开、traceId 无法续接
+        -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Spring Cloud Gateway（WebFlux 响应式网关） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

@@ -5,6 +5,18 @@
 
     <!-- 日志输出路径，从 Spring Environment 取值（logback-spring.xml 专有标签） -->
     <springProperty scope="context" name="LOG_FILE_PATH" source="logging.file.path" defaultValue="./log/app"/>
+    <!-- 服务名，从 Spring Environment 取值（logback-spring.xml 专有标签） -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="app"/>
+
+    <!--
+      链路追踪占位符：traceId / spanId 由 Micrometer Tracing 写入 MDC（Brave 的 MDCScopeDecorator），此处只负责输出
+      格式沿用 Spring Cloud Sleuth 惯例 [appName,traceId,spanId]，兼容按该格式解析的日志工具
+
+      %X{key:-} 的 ":-" 表示无值时输出空串而非字面量
+      故不在请求上下文中的日志（启动过程、定时任务、后台线程）会显示成空段，如 [yeed-gateway,,] 或 []
+      这是"这条日志不隶属于任何请求"的正确表达，刻意不用 "N/A" 之类的占位词，避免与真实 traceId 混淆
+    -->
+    <property name="TRACE_PATTERN" value="%X{traceId:-},%X{spanId:-}"/>
 
     <!-- 彩色日志依赖的渲染类 -->
     <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
@@ -20,8 +32,8 @@
     </springProfile>
 
     <!-- 日志格式，引入彩色日志转换器、敏感数据转换器【%seda】，一般情况下这里用的是【%m】【%msg】，即日志原文 -->
-    <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %seda%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
-    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %seda%n"/>
+    <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr([${APP_NAME},${TRACE_PATTERN}]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %seda%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [${APP_NAME},${TRACE_PATTERN}] %logger{50} - %seda%n"/>
     <property name="CONVERTER_ERROR_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
 
     <!-- 控制台日志：无需任何 Filter，完全遵从 Root 级别 -->

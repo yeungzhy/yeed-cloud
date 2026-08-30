@@ -44,6 +44,24 @@
             <version>20260501</version>
         </dependency>
 
+        <!-- 全链路追踪 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-micrometer</artifactId>
+        </dependency>
+
         <!-- 测试依赖（JUnit 4 单测栈），版本和 exclusions 已收敛进根 POM dependencyManagement，这里无需重复排除 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

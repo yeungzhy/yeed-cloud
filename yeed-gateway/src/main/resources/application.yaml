@@ -9,6 +9,8 @@ spring:
     web-application-type: reactive          # 网关为 WebFlux 响应式，强制指定避免误判
   profiles:
     active: @spring.profiles.active@
+  reactor:
+    context-propagation: auto               # 启用 Reactor 上下文传播以自动传递 traceId
 
 logging:
   level:
