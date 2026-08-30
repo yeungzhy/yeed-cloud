@@ -29,7 +29,8 @@ public class CorsVaryHeadersFilter implements HttpHeadersFilter {
     private static final List<String> CORS_VARY_HEADERS = List.of(
             HttpHeaders.ORIGIN,
             HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD,
-            HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS);
+            HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS
+    );
 
     @Override
     public boolean supports(Type type) {
@@ -38,23 +39,28 @@ public class CorsVaryHeadersFilter implements HttpHeadersFilter {
 
     @Override
     public HttpHeaders filter(HttpHeaders input, ServerWebExchange exchange) {
+        // 分支预测: 仅下游服务响应头里有 Vary 头时才做处理
         if (!input.containsKey(HttpHeaders.VARY)) {
             return input;
         }
+        // 提取 Vary 值并剔除 CORS 三项，保留其它 Vary（如 Accept-Encoding）
         List<String> varyValues = input.get(HttpHeaders.VARY);
         List<String> retained = varyValues.stream()
                 .map(String::trim)
                 .filter(v -> !CORS_VARY_HEADERS.contains(v))
                 .toList();
+        // 一个都没剔除说明下游本就没声明 CORS Vary，无重复，原样返回
         if (retained.size() == varyValues.size()) {
             return input;
         }
+        // 重建头对象：除 Vary 键外全部原样拷贝，避免原对象里的重复 Vary 残留
         HttpHeaders filtered = new HttpHeaders();
         input.forEach((key, values) -> {
             if (!key.equalsIgnoreCase(HttpHeaders.VARY)) {
                 filtered.addAll(key, values);
             }
         });
+        // 有保留的非 CORS Vary 时写回重建结果，保证其它 Vary 语义不丢
         if (!retained.isEmpty()) {
             filtered.addAll(HttpHeaders.VARY, retained);
         }
