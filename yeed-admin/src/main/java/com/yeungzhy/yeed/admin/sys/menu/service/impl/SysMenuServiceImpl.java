@@ -10,14 +10,13 @@ import com.yeungzhy.yeed.admin.sys.menu.dto.SysMenuUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
 import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
+import com.yeungzhy.yeed.admin.sys.menu.service.MenuCacheReloader;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuConvert;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuService;
 import com.yeungzhy.yeed.admin.sys.menu.service.SysMenuSorts;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuPageVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuTreeVO;
 import com.yeungzhy.yeed.admin.sys.menu.vo.SysMenuVO;
-import com.yeungzhy.yeed.common.cache.support.RedisHelper;
-import com.yeungzhy.yeed.common.core.constant.CacheConstant;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.support.TreeUtil;
@@ -25,13 +24,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +44,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Resource
     private SysMenuConvert sysMenuConvert;
     @Resource
-    private RedisHelper redisHelper;
+    private MenuCacheReloader menuCacheReloader;
 
 
     @Override
@@ -78,7 +71,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // DTO -> Entity：同名字段由 MapStruct 自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.insert(entity);
-        reloadPermsCache();
+        menuCacheReloader.reload();
         return entity.getId();
     }
 
@@ -109,7 +102,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // DTO -> Entity：id 与业务字段均自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.updateById(entity);
-        reloadPermsCache();
+        menuCacheReloader.reload();
     }
 
 
@@ -128,6 +121,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         sysMenuMapper.update(null, Wrappers.<SysMenu>lambdaUpdate()
                 .set(SysMenu::getParentId, dto.getParentId())
                 .eq(SysMenu::getId, dto.getId()));
+        menuCacheReloader.reload();
     }
 
 
@@ -154,7 +148,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public List<SysMenuTreeVO> tree() {
         // 懒加载自愈：外部清库后首个菜单树请求即重建鉴权缓存（超管进菜单管理页即恢复）
-        reloadPermsCacheIfAbsent();
+        menuCacheReloader.reloadIfAbsent();
         List<SysMenu> menus = sysMenuMapper.selectList(
                 Wrappers.<SysMenu>lambdaQuery().orderByAsc(SysMenu::getSort));
         // 查询侧兜底：存量脏数据环不阻断（迭代式 buildTree 不会栈溢出），仅告警暴露待修数据
@@ -175,7 +169,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         boolean hasChildren = sysMenuMapper.existsByColumn(SysMenu::getParentId, id);
         BizAssert.isTrue(!hasChildren, "存在子菜单，不允许删除");
         sysMenuMapper.deleteByIdAutoFill(id);
-        reloadPermsCache();
+        menuCacheReloader.reload();
     }
 
 
@@ -186,7 +180,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         BizAssert.isTrue(!hasChildren, "存在子菜单，不允许删除");
         // 批量逻辑删除：空集合不触库，超量自动分片，删除人自动填充
         sysMenuMapper.deleteByIdsAutoFill(ids);
-        reloadPermsCache();
+        menuCacheReloader.reload();
     }
 
 
@@ -211,45 +205,6 @@ public class SysMenuServiceImpl implements SysMenuService {
     private void assertButtonPath(MenuTypeEnum menuType, String path) {
         if (menuType == MenuTypeEnum.BUTTON) {
             BizAssert.notBlank(path, "按钮类型必须填写调用接口路径（如 /sys/user/list）");
-        }
-    }
-
-
-    // ==================== 接口权限缓存 ====================
-
-    @Override
-    public void reloadPermsCache() {
-        // 仅按钮进入网关鉴权缓存：目录/菜单 path 为用户端路由，不参与接口鉴权
-        // 拆键分流：无通配符的精确路径入 ALL 键（网关 HGET O(1) 命中）；
-        // 含通配符的路径（归一化后的动态接口，见 normalizePath）入 ANT 键，网关精确 miss 后 Ant 匹配兜底
-        Map<Boolean, List<SysMenu>> partition = sysMenuMapper.selectList(
-                        Wrappers.<SysMenu>lambdaQuery().eq(SysMenu::getMenuType, MenuTypeEnum.BUTTON)
-                                .isNotNull(SysMenu::getPath)
-                                .isNotNull(SysMenu::getPerms))
-                .stream()
-                .collect(Collectors.partitioningBy(m -> m.getPath().indexOf('*') >= 0));
-
-        Map<String, String> exactApiPermMap = partition.get(false).stream()
-                .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
-        Map<String, String> antApiPermMap = partition.get(true).stream()
-                .collect(Collectors.toMap(SysMenu::getPath, SysMenu::getPerms, (a, b) -> a));
-
-        // 初始化判据只认 ALL 键：ANT 键缺失一律视为空集合（无动态接口），不承载「未预热」语义
-        // 显式永久存储（timeout=null）：本缓存每次整体重建、无历史残留；且网关 fail-closed 依赖
-        // ALL 键存在性判定「未预热」，若随默认 TTL 过期将误判为未预热而拒绝所有请求，
-        // 生命周期必须完全由 reloadPermsCache 主动管理
-        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL, exactApiPermMap, null);
-        redisHelper.setMap(CacheConstant.SYS_MENU_API_PERMS_ALL_ANT, antApiPermMap, null);
-        // 发布变更事件：网关本地缓存（GatewayApiPermsCache）订阅后即时失效，权限变更精准生效；
-        // 发布失败不阻断重建（网关本地缓存有兜底 TTL 自愈，最坏延迟几分钟生效）
-        redisHelper.publish(CacheConstant.SYS_MENU_API_PERMS_CHANGED, String.valueOf(System.currentTimeMillis()));
-        log.info("菜单接口权限缓存已重建并发布变更事件：精确接口={}，动态接口={}", exactApiPermMap.size(), antApiPermMap.size());
-    }
-
-    @Override
-    public void reloadPermsCacheIfAbsent() {
-        if (!redisHelper.hasKey(CacheConstant.SYS_MENU_API_PERMS_ALL)) {
-            reloadPermsCache();
         }
     }
 

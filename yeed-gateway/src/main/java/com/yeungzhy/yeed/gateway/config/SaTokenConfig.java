@@ -11,8 +11,8 @@ import cn.dev33.satoken.util.SaResult;
 import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
-import com.yeungzhy.yeed.gateway.security.ApiPermsCache;
-import com.yeungzhy.yeed.gateway.security.ApiPermsSnapshot;
+import com.yeungzhy.yeed.gateway.security.MenuCache;
+import com.yeungzhy.yeed.gateway.security.MenuCacheSnapshot;
 import com.yeungzhy.yeed.gateway.security.PermitAllProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class SaTokenConfig {
     private PermitAllProperties permitAllProperties;
 
     @Resource
-    private ApiPermsCache apiPermsCache;
+    private MenuCache menuCache;
 
 
     // 注册 Sa-Token全局过滤器
@@ -59,10 +59,10 @@ public class SaTokenConfig {
      * <p>鉴权规则：
      * <ul>
      *   <li>命中放行名单（{@link PermitAllProperties}）：无需认证，直接放行，跳过登录校验与权限校验；</li>
-     *   <li>缓存不可用（未预热/外部清库/Redis 异常，三态日志由 {@link ApiPermsCache} 区分）：fail-closed 拒绝，
+     *   <li>缓存不可用（未预热/外部清库/Redis 异常，三态日志由 {@link MenuCache} 区分）：fail-closed 拒绝，
      *   仅 SUPER_ADMIN 放行，且保证权限配置被改坏时超管仍可进系统修复；</li>
      *   <li>命中登记：先精确匹配（O(1) 内存查），miss 后对通配符登记做 Ant 模式匹配兜底（带路径参数接口），
-     *   全部在 {@link ApiPermsSnapshot#lookup(String)} 本地完成，无 Redis 往返；</li>
+     *   全部在 {@link MenuCacheSnapshot#lookupPerms(String)} 本地完成，无 Redis 往返；</li>
      *   <li>精确与模式均未命中（未登记/伪造路径）：视为无此权限。</li>
      * </ul>
      *
@@ -82,7 +82,7 @@ public class SaTokenConfig {
         StpUtil.checkLogin();
 
         // 本地权限快照不可用（未初始化/Redis 异常）fail-closed，仅超管放行
-        ApiPermsSnapshot snapshot = apiPermsCache.getSnapshot();
+        MenuCacheSnapshot snapshot = menuCache.getSnapshot();
         if (snapshot == null) {
             if (LoginUserHelper.getRoleCodes().contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode())) {
                 log.error("菜单接口权限缓存不可用，SUPER_ADMIN 放行：path={}", path);
@@ -94,7 +94,7 @@ public class SaTokenConfig {
         }
 
         // 先精确匹配，miss 后 Ant 模式匹配（带路径参数接口），全部本地完成
-        String perm = snapshot.lookup(path);
+        String perm = snapshot.lookupPerms(path);
 
         // 接口未登记权限码，则说明接口 path 是新建或伪造，直接拦截
         if (perm == null) {
