@@ -16,15 +16,15 @@ import java.util.Map;
 /**
  * 网关本地菜单缓存（Caffeine + 精准失效）
  *
- * <p><b>为什么需要本地缓存：</b>网关是 WebFlux 响应式架构，在 Netty event loop 线程上，
- * 直接走 Redis 是同步阻塞 I/O，会占用 event loop 线程导致线程饥饿。
- * 菜单缓存是「读极多、写极少」的静态配置数据，完全适合 JVM 本地缓存。
+ * <p>为什么用本地缓存：网关是 WebFlux 响应式架构，在 Netty event loop 线程上直接走 Redis 是
+ * 同步阻塞 I/O，会占用 event loop 线程导致线程饥饿；菜单缓存是「读极多、写极少」的静态配置数据，
+ * 完全适合 JVM 本地缓存。
  *
- * <p><b>精准失效（变更事件）：</b>admin 每次重建权限缓存后向 {@link CacheConstant#MENU_CACHE_CHANGED} 主题发布变更事件，
- * 本组件订阅后即时失效本地缓存，权限变更秒级生效，无需等待 TTL。
- * 兜底 TTL 仅防御事件丢失（订阅失败/发布失败），事件正常时本地缓存生命周期完全由事件驱动。
+ * <p>精准失效：admin 每次重建权限缓存后向 {@link CacheConstant#MENU_CACHE_CHANGED} 主题发布变更事件，
+ * 本组件订阅后即时失效本地缓存，权限变更秒级生效，无需等待 TTL；兜底 TTL 仅防御事件丢失
+ * （订阅失败/发布失败），事件正常时本地缓存生命周期完全由事件驱动。
  *
- * <p>本地 miss 后回源 Redis，回源失败后进入退避窗口（30s），避免 Redis 故障期间每个请求都重复回源打日志
+ * <p>本地 miss 后回源 Redis，回源失败进入 30s 退避窗口，避免 Redis 故障期间每个请求都重复回源打日志
  *
  * @author yeungzhy
  * @since 2026-08-15
@@ -70,6 +70,10 @@ public class MenuCache {
         try {
             RTopic topic = redissonClient.getTopic(CacheConstant.MENU_CACHE_CHANGED);
             topic.addListener(String.class, (channel, message) -> {
+                /*
+                 * 只失效不预热：下次请求本地 miss 才懒加载回源（感知延迟 ≈ 一次 Redis 往返）
+                 * 不在此同步回源：会阻塞 Redisson 事件分发线程，省下的仅毫秒级延迟，收益不抵代价
+                 */
                 localCache.invalidateAll();
                 log.info("收到菜单缓存变更事件，本地缓存已失效");
             });
