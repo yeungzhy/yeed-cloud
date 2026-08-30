@@ -13,7 +13,7 @@
 
     <!-- 按照激活环境确定是否加载敏感日志数据转换器 -->
     <springProfile name="test,prod">
-        <conversionRule conversionWord="seda" class="com.yeungzhy.yeed.common.core.support.SensitiveDataLogConverter"/>
+        <conversionRule conversionWord="seda" class="com.yeungzhy.yeed.common.core.sensitive.SensitiveDataLogConverter"/>
     </springProfile>
     <springProfile name="dev">
         <conversionRule conversionWord="seda" class="ch.qos.logback.classic.pattern.MessageConverter"/>
@@ -84,17 +84,6 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
-    <!--
-      配置脱敏组件专用的 Logger
-      name: 必须精确匹配 LoggerFactory.getLogger(SensitiveDataLogConverter.class) 解析出的全限定名
-      level: ERROR（只记录异常）
-      additivity="false": 关键！不让日志向上传递给 root，从而避开 %seda（防止递归脱敏）
-    -->
-    <logger name="com.yeungzhy.yeed.common.core.support.SensitiveDataLogConverter" level="ERROR" additivity="false">
-        <appender-ref ref="CONVERTER_ERROR_CONSOLE" />
-        <appender-ref ref="CONVERTER_ERROR_FILE" />
-    </logger>
 
     <!-- 定义异步 Appender，引用 ALL_FILE -->
     <appender name="ASYNC_ALL" class="ch.qos.logback.classic.AsyncAppender">
