@@ -44,6 +44,28 @@
             <version>20260501</version>
         </dependency>
 
+        <!-- 测试依赖（JUnit 4 单测栈），版本和 exclusions 已收敛进根 POM dependencyManagement，这里无需重复排除 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.milbmr</groupId>
+            <artifactId>faker</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Caffeine：本地高性能缓存（W-TinyLFU），IdenticonCacheConfig 和 SysUserController 使用 -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
