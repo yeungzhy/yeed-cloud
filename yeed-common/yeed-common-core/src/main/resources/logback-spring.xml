@@ -3,8 +3,8 @@
     <!-- XML   负责 日志格式/归档策略 -->
     <!-- Nacos 负责 日志级别控制 -->
 
-    <!-- 指定日志输出路径 -->
-    <springProperty scope="context" name="logging.path" source="logging.file.path"/>
+    <!-- 日志输出路径，从 Spring Environment 取值（logback-spring.xml 专有标签） -->
+    <springProperty scope="context" name="LOG_FILE_PATH" source="logging.file.path" defaultValue="./log/app"/>
 
     <!-- 彩色日志依赖的渲染类 -->
     <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
@@ -34,9 +34,9 @@
 
     <!-- 全量日志文件：不设 Filter，完全遵从 Root 级别 -->
     <appender name="ALL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/all.log</file>
+        <file>${LOG_FILE_PATH}/all.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/history/all-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${LOG_FILE_PATH}/history/all-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <maxFileSize>100MB</maxFileSize>
         </rollingPolicy>
@@ -48,9 +48,9 @@
 
     <!-- 错误日志文件 -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/error.log</file>
+        <file>${LOG_FILE_PATH}/error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/history/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${LOG_FILE_PATH}/history/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <maxFileSize>100MB</maxFileSize>
         </rollingPolicy>
@@ -73,9 +73,9 @@
 
     <!-- 脱敏组件异常输出的 文件 Appender -->
     <appender name="CONVERTER_ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.path}/converter-error.log</file>
+        <file>${LOG_FILE_PATH}/converter-error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logging.path}/history/converter-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${LOG_FILE_PATH}/history/converter-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <maxFileSize>10MB</maxFileSize>
         </rollingPolicy>
