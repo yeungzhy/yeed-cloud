@@ -75,28 +75,6 @@
         </encoder>
     </appender>
 
-    <!-- 脱敏组件异常输出的 控制台 Appender -->
-    <appender name="CONVERTER_ERROR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONVERTER_ERROR_LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
-    <!-- 脱敏组件异常输出的 文件 Appender -->
-    <appender name="CONVERTER_ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_FILE_PATH}/converter-error.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_FILE_PATH}/history/converter-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-            <maxFileSize>10MB</maxFileSize>
-        </rollingPolicy>
-        <encoder>
-            <pattern>${CONVERTER_ERROR_LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
     <!-- 定义异步 Appender，引用 ALL_FILE -->
     <appender name="ASYNC_ALL" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>512</queueSize>
