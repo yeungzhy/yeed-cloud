@@ -12,13 +12,13 @@ import java.util.function.Consumer;
 /**
  * 排序字段白名单基类
  *
- * <h3>设计思路（为什么用 Builder / Consumer）</h3>
- * <p>父类构造器执行 <b>早于</b> 子类字段初始化，所以不能用「子类构造器里 super() 之后再调 add()」——
- * 那样父类的 sorts 在 super() 结束时还是空的，子类后续 add() 进去的内容无法保证在 freeze 之前完成。
- * 因此必须在 super() 调用的<b>参数位置</b>把白名单一次性传完。
+ * <p>设计思路（为什么用 Builder / Consumer）：父类构造器执行早于子类字段初始化，
+ * 所以不能用「子类构造器里 super() 之后再调 add()」——那样父类的 sorts 在 super() 结束时还是空的，
+ * 子类后续 add() 进去的内容无法保证在 freeze 之前完成。因此必须在 super() 调用的参数位置把白名单一次性传完。
  *
- * <h3>子类两种写法（任选其一，效果完全相同）</h3>
- * <p><b>写法 A：Consumer lambda（紧凑，推荐 4~8 个字段以内）</b>
+ * <p>子类两种写法（任选其一，效果完全相同）：
+ *
+ * <p>写法 A：Consumer lambda（紧凑）
  * <pre>{@code
  * @Component
  * public class SysUserSorts extends BaseSorts<SysUser> {
@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  *     }
  * }}</pre>
  *
- * <p><b>写法 B：显式 Builder（更直观，字段多时更清晰）</b>
+ * <p>写法 B：显式 Builder（更直观）
  * <pre>{@code
  * @Component
  * public class SysUserSorts extends BaseSorts<SysUser> {
@@ -41,20 +41,17 @@ import java.util.function.Consumer;
  *     }
  * }}</pre>
  *
- * <h3>安全策略</h3>
- * <p>未知字段静默忽略（不抛异常、不打 error 日志），避免攻击者通过响应差异枚举白名单。
+ * <p>安全策略：未知字段静默忽略（不抛异常、不打 error 日志），避免攻击者通过响应差异枚举白名单
  *
- * <h3>默认排序方向</h3>
- * <p>isAsc 为 null → <b>降序</b>（业务惯例：最新记录在前）
+ * <p>默认排序方向：isAsc 为 null → 降序（业务惯例：最新记录在前）
  *
- * <h3>为什么不用 static 工具类</h3>
- * <p>白名单虽不可变，但做成实例化 Bean 而非 static 工具类，原因有三：
+ * <p>为什么不用 static 工具类：白名单虽不可变，但做成实例化 Bean 而非 static 工具类，原因有三：
  * <ul>
- *   <li><b>泛型绑定</b>：{@code BaseSorts<T extends BaseEntity>} 的泛型上下文需要实例化才能体现；
+ *   <li>泛型绑定：{@code BaseSorts<T extends BaseEntity>} 的泛型上下文需要实例化才能体现；
  *       static 方法无法携带泛型类型参数，也无法让 {@link #apply} 直接接收带类型的 {@code LambdaQueryWrapper<T>}。</li>
- *   <li><b>依赖注入</b>：子类以 {@code @Component} 注册后可被 Service 层注入复用；
+ *   <li>依赖注入：子类以 {@code @Component} 注册后可被 Service 层注入复用；
  *       未来如需按角色/租户动态裁剪白名单或注入配置类，Bean 天然支持依赖注入，static 做不到。</li>
- *   <li><b>可测试性</b>：作为 Bean 可在测试中用 {@code @MockBean} 替换或注入自定义白名单子类，
+ *   <li>可测试性：作为 Bean 可在测试中用 {@code @MockBean} 替换或注入自定义白名单子类，
  *       比直接 {@code new} 或 static 更灵活。</li>
  * </ul>
  *
