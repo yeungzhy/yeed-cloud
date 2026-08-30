@@ -16,6 +16,7 @@ import com.yeungzhy.yeed.gateway.security.MenuCacheSnapshot;
 import com.yeungzhy.yeed.gateway.security.PermitAllProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -46,10 +47,10 @@ public class SaTokenConfig {
             .addInclude("/**")
             // 开放地址 
             .addExclude("/favicon.ico")
-            // 鉴权方法：每次访问进入
-            .setAuth(obj -> addAuthPattern())
-            // 异常处理方法：每次setAuth函数出现异常时进入 
-            .setError(this::handleAuthError);
+            // 每次访问进入鉴权方法
+            .setAuth(obj -> doAuth())
+            // 鉴权函数 setAuth 出现异常时进入
+            .setError(this::doOnAuthError);
     }
 
 
@@ -69,7 +70,7 @@ public class SaTokenConfig {
      * <p>本方法运行在 Netty event loop 线程上（SaReactorFilter 的 auth 回调），
      * 全程只做内存查询与 Sa-Token 会话直读，避免同步阻塞 Redis 占用 event loop 线程。
      */
-    public void addAuthPattern() {
+    public void doAuth() {
         String path = SaHolder.getRequest().getRequestPath();
 
         // 放行名单（无需认证即可访问）：命中直接放行，跳过登录校验与权限校验
@@ -96,9 +97,9 @@ public class SaTokenConfig {
         // 先精确匹配，miss 后 Ant 模式匹配（带路径参数接口），全部本地完成
         String perm = snapshot.lookupPerms(path);
 
-        // 接口未登记权限码，则说明接口 path 是新建或伪造，直接拦截
+        // 精确与 Ant 模式均未命中：快照是系统全量登记接口，路径不在其中即 404
         if (perm == null) {
-            throw new NotPermissionException("无此权限");
+            throw new NotFoundException("Not Found");
         }
 
         // 校验当前账号是否含有本次请求 path 的权限
@@ -112,30 +113,53 @@ public class SaTokenConfig {
      * @param e 鉴权过程中抛出的异常
      * @return SaResult 包含错误信息的结果对象
      */
-    public SaResult handleAuthError(Throwable e) {
+    public SaResult doOnAuthError(Throwable e) {
         ServerWebExchange exchange = SaReactorSyncHolder.getExchange();
         RequestPath requestPath = exchange.getRequest().getPath();
         ServerHttpResponse response = exchange.getResponse();
         response.getHeaders().set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 
         /*
-         * 预期中的业务拒绝（未登录/无权限）：warn 级、不打印堆栈，避免刷屏淹没真实故障；
-         * 真异常才 error + 堆栈（缓存不可用的 fail-closed 已在上游单独打 error 日志）。
+         * 预期中的业务拒绝（未登录/无权限）：warn 级、不打印堆栈，避免刷屏淹没真实故障
+         * 真异常才 error + 堆栈（缓存不可用的 fail-closed 已在上游单独打 error 日志）
          *
          * 同时设置真实 HTTP 状态码
          */
-        if (e instanceof NotLoginException) {
-            log.warn("接口未登录被拒 [{}]", requestPath);
-            response.setStatusCode(HttpStatus.UNAUTHORIZED);
-            return new SaResult(HttpStatus.UNAUTHORIZED.value(), ApiResult.CommonCode.UNAUTHORIZED.getMsg(), null);
-        } else if (e instanceof NotPermissionException) {
-            log.warn("接口无权限被拒 [{}]", requestPath);
-            response.setStatusCode(HttpStatus.FORBIDDEN);
-            return new SaResult(HttpStatus.FORBIDDEN.value(), ApiResult.CommonCode.FORBIDDEN.getMsg(), null);
-        } else {
-            log.error("接口权限认证异常 [{}]", requestPath, e);
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-            return new SaResult(HttpStatus.INTERNAL_SERVER_ERROR.value(), ApiResult.CommonCode.SYSTEM_ERROR.getMsg(), null);
+        switch (e) {
+            case NotLoginException ignored -> {
+                log.warn("接口未登录被拒 [{}]", requestPath);
+                response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                return new SaResult()
+                        .set(ApiResult.Fields.code, ApiResult.CommonCode.UNAUTHORIZED.getCode())
+                        .set(ApiResult.Fields.msg, ApiResult.CommonCode.UNAUTHORIZED.getMsg())
+                        .set(ApiResult.Fields.data, null);
+            }
+            case NotFoundException ignored -> {
+                log.warn("接口未找到被拒 [{}]", requestPath);
+                response.setStatusCode(HttpStatus.NOT_FOUND);
+                return new SaResult()
+                        .set(ApiResult.Fields.code, ApiResult.CommonCode.NOT_FOUND.getCode())
+                        .set(ApiResult.Fields.msg, ApiResult.CommonCode.NOT_FOUND.getMsg())
+                        .set(ApiResult.Fields.data, null);
+            }
+            case NotPermissionException ignored -> {
+                log.warn("接口无权限被拒 [{}]", requestPath);
+                response.setStatusCode(HttpStatus.FORBIDDEN);
+                return new SaResult()
+                        .set(ApiResult.Fields.code, ApiResult.CommonCode.FORBIDDEN.getCode())
+                        .set(ApiResult.Fields.msg, ApiResult.CommonCode.FORBIDDEN.getMsg())
+                        .set(ApiResult.Fields.data, null);
+            }
+            case null, default -> {
+                // 真异常：HTTP 500 为通用稳定语义（网关层错误信号），body 用领域语义 SYSTEM_ERROR(1000)，
+                // 与上方 401/403/404「无领域语义、body 对齐 HTTP」是两种分工，刻意不对齐
+                log.error("接口权限认证异常 [{}]", requestPath, e);
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                return new SaResult()
+                        .set(ApiResult.Fields.code, ApiResult.CommonCode.SYSTEM_ERROR.getCode())
+                        .set(ApiResult.Fields.msg, ApiResult.CommonCode.SYSTEM_ERROR.getMsg())
+                        .set(ApiResult.Fields.data, null);
+            }
         }
     }
 
