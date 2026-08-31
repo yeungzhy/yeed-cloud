@@ -33,7 +33,7 @@ public class AutoFillFieldHandler implements MetaObjectHandler {
         // 仅当实体有 createBy 字段且值为空时才填充（兼容关联表无此字段、非用户操作无登录态）
         boolean hasCreateByField = metaObject.hasGetter(BaseEntity.Fields.createBy);
         if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.createBy))) {
-            this.strictInsertFill(metaObject, BaseEntity.Fields.createBy, Long.class, LoginUserHelper.getUserId(null));
+            this.strictInsertFill(metaObject, BaseEntity.Fields.createBy, Long.class, LoginUserHelper.requireUserId());
         }
     }
 
@@ -44,7 +44,7 @@ public class AutoFillFieldHandler implements MetaObjectHandler {
         // 同上：updateBy 仅在实体有该字段且为空时填充
         boolean hasUpdateByField = metaObject.hasGetter(BaseEntity.Fields.updateBy);
         if (hasUpdateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.updateBy))) {
-            this.strictUpdateFill(metaObject, BaseEntity.Fields.updateBy, Long.class, LoginUserHelper.getUserId(null));
+            this.strictUpdateFill(metaObject, BaseEntity.Fields.updateBy, Long.class, LoginUserHelper.requireUserId());
         }
     }
 }
