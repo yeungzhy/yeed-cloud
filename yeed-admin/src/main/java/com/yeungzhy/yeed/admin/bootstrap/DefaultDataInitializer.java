@@ -26,8 +26,7 @@ import org.springframework.util.StringUtils;
  * <p>在应用启动完成后，按需初始化默认角色与默认超管账号：
  * <ul>
  *     <li>角色编码等结构性数据定义在代码常量（{@link BuiltinRoleEnum}），随版本发布，不进配置中心；</li>
- *     <li>超管账号密码属环境敏感信息，从配置中心读取（{@link DefaultDataProperties}，{@code app.init.default-data}），
- *         不同环境各自维护；</li>
+ *     <li>超管账号密码属环境敏感信息，从配置中心读取（{@link DefaultDataProperties}，不同环境各自维护；</li>
  *     <li>「先查后插」保证幂等；多实例并发首启的竞态由唯一索引兜底，
  *         捕获 {@link DuplicateKeyException} 视为其他实例已完成初始化；</li>
  *     <li>预期外异常不捕获，直接抛出终止启动（fail-fast），默认数据缺失时系统本就不应提供服务。</li>
@@ -62,8 +61,10 @@ public class DefaultDataInitializer implements ApplicationRunner {
         }
 
         DefaultDataProperties.SuperAdmin superAdmin = defaultDataProperties.getSuperAdmin();
-        if (!StringUtils.hasText(superAdmin.getUsername()) || !StringUtils.hasText(superAdmin.getDefaultPassword())) {
-            throw new IllegalStateException("默认数据初始化已启用，但 super-admin.username / default-password 未配置，请检查 Nacos 配置");
+        if (!StringUtils.hasText(superAdmin.getUsername())
+                || !StringUtils.hasText(superAdmin.getEmployeeNo())
+                || !StringUtils.hasText(superAdmin.getDefaultPassword())) {
+            throw new IllegalStateException("默认数据初始化已启用，但 super-admin.username / employee-no / default-password 未配置，请检查 Nacos 配置");
         }
 
         initSuperAdmin(superAdmin);
@@ -91,8 +92,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
         SysUser sysUser = SysUser.builder()
                 .realName(BuiltinRoleEnum.SUPER_ADMIN.getRoleName())
                 .username(username)
-                // 超管固定工号
-                .employeeNo("1")
+                .employeeNo(superAdmin.getEmployeeNo())
                 // Argon2 单向哈希，与业务新增用户完全一致；不依赖环境密钥
                 .password(argon2PwdEncoder.encode(superAdmin.getDefaultPassword()))
                 .status(EnableStatusEnum.ENABLED)
