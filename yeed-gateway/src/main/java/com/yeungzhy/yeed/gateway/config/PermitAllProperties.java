@@ -1,4 +1,4 @@
-package com.yeungzhy.yeed.gateway.security;
+package com.yeungzhy.yeed.gateway.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

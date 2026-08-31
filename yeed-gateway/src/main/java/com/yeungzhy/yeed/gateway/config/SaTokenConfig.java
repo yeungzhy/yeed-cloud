@@ -13,7 +13,6 @@ import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.gateway.security.MenuCache;
 import com.yeungzhy.yeed.gateway.security.MenuCacheSnapshot;
-import com.yeungzhy.yeed.gateway.security.PermitAllProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.support.NotFoundException;
