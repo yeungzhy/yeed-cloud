@@ -69,5 +69,9 @@ public enum BuiltinRoleEnum {
         return roleCode == null ? null : CODE_MAP.get(roleCode);
     }
 
+    /** 判断角色编码是否为内置角色编码 */
+    public static boolean isBuiltin(String roleCode) {
+        return CODE_MAP.containsKey(roleCode);
+    }
 
 }

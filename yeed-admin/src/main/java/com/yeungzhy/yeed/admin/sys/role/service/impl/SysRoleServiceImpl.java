@@ -19,6 +19,7 @@ import com.yeungzhy.yeed.admin.sys.role.vo.SysRolePageVO;
 import com.yeungzhy.yeed.admin.sys.role.vo.SysRoleVO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
+import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
@@ -27,13 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +59,8 @@ public class SysRoleServiceImpl implements SysRoleService {
     public Long save(SysRoleDTO dto) {
         BizAssert.notBlank(dto.getRoleName(), "角色名称不能为空");
         BizAssert.notBlank(dto.getRoleCode(), "角色编码不能为空");
+        BizAssert.isFalse(BuiltinRoleEnum.isBuiltin(dto.getRoleCode()), "角色编码与内置角色冲突，请更换");
+
         // 角色编码是业务唯一标识
         checkRoleCodeUnique(dto.getRoleCode(), null);
 
