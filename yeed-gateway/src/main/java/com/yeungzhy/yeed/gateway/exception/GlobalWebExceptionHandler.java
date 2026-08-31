@@ -94,7 +94,7 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
                 return new ResolvedError(ApiResult.error(ApiResult.CommonCode.NOT_FOUND), HttpStatus.NOT_FOUND);
             }
             log.warn("下游服务暂不可用 [{}]：{}", nfe.getStatusCode(), nfe.getMessage());
-            return new ResolvedError(ApiResult.error(ApiResult.CommonCode.SERVICE_UNAVAILABLE), HttpStatus.SERVICE_UNAVAILABLE);
+            return new ResolvedError(ApiResult.error(), HttpStatus.SERVICE_UNAVAILABLE);
         }
 
         // Spring Cloud Gateway 请求超时（org.springframework.cloud.gateway.support.TimeoutException）
