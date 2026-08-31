@@ -22,9 +22,9 @@ import java.lang.annotation.*;
  * public class FeignClientsAutoConfiguration { }
  * }</pre>
  *
- * <p><b>为什么需要它</b>：不使用本注解时，fallback / fallbackFactory 类要么依赖组件扫描
- * （扫描范围需与主包重合），要么在配置类中逐个 {@code @Import}。本注解将"发现并注册"统一收敛：
- * 之后新增兜底类只需标注 {@link FeignFallback}，无需再改动任何配置类。
+ * <p>不使用本注解时，fallback 类要么依赖组件扫描（扫描范围需与主包重合），要么在配置类中逐个
+ * {@code @Import}；本注解把"发现并注册"统一收敛——新增兜底类只需标注 {@link FeignFallback}，
+ * 无需再改动任何配置类。
  *
  * @author yeungzhy
  * @since 2026-08-10
@@ -38,15 +38,14 @@ import java.lang.annotation.*;
 public @interface EnableFeignFallbacks {
 
     /**
-     * {@link #basePackages()} 的简写别名，语义一致；
-     * 两者皆空时默认扫描标注本注解的类所在包。
+     * {@link #basePackages()} 的简写别名；两者皆空时默认扫描标注本注解的类所在包。
      */
     String[] value() default {};
 
     /**
      * 扫描的基础包，可指定多个。
      *
-     * <p>实际解析顺序（与 {@code @EnableFeignClients} 保持一致）：
+     * <p>解析顺序与 {@link org.springframework.cloud.openfeign.EnableFeignClients} 一致：
      * {@code basePackages} 优先，其次 {@code value}，都未指定则取标注本注解的类所在包。
      */
     String[] basePackages() default {};

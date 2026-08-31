@@ -11,23 +11,20 @@ import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import java.util.List;
 
 /**
- * {@link SysUserFeignClient} 兜底降级实现。
+ * {@link SysUserFeignClient} 的兜底降级实现：admin 不可达、调用超时或抛出未处理异常时，
+ * 由 Spring Cloud CircuitBreaker（Resilience4j）触发，返回统一降级错误，
+ * 避免异常冒泡到 auth 业务层。
  *
- * <p>当 yeed-admin 不可达、调用超时或抛出未处理异常时，Spring Cloud CircuitBreaker（Resilience4j）
- * 触发本兜底实现，避免异常冒泡到 auth 业务层，让登录流程返回友好降级提示而非 500。
+ * <p>仅远程调用失败进入兜底；业务失败（账号不存在、密码错误）由 admin 正常返回
+ * {@code ApiResult.error} 走响应链路，不经过本类。
  *
- * <p><b>触发边界</b>：仅远程调用失败（网络异常、超时、admin 宕机等）时触发。
- * <b>不</b>覆盖业务失败——账号不存在、密码错误由 admin 正常返回 {@code ApiResult.error}，
- * 走正常响应链路，不会进入兜底。
- *
- * <p>本类未显式指定 {@code @FeignFallback(SysUserFeignClient.class)}，由 Registrar 从
- * {@code implements SysUserFeignClient} 自动推断兜底目标并强校验契约实现。
- *
- * <p>本类不标注 {@code @Component}，而是通过 {@link com.yeungzhy.yeed.api.feign.EnableFeignFallbacks}
- * 扫描 {@link FeignFallback} 注解自动注册为 Bean，避免触发包扫描，零副作用。
+ * <p>未显式指定 {@code @FeignFallback(SysUserFeignClient.class)}，兜底目标由 Registrar 从
+ * {@code implements SysUserFeignClient} 自动推断；本类经
+ * {@link com.yeungzhy.yeed.api.feign.EnableFeignFallbacks} 扫描注册为 Bean，不标注 {@code @Component}。
  *
  * @author yeungzhy
  * @since 2026-08-09
+ * @see SysUserFeignClientFallbackFactory
  */
 public class SysUserFeignClientFallback implements SysUserFeignClient {
 

@@ -6,25 +6,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 
 /**
- * {@link SysUserFeignClient} 兜底工厂：拦截原始异常后打日志，再交给具体 Fallback 实现返回降级响应。
+ * {@link SysUserFeignClient} 兜底工厂：拦截触发兜底的原始异常并打 ERROR 日志，再返回降级实现。
  *
- * <p>之所以引入 Factory 而非直接使用 {@link SysUserFeignClientFallback}：
- * {@code fallback = ...} 形式在触发兜底时拿不到原始异常，线上一旦触发 fallback 没有任何错误日志，排查困难。
- * 改用 {@code fallbackFactory = ...} 后，{@link #create(Throwable)} 会拿到触发兜底的原始异常，
- * 可以在此打印 ERROR 日志（含堆栈），便于定位"admin 宕机 / 超时 / 业务异常 / 熔断"等不同失败原因，
- * 而最终返回给前端的降级响应仍由统一的 Fallback 实例负责，保持响应体规范一致。
+ * <p>选 Factory 而非直接 Fallback：{@code fallback = ...} 触发时拿不到原始异常，线上一旦降级
+ * 便无错误日志，难以排查；{@link #create(Throwable)} 拿到异常后可打印堆栈（区分超时 / 拒绝连接 /
+ * 熔断），降级响应仍由统一 Fallback 实例返回，保持响应体契约一致。
  *
- * <p>本类未显式指定 {@code @FeignFallback(SysUserFeignClient.class)}，由 Registrar 从
- * {@code implements FallbackFactory<SysUserFeignClient>} 的泛型参数自动推断兜底目标并强校验。
+ * <p>兜底目标由 Registrar 从 {@code FallbackFactory<SysUserFeignClient>} 泛型参数自动推断，
+ * 见 {@link com.yeungzhy.yeed.api.feign.FeignFallbacksRegistrar}。
  *
- * <p><b>日志约定</b>：
+ * <p>日志约定：
  * <ul>
- *   <li>ERROR 级别打印完整堆栈：保证告警链路（日志采集 + 监控告警）能捕获到"触发 fallback"事件</li>
- *   <li>附带目标 Feign 客户端、失败原因 message：无需翻堆栈首行即可快速判断是超时、拒绝连接还是熔断</li>
+ *   <li>ERROR 级别打印完整堆栈，保证日志采集与监控告警能捕获"触发 fallback"事件</li>
+ *   <li>失败原因 message 随日志输出，无需翻堆栈首行即可快速判断是超时、拒绝连接还是熔断</li>
  * </ul>
  *
  * @author yeungzhy
  * @since 2026-08-11
+ * @see SysUserFeignClientFallback
  */
 @Slf4j
 @FeignFallback
