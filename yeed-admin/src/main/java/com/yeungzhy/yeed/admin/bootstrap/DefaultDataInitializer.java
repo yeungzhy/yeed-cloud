@@ -7,6 +7,7 @@ import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUserRole;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserMapper;
 import com.yeungzhy.yeed.admin.sys.user.mapper.SysUserRoleMapper;
+import com.yeungzhy.yeed.common.core.constant.Constant;
 import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import jakarta.annotation.Resource;
@@ -95,7 +96,8 @@ public class DefaultDataInitializer implements ApplicationRunner {
                 // Argon2 单向哈希，与业务新增用户完全一致；不依赖环境密钥
                 .password(argon2PwdEncoder.encode(superAdmin.getDefaultPassword()))
                 .status(EnableStatusEnum.ENABLED)
-                .createBy(0L)
+                // 系统引导数据，显式赋值以绕过自动填充的登录态校验
+                .createBy(Constant.NO_USER_ID)
                 .build();
         try {
             sysUserMapper.insert(sysUser);
@@ -126,8 +128,8 @@ public class DefaultDataInitializer implements ApplicationRunner {
                     .roleName(roleEnum.getRoleName())
                     .description(roleEnum.getDescription())
                     .status(EnableStatusEnum.ENABLED)
-                    // 系统引导数据，无登录上下文，固定 0 表示系统创建（避免自动填充随机值）
-                    .createBy(0L)
+                    // 系统引导数据，显式赋值以绕过自动填充的登录态校验
+                    .createBy(Constant.NO_USER_ID)
                     .build();
             try {
                 sysRoleMapper.insert(sysRole);
