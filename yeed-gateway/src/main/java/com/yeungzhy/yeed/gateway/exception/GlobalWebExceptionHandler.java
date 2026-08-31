@@ -27,14 +27,14 @@ import java.nio.charset.StandardCharsets;
  * <ol>
  *   <li>Sa-Token 鉴权异常 —— 由 {@code SaReactorFilter.setError} 在 WebFilter 阶段自处理，
  *       不会传播到本处理器</li>
- *   <li>路由/下游异常 —— {@link NotFoundException}（Spring Cloud Gateway 无路由匹配）、
+ *   <li>路由/下游异常 —— {@link NotFoundException}（Spring Cloud Gateway 无路由匹配 / 下游无可用实例）、
  *       {@link TimeoutException}（Spring Cloud Gateway 请求超时）、
  *       {@link ResponseStatusException}（下游 5xx / 连接拒绝 / 读写超时等）</li>
  *   <li>兜底 —— 其它未捕获 {@link Throwable}</li>
  * </ol>
  *
  * <p>网关层错误返回真实 HTTP 状态码 + ApiResult body（描述见 {@code body.msg}），前端按状态码分流：
- * 401 跳登录 / 403 提示无权限 / 404 资源不存在 / 502 下游不可用 / 504 请求超时 / 500 系统繁忙。
+ * 401 跳登录 / 403 提示无权限 / 404 资源不存在 / 503 下游无可用实例 / 502 下游异常 / 504 请求超时 / 500 系统繁忙。
  * 下游服务自身的业务错误（参数校验、数据重复等）仍由下游以 HTTP 200 + body 业务码返回并经网关透传。
  * 分层原则：HTTP 状态码表达通用/稳定语义（网关层），业务码表达领域/多样语义（下游层），互不替代。
  *
@@ -86,11 +86,15 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
      * 把异常映射为（响应体，HTTP 状态码），并记录相应级别的日志
      */
     private ResolvedError resolve(Throwable ex) {
-        // Spring Cloud Gateway 路由不存在（org.springframework.cloud.gateway.support.NotFoundException）
-        // body 用 CommonCode.NOT_FOUND（code=404），与下游 servlet 404 契约保持一致
-        if (ex instanceof NotFoundException) {
-            log.warn("网关路由不存在：{}", ex.getMessage());
-            return new ResolvedError(ApiResult.error(ApiResult.CommonCode.NOT_FOUND), HttpStatus.NOT_FOUND);
+        // Spring Cloud Gateway NotFoundException 是 ResponseStatusException 子类，按 status 分流：
+        // 404 = 无匹配路由（RoutePredicateHandlerMapping）；503 = 下游无可用实例（ReactiveLoadBalancerClientFilter）
+        if (ex instanceof NotFoundException nfe) {
+            if (nfe.getStatusCode() == HttpStatus.NOT_FOUND) {
+                log.warn("网关路由不存在：{}", nfe.getMessage());
+                return new ResolvedError(ApiResult.error(ApiResult.CommonCode.NOT_FOUND), HttpStatus.NOT_FOUND);
+            }
+            log.warn("下游服务暂不可用 [{}]：{}", nfe.getStatusCode(), nfe.getMessage());
+            return new ResolvedError(ApiResult.error(ApiResult.CommonCode.SERVICE_UNAVAILABLE), HttpStatus.SERVICE_UNAVAILABLE);
         }
 
         // Spring Cloud Gateway 请求超时（org.springframework.cloud.gateway.support.TimeoutException）
