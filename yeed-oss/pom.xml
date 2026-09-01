@@ -10,4 +10,69 @@
     <artifactId>yeed-oss</artifactId>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <!-- 平台基础：ApiResult / 常量 / 工具 -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-core</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <!-- 持久层：BaseEntity / BaseMapper / MyBatis-Plus 枚举映射 / 字段加解密 -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-data</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <!-- Web 能力：Servlet 栈(spring-boot-starter-web) / 统一异常 / @CleanString / 校验 -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-web</artifactId>
+            <version>20260501</version>
+        </dependency>
+
+        <!-- Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <!-- Nacos 服务发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- 全链路追踪 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-micrometer</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                引用父 POM pluginManagement 中的配置。
+                因为父 POM 已经配置了 repackage goal 和 excludes，
+                这里可以极度简化，甚至只写 groupId + artifactId。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

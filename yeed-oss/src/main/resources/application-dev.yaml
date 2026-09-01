@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos123
+      server-addr: 192.168.22.155:8848
+      discovery:
+        namespace: 52ed6bf608814d21a9cb122798dd67c2
+        group: dev
+      config:
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        group: ${spring.profiles.active}
+  config:
+    import:
+      # 1. 导入共享配置（本服务只需数据源 + 公共配置；sa-token/redis/feign 未引入对应模块，不导入）
+      - nacos:datasource.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:common.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      # 2. 导入主配置（服务特有覆盖项，排在最后可覆盖共享配置默认值；首次部署需在 Nacos 建空 yeed-oss.yaml）
+      - nacos:${spring.application.name}.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+
+logging:
+  level:
+    druid.sql.Statement: DEBUG
