@@ -10,4 +10,124 @@
     <artifactId>yeed-job</artifactId>
     <packaging>jar</packaging>
 
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-core</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-data</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-web</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-security</artifactId>
+            <version>20260501</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-api</artifactId>
+            <version>20260501</version>
+        </dependency>
+
+        <!-- Sa-Token Servlet 栈适配（security 模块已提供 core/jwt/redis-template） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <!-- Nacos 服务发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <!-- OpenFeign服务调用 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <!-- Feign↔HttpClient5 桥接：使 OpenFeign 底层走 Apache HttpClient 5（hc5 默认启用需此类在 classpath） -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-hc5</artifactId>
+        </dependency>
+        <!-- 负载均衡器 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!-- CircuitBreaker 实现：Resilience4j（OpenFeign fallback/fallbackFactory 依赖此包在 classpath）
+             仅 spring.cloud.openfeign.circuitbreaker.enabled=true 还不够，必须有实现类才能启用 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+        </dependency>
+
+        <!-- 全链路追踪 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-micrometer</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+
+        <!-- MapStruct：对象字段映射 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                引用父 POM pluginManagement 中的配置。
+                因为父 POM 已经配置了 repackage goal 和 excludes，
+                这里可以极度简化，甚至只写 groupId + artifactId。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
