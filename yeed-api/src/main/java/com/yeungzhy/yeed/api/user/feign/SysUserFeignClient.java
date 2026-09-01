@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.api.user.feign;
 
 import com.yeungzhy.yeed.api.user.dto.UserMenuDTO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
+import com.yeungzhy.yeed.api.user.feign.fallback.SysUserFeignClientFallback;
 import com.yeungzhy.yeed.api.user.feign.fallback.SysUserFeignClientFallbackFactory;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
@@ -13,13 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 /**
- * 系统用户内部 Feign 契约（消费方：yeed-auth；提供方：yeed-admin）
- *
- * <p>admin 在 {@code /internal/user/**} 下暴露内部接口，仅供 auth 经 Feign 调用，
- * 网关层应屏蔽该前缀的外部路由，避免内部契约泄漏。
- *
- * <p>兜底走 {@link SysUserFeignClientFallbackFactory}（FallbackFactory 形态），
- * 触发时可记录原始 {@link Throwable}；降级响应契约见 {@link SysUserFeignClientFallback}。
+ * 系统用户内部 Feign 契约
  *
  * @author yeungzhy
  * @since 2026-08-09
