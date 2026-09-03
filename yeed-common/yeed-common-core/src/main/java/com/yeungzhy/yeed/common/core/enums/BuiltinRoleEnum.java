@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -72,6 +73,11 @@ public enum BuiltinRoleEnum {
     /** 判断角色编码是否为内置角色编码 */
     public static boolean isBuiltin(String roleCode) {
         return CODE_MAP.containsKey(roleCode);
+    }
+
+    /** 判断角色编码是否为超级管理员 */
+    public static boolean isSuperAdmin(Collection<String> roleCodes) {
+        return roleCodes != null && roleCodes.contains(SUPER_ADMIN.getRoleCode());
     }
 
 }

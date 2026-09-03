@@ -168,7 +168,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * @since 2026-08-08
      */
     default boolean deleteByIdAutoFill(Long id) {
-        return logicDeleteById(id, nanoEpoch(), LoginUserHelper.requireUserId()) > 0;
+        return logicDeleteById(id, nanoEpoch(), LoginUserHelper.getUserId()) > 0;
     }
 
 
@@ -200,7 +200,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * 全部分片共享同一个删除时间戳与删除人（整批视为一次操作）
      * <p>亮点: 命名带 AutoFill 后缀, 与官方 deleteByIds 相邻出现在代码补全中, 易于发现
      * <p>注意: 逻辑删除（标记删除）统一走本方法, 不要调用框架内置删除;
-     * 删除人取 Sa-Token 当前登录用户 ID, 未登录场景（定时任务等）将抛异常,
+     * 删除人取当前登录用户 ID（值族强登录语义）, 未登录场景（定时任务等）将抛异常,
      * 系统操作请改调 {@link #logicDeleteByIds} 显式传 deleteBy;
      * 分片执行时各片为独立 UPDATE, 需要整体原子性请在 Service 层加事务
      *
@@ -213,7 +213,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
             return 0;
         }
         long deleteTime = nanoEpoch();
-        Long deleteBy = LoginUserHelper.requireUserId();
+        Long deleteBy = LoginUserHelper.getUserId();
         if (ids.size() <= Constants.DEFAULT_BATCH_SIZE) {
             return logicDeleteByIds(ids, deleteTime, deleteBy);
         }

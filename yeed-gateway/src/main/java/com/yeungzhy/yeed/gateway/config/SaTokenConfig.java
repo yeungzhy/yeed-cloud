@@ -8,7 +8,6 @@ import cn.dev33.satoken.reactor.filter.SaReactorFilter;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.gateway.security.MenuCache;
@@ -84,7 +83,7 @@ public class SaTokenConfig {
         // 本地权限快照不可用（未初始化/Redis 异常）fail-closed，仅超管放行
         MenuCacheSnapshot snapshot = menuCache.getSnapshot();
         if (snapshot == null) {
-            if (LoginUserHelper.getRoleCodes().contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode())) {
+            if (LoginUserHelper.isSuperAdmin()) {
                 log.error("菜单接口权限缓存不可用，SUPER_ADMIN 放行：path={}", path);
                 return;
             }
