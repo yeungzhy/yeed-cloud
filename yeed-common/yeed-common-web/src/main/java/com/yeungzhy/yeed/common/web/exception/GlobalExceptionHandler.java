@@ -37,7 +37,8 @@ public class GlobalExceptionHandler {
     /** 业务异常 */
     @ExceptionHandler(BizException.class)
     public ApiResult<Void> handleBizException(BizException e) {
-        return ApiResult.error(e.getMessage());
+        ApiResult.CommonCode code = e.getCommonCode() == null ? ApiResult.CommonCode.SYSTEM_ERROR : e.getCommonCode();
+        return ApiResult.error(code, e.getMessage());
     }
 
     /* ================================================= 参数异常 ================================================ */
@@ -94,7 +95,7 @@ public class GlobalExceptionHandler {
     /** 请求方法不支持（如公司禁用GET，如果误发GET会触发） */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ApiResult<Void> handleMethodNotSupport(HttpRequestMethodNotSupportedException e) {
-        return ApiResult.error("不支持的请求方法，请使用POST");
+        return ApiResult.error("不支持的请求方法，请使用：" + e.getSupportedHttpMethods());
     }
 
     /* ================================================= 数据库异常 ================================================
