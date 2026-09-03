@@ -4,6 +4,11 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**
  * 统一API响应结果封装，确保所有接口返回一致的JSON结构：
  * <pre>{@code { code: int, msg: String, data: T }}</pre>
@@ -155,6 +160,11 @@ public class ApiResult<T> {
         ILLEGAL_STATE_ERROR(1009, "系统状态异常，请刷新后重试"),
 
         ; // 领域语义组集中在 1000~9999，与 HTTP 状态码彻底解耦
+
+
+
+        public static final Map<Integer, CommonCode> CODE_MAP = Arrays.stream(CommonCode.values())
+                .collect(Collectors.toMap(CommonCode::getCode, Function.identity()));
 
         private final int code;
         private final String msg;
