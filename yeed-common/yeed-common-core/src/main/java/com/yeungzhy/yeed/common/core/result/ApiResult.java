@@ -70,8 +70,8 @@ public class ApiResult<T> {
         return error(commonCode, null);
     }
 
-    public static <T> ApiResult<T> error(CommonCode commonCode, T response) {
-        return build(commonCode, commonCode.msg, response);
+    public static <T> ApiResult<T> error(CommonCode commonCode, String msg) {
+        return build(commonCode, msg != null ? msg : commonCode.msg, null);
     }
 
 
