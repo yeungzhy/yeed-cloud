@@ -39,7 +39,7 @@
 
         <!--
             jakarta.servlet-api：仅编译期需要 HttpServletRequest
-            （FeignTokenRelayInterceptor 经 RequestContextHolder 取当前请求头）
+            （InternalTokenRelayInterceptor 经 RequestContextHolder 取当前请求头）
         -->
         <dependency>
             <groupId>jakarta.servlet</groupId>

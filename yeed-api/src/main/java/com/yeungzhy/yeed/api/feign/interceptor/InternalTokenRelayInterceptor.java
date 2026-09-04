@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.api.feign.interceptor;
 
+import com.yeungzhy.yeed.api.feign.config.InternalFeignConfig;
 import com.yeungzhy.yeed.common.core.constant.Constant;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
@@ -9,12 +10,18 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
- * Feign 请求头透传拦截器：把当前请求上下文中的 token 透传到下游 Feign 调用。
+ * 内部 Feign 客户端的请求头透传拦截器：把当前请求上下文中的 token 透传到下游。
  *
- * <p>随 yeed-api 自动装配，对所有 Feign 消费方生效。仅透传当前请求线程的上下文：
- * 异步/多线程场景需自行从主线程传递，子线程取不到请求上下文时跳过（不伪造身份）。
+ * <p>生效范围：经 {@link InternalFeignConfig} 注册为 <b>Feign 子容器 Bean</b>，只对
+ * {@code @FeignClient(configuration = InternalFeignConfig.class)} 的客户端生效；
+ * 不是全局 {@code RequestInterceptor}，不会波及其它 Feign 客户端。
+ *
+ * <p>仅透传当前请求线程的上下文：异步/多线程场景需自行从主线程传递，子线程取不到
+ * 请求上下文时跳过（不伪造身份）。
+ *
+ * @author yeungzhy
  */
-public class FeignTokenRelayInterceptor implements RequestInterceptor {
+public class InternalTokenRelayInterceptor implements RequestInterceptor {
 
     @Override
     public void apply(RequestTemplate template) {
