@@ -20,7 +20,7 @@
         ✅ 可引：yeed-common-security —— Sa-Token 有 Reactive 适配，Gateway 可正常使用
 
         ❌ 禁引：yeed-common-data    —— MyBatis-Plus + MySQL + Druid 全是阻塞 IO
-        ❌ 禁引：yeed-common-web     —— Servlet/MVC 栈（含 logback-spring.xml、GlobalExceptionHandler）
+        ❌ 禁引：yeed-common-web     —— Servlet/MVC 栈（含 logback-spring.xml、ExternalApiExceptionHandler）
         ❌ 禁引：spring-boot-starter-web —— 与 Gateway 的 WebFlux 冲突
     -->
     <dependencies>

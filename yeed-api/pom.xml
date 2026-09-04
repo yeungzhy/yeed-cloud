@@ -47,6 +47,17 @@
             <scope>provided</scope>
         </dependency>
 
+        <!--
+            jackson-databind：InternalErrorDecoder 解析下游错误响应体（ApiResult 结构）所需。
+            provided 范围：编译期需要，运行期由消费方（admin/auth/job/oss 等）的 spring-boot-starter-web 传递提供。
+            版本由根 POM 的 jackson-bom 统一管理。
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
