@@ -90,13 +90,6 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
-        <!-- CircuitBreaker 实现：Resilience4j（OpenFeign fallback/fallbackFactory 依赖此包在 classpath）
-             仅 spring.cloud.openfeign.circuitbreaker.enabled=true 还不够，必须有实现类才能启用 -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
-        </dependency>
-
     </dependencies>
 
 
