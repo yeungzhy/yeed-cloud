@@ -6,6 +6,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -21,17 +23,36 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
 
 /**
- * 统一异常处理
+ * 对外端点（经网关暴露给前端的 Controller）异常处理：HTTP 200 + body 业务码。
+ *
+ * <p>与 {@link InternalApiExceptionHandler} 是一对，分工只在一处：<b>失败如何表达</b>。
+ * <ul>
+ *   <li>本类：HTTP 状态码恒为 200（除 404 这类纯 HTTP 语义），领域语义全部放进 body 的
+ *       {@link ApiResult#getCode()}——前端统一按 {@code code == 0} 判成功；</li>
+ *   <li>{@link InternalApiExceptionHandler}：映射成 HTTP 错误码，供 Feign ErrorDecoder 还原。</li>
+ * </ul>
+ * 因此本类<b>不做选择器</b>（裸 {@code @RestControllerAdvice}），它是所有未被更具体 Advice
+ * 接管的异常的兜底；内部端点由排序更靠前的 {@link InternalApiExceptionHandler} 先行处理。
+ *
+ * <p>为何显式 {@code @Order(LOWEST_PRECEDENCE)}：与对内的 {@code @Order(HIGHEST_PRECEDENCE)}
+ * 成对写明，顺序不再依赖"未标注 @Order 的 Advice 兜底最低优先级"这一隐式行为——将来插入
+ * 中间层 Advice 时，两类端点的接管关系仍然一目了然。
+ *
+ * <p>装配方式：本类位于 {@code common-web}，不在任何业务模块的组件扫描边界内，
+ * 由 {@link com.yeungzhy.yeed.common.web.config.ExceptionHandlerAutoConfiguration} 显式注册。
  *
  * @author yeungzhy
+ * @see InternalApiExceptionHandler
  */
 @Slf4j
+@Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class ExternalApiExceptionHandler {
 
     /* ================================================= 业务异常 ================================================ */
     /** 业务异常 */
@@ -49,7 +70,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining("; "));
         return ApiResult.error(msg);
     }
 
@@ -176,9 +197,13 @@ public class GlobalExceptionHandler {
 
     /**
      * 原生网络异常（DNS 解析失败、拒绝连接、Socket 超时）
+     *
+     * <p>形参必须是两者的公共父类 {@link IOException}：{@code ConnectException extends SocketException}、
+     * {@code SocketTimeoutException extends InterruptedIOException}，彼此无继承关系；若形参声明成
+     * 其中某一个，Spring 提供异常实参时按 {@code isInstance} 匹配失败，本方法根本不会被调用。
      */
     @ExceptionHandler({java.net.ConnectException.class, java.net.SocketTimeoutException.class})
-    public ApiResult<Void> handleNetwork(java.net.SocketTimeoutException e) {
+    public ApiResult<Void> handleNetwork(IOException e) {
         log.error("网络连接异常 [{}]：", e.getClass().getName(), e);
         return ApiResult.error(ApiResult.CommonCode.NETWORK_ERROR);
     }

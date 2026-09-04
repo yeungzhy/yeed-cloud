@@ -6,6 +6,6 @@
 # ApplicationListener implementations must be loaded before the ApplicationContext starts to catch early events. AutoConfiguration.imports loads too late.
 # To register an ApplicationListener, use the dedicated SPI file: `src/main/resources/META-INF/spring.factories`, use key `org.springframework.context.ApplicationListener`, and add the fully-qualified class name of the ApplicationListener implementation.
 
+com.yeungzhy.yeed.common.web.config.ExceptionHandlerAutoConfiguration
 com.yeungzhy.yeed.common.web.config.FastJson2AutoConfiguration
-com.yeungzhy.yeed.common.web.config.GlobalExceptionAutoConfiguration
 com.yeungzhy.yeed.common.web.config.RestClientAutoConfiguration

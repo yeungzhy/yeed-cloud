@@ -47,7 +47,7 @@
         </dependency>
 
         <!--
-            spring-tx：GlobalExceptionHandler 编译期需要访问 org.springframework.dao.DataAccessException
+            spring-tx：ExternalApiExceptionHandler 编译期需要访问 org.springframework.dao.DataAccessException
             及其子类（DuplicateKeyException / DataIntegrityViolationException）。
             provided 范围：运行期由 data 模块（mybatis-plus-spring-boot3-starter 传递 spring-tx）提供；
             若业务模块仅引入 web 不引入 data，这些 @ExceptionHandler 不会被匹配，不影响运行。
