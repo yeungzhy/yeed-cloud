@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.common.core.support;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,6 +59,10 @@ import static com.yeungzhy.yeed.common.core.constant.Constant.DATE_TIME_PATTERN;
  * <p>null 入参：读方法（parseXxx / getXxx / convertValue / treeToValue）返回安全默认值，不抛异常；
  * {@link #toJsonStr(Object)} 传入 null 返回字符串 {@code "null"}（业界共识，同 Hutool / Fastjson2）。
  *
+ * <p>null 字段：默认<b>输出</b> null（Jackson 原生的 {@code ALWAYS}，保证 round-trip 无损，与 Hutool / Fastjson2
+ * 的默认相反）。展示 / 传输场景要精简报文时用 {@link #toJsonStrIgnoreNull(Object)}，
+ * <b>不要改全局 inclusion</b>——本类实例同时服务 HTTP 出参、Feign 编解码与 Redis 序列化
+ *
  * <p>复用：同一 JSON 需多次取值时，先 {@link #parseTree(String)} 一次，再复用节点版 {@code getXxx(JsonNode, String)} 重载。
  *
  * @author yeungzhy
@@ -89,11 +94,29 @@ public final class JacksonUtil {
     private static volatile ObjectMapper mapper = newDefaultMapper();
 
     /**
+     * 忽略 null 字段的 mapper，仅供 {@link #toJsonStrIgnoreNull(Object)} 使用
+     * <p>由生效 mapper {@code copy()} 派生：忽略 null 只是局部诉求，不能污染 {@link #mapper}
+     * （HTTP 出参、Feign 编解码、Redis 序列化共用同一个实例）
+     * <p>与 {@link #mapper} 成对维护，随 {@link #bind(ObjectMapper)} 一并重建；copy 是快照，
+     * bind 之后对生效 mapper 的改动不会同步过来
+     */
+    private static volatile ObjectMapper nonNullMapper = newNonNullMapper(mapper);
+
+    /**
      * 绑定生效的 {@link ObjectMapper}
      * <p>仅供容器启动时调用：业务代码替换全局实例会导致各层序列化行为不一致
      */
     static void bind(ObjectMapper objectMapper) {
         mapper = objectMapper;
+        nonNullMapper = newNonNullMapper(objectMapper);
+    }
+
+    /**
+     * 复制出一个忽略 null 字段的 mapper
+     * <p>copy 出的实例有独立的序列化器缓存，故只在初始化 / {@link #bind(ObjectMapper)} 时调用，不在序列化热路径上
+     */
+    private static ObjectMapper newNonNullMapper(ObjectMapper source) {
+        return source.copy().setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
     }
 
     /**
@@ -145,6 +168,25 @@ public final class JacksonUtil {
     public static String toJsonStr(Object obj) {
         try {
             return mapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(serializationFailed(obj), e);
+        }
+    }
+
+    /**
+     * 对象转 JSON 字符串，并忽略值为 null 的字段
+     *
+     * <p>仅适用于<b>展示 / 传输</b>场景（日志打印、调试、报文瘦身）。审计落库与契约出参请用 {@link #toJsonStr(Object)}：
+     * null 被裁掉后「字段值为 null」与「字段不存在」不再可区分，而这种区分正是审计报文的价值所在
+     *
+     * <p>优先级：类 / 字段上的 {@link JsonInclude} 注解<b>高于</b>本方法所用 mapper 的全局设置，
+     * 被显式标注为 {@code Include.ALWAYS} 的类不会因本方法被裁剪
+     *
+     * <p>{@code Map} / {@link JsonNode} 中值为 null 的条目同样会被裁掉
+     */
+    public static String toJsonStrIgnoreNull(Object obj) {
+        try {
+            return nonNullMapper.writeValueAsString(obj);
         } catch (Exception e) {
             throw new RuntimeException(serializationFailed(obj), e);
         }
