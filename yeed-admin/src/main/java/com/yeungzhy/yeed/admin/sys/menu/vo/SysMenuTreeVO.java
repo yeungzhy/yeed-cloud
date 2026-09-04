@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.menu.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuVisibleEnum;
 import lombok.Data;
@@ -19,6 +20,7 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SysMenuTreeVO {
 
     // ================== 主键 ==================

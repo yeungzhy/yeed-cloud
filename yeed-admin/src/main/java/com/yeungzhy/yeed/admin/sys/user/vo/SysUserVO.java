@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.user.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.sensitive.Sensitive;
 import com.yeungzhy.yeed.common.core.sensitive.SensitiveType;
@@ -17,6 +18,7 @@ import java.util.Map;
  */
 @Data
 @Accessors(chain = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SysUserVO {
 
     // ================== 主键 ==================

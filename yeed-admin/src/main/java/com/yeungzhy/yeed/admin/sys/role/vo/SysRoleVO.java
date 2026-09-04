@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.role.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -15,6 +16,7 @@ import java.util.Map;
  */
 @Data
 @Accessors(chain = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SysRoleVO {
 
     // ================== 主键 ==================
