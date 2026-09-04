@@ -4,15 +4,16 @@ import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.stp.StpUtil;
 import com.yeungzhy.yeed.api.user.dto.UserMenuDTO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
-import com.yeungzhy.yeed.api.user.feign.SysUserFeignClient;
+import com.yeungzhy.yeed.api.user.SysUserFeignClient;
 import com.yeungzhy.yeed.auth.account.dto.LoginDTO;
 import com.yeungzhy.yeed.auth.account.service.AuthService;
 import com.yeungzhy.yeed.auth.account.vo.LoginVO;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
-import com.yeungzhy.yeed.common.core.result.ApiResult;
+import com.yeungzhy.yeed.common.core.exception.BizException;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import com.yeungzhy.yeed.common.core.security.SessionKeys;
+import feign.FeignException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,11 +32,11 @@ import java.util.List;
  *   <li>回前端 token + 登录身份包 + 菜单树。</li>
  * </ol>
  *
- * <p><b>异常透传</b>：admin 侧凭据校验失败（账号不存在/密码错误）时，由 admin 的 GlobalExceptionHandler
- * 包成 {@code ApiResult.error(msg)} 返回（HTTP 200）；本类断言 {@code result.isOk()} 失败时抛
- * {@code BizException(msg)}，由 auth 侧 GlobalExceptionHandler 原样透传给前端。
+ * <p><b>异常透传</b>：admin 内部端点为裸数据契约（终态 A）——凭据校验失败（账号不存在/密码错误）由
+ * admin 抛异常映射为 HTTP 错误码，auth 侧 {@code InternalErrorDecoder} 还原为
+ * {@code BizException(码, 话术)} 直接中断本方法，auth 的 ExternalApiExceptionHandler 原样透传前端。
  *
- * <p><b>菜单树降级</b>：user-menus 拉取失败（远程异常走 Fallback）时按空菜单降级并打 warn，
+ * <p><b>菜单树降级</b>：user-menus 拉取失败（业务失败/连接失败）时按空菜单降级并打 warn，
  * 不阻断登录——菜单树仅供前端渲染，会话身份包已成功写入。
  *
  * @author yeungzhy
@@ -50,16 +51,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginVO login(LoginDTO dto) {
-        // 1. Feign 调 admin 校验凭据
-        ApiResult<LoginUserInfo> result = sysUserFeignClient.verify(
+        // 1. Feign 调 admin 校验凭据：成功返回身份包；失败（账号/密码错误等）抛 BizException 中断，话术透传前端
+        LoginUserInfo loginUser = sysUserFeignClient.verify(
                 new UserVerifyDTO()
                         .setAccount(dto.getAccount())
                         .setPassword(dto.getPassword())
         );
-        // admin 凭据校验失败时 result.isOk()=false，msg 透传给前端
-        BizAssert.isTrue(result.succeed(), result.getMsg());
-
-        LoginUserInfo loginUser = result.getData();
         BizAssert.notNull(loginUser, "登录失败");
 
         // 2. 签发 token + 写 session
@@ -82,19 +79,21 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 拉取用户可见菜单树
      *
-     * <p>菜单树仅供前端侧边栏/路由渲染，拉取失败（远程异常走 Fallback）时按空菜单降级
-     * 并打 warn，不阻断登录——会话身份包已成功写入，前端可刷新页面重试。
+     * <p>菜单树仅供前端侧边栏/路由渲染，拉取失败时按空菜单降级并打 warn，不阻断登录——
+     * 会话身份包已成功写入，前端可刷新页面重试。捕获范围收窄为"远程失败"两类
+     * （业务失败 {@link BizException} / 连接失败 {@link FeignException}），
+     * 代码缺陷（NPE 等）仍正常上抛，不被降级语义掩盖。
      *
      * @param userId 用户 ID
-     * @return 已建树的菜单树节点（失败时为空列表）
+     * @return 已建树的菜单树节点（远程失败时为空列表）
      */
     private List<MenuTreeInfo> listMenus(Long userId) {
-        ApiResult<List<MenuTreeInfo>> result = sysUserFeignClient.userMenus(new UserMenuDTO().setUserId(userId));
-        if (!result.succeed() || result.getData() == null) {
-            log.warn("获取用户菜单树失败，按空菜单降级 userId={} msg={}", userId, result.getMsg());
+        try {
+            return sysUserFeignClient.userMenus(new UserMenuDTO().setUserId(userId));
+        } catch (BizException | FeignException e) {
+            log.error("获取用户菜单树失败，按空菜单降级 userId={} err={}", userId, e.getMessage());
             return List.of();
         }
-        return result.getData();
     }
 
 }
