@@ -7,7 +7,7 @@ import java.util.Map;
  * 业务断言工具类
  *
  * <p>与 Hutool/Spring 的通用 {@code Assert} 不同，本类所有方法在断言失败时抛出
- * {@link BizException}，其 message 会被 {@code GlobalExceptionHandler}
+ * {@link BizException}，其 message 会被对外端点异常处理器（{@code ExternalApiExceptionHandler}）
  * 原样透传给前端用户；而通用 Assert 抛出的 {@link IllegalArgumentException}
  * 会被统一兜底为"参数校验失败"，无法把具体业务原因（如"密码不正确"）传达给用户。
  *
