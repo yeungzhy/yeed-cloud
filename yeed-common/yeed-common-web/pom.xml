@@ -46,6 +46,13 @@
             <artifactId>fastjson2</artifactId>
         </dependency>
 
+        <!-- MapStruct：对象字段映射 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
         <!--
             spring-tx：ExternalApiExceptionHandler 编译期需要访问 org.springframework.dao.DataAccessException
             及其子类（DuplicateKeyException / DataIntegrityViolationException）。

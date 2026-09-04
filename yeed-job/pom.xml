@@ -101,12 +101,6 @@
             <artifactId>poi-ooxml</artifactId>
         </dependency>
 
-        <!-- MapStruct：对象字段映射 -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
-
     </dependencies>
 
     <build>
