@@ -9,3 +9,4 @@
 com.yeungzhy.yeed.common.web.config.ExceptionHandlerAutoConfiguration
 com.yeungzhy.yeed.common.web.config.FastJson2AutoConfiguration
 com.yeungzhy.yeed.common.web.config.RestClientAutoConfiguration
+com.yeungzhy.yeed.common.web.config.InternalApiValidatorAutoConfiguration
