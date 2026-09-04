@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 系统用户内部 Feign 契约（消费方：yeed-auth / yeed-job；提供方：yeed-admin）
  *
- * <p>终态 A 契约：直接返回业务数据，业务失败（账号不存在/密码错误等）由 admin 抛异常并经
+ * <p>RPC-Style：成功返回裸数据，业务失败（账号不存在/密码错误等）由 admin 抛异常并经
  * {@code InternalErrorDecoder} 解码为 {@link com.yeungzhy.yeed.common.core.exception.BizException BizException}
  * 中断调用——调用方无需判 ApiResult 码。
  *

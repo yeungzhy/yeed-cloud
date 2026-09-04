@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
  * <p>监听 {@link ApplicationReadyEvent}，保证容器就绪且所有 ApplicationRunner
  * 全部成功执行后才输出，避免「先打印启动成功、随后启动失败」的误导输出。
  *
- * <p><b>使用方式</b>
+ * <p>使用方式
  * <ol>
  *   <li>由 {@link com.yeungzhy.yeed.common.core.config.StartupInfoPrinterAutoConfiguration} 通过
  *       {@code @Bean} 注册，该配置类由 {@code AutoConfiguration.imports} 自动加载，
@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
  *       若未提供则兜底跳过 Banner 打印。</li>
  * </ol>
  *
- * <p><b>运行环境兼容</b>
+ * <p>运行环境兼容
  * <ul>
  *   <li>Servlet Web（admin / auth 等）：通过 {@link WebServerApplicationContext} 取实际绑定端口</li>
  *   <li>Reactive Web（gateway 等）：通过反射获取 {@code ReactiveWebServerApplicationContext} 的端口</li>

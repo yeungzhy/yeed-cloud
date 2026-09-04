@@ -12,7 +12,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 /**
  * 内部 Feign 客户端的请求头透传拦截器：把当前请求上下文中的 token 透传到下游。
  *
- * <p>生效范围：经 {@link InternalFeignConfig} 注册为 <b>Feign 子容器 Bean</b>，只对
+ * <p>生效范围：经 {@link InternalFeignConfig} 注册为 Feign 子容器 Bean，只对
  * {@code @FeignClient(configuration = InternalFeignConfig.class)} 的客户端生效；
  * 不是全局 {@code RequestInterceptor}，不会波及其它 Feign 客户端。
  *

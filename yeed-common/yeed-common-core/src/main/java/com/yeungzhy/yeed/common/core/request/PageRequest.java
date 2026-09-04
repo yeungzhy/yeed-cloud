@@ -41,7 +41,7 @@ public class PageRequest {
 
     /**
      * 单字段排序 - 是否升序
-     * <p><b>null 默认降序</b>（业务惯例：最新记录在前）
+     * <p>null 默认降序（业务惯例：最新记录在前）
      * <p>只有显式传 true 才升序；false / null 都是降序
      */
     private Boolean isAsc;
@@ -53,8 +53,8 @@ public class PageRequest {
      *   {"field": "status",     "isAsc": true},
      *   {"field": "createTime", "isAsc": false}
      * ]</pre>
-     * <p>执行顺序规则：<b>先 {@link #orderField} 单字段 → 再多字段列表</b>
-     * <p>各条目 isAsc 为 null → <b>默认降序</b>；不在白名单内的字段静默忽略
+     * <p>执行顺序规则：先 {@link #orderField} 单字段 → 再多字段列表
+     * <p>各条目 isAsc 为 null → 默认降序；不在白名单内的字段静默忽略
      */
     private List<OrderItem> orders;
 
@@ -66,7 +66,7 @@ public class PageRequest {
     public static class OrderItem {
         /** Java 属性名（驼峰）；不在白名单内会被静默忽略 */
         private String field;
-        /** 是否升序；<b>null 默认降序</b> */
+        /** 是否升序；null 默认降序 */
         private Boolean isAsc;
     }
 

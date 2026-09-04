@@ -59,9 +59,9 @@ import static com.yeungzhy.yeed.common.core.constant.Constant.DATE_TIME_PATTERN;
  * <p>null 入参：读方法（parseXxx / getXxx / convertValue / treeToValue）返回安全默认值，不抛异常；
  * {@link #toJsonStr(Object)} 传入 null 返回字符串 {@code "null"}（业界共识，同 Hutool / Fastjson2）。
  *
- * <p>null 字段：默认<b>输出</b> null（Jackson 原生的 {@code ALWAYS}，保证 round-trip 无损，与 Hutool / Fastjson2
+ * <p>null 字段：默认输出 null（Jackson 原生的 {@code ALWAYS}，保证 round-trip 无损，与 Hutool / Fastjson2
  * 的默认相反）。展示 / 传输场景要精简报文时用 {@link #toJsonStrIgnoreNull(Object)}，
- * <b>不要改全局 inclusion</b>——本类实例同时服务 HTTP 出参、Feign 编解码与 Redis 序列化
+ * 不要改全局 inclusion——本类实例同时服务 HTTP 出参、Feign 编解码与 Redis 序列化
  *
  * <p>复用：同一 JSON 需多次取值时，先 {@link #parseTree(String)} 一次，再复用节点版 {@code getXxx(JsonNode, String)} 重载。
  *
@@ -176,10 +176,10 @@ public final class JacksonUtil {
     /**
      * 对象转 JSON 字符串，并忽略值为 null 的字段
      *
-     * <p>仅适用于<b>展示 / 传输</b>场景（日志打印、调试、报文瘦身）。审计落库与契约出参请用 {@link #toJsonStr(Object)}：
+     * <p>仅适用于展示 / 传输场景（日志打印、调试、报文瘦身）。审计落库与契约出参请用 {@link #toJsonStr(Object)}：
      * null 被裁掉后「字段值为 null」与「字段不存在」不再可区分，而这种区分正是审计报文的价值所在
      *
-     * <p>优先级：类 / 字段上的 {@link JsonInclude} 注解<b>高于</b>本方法所用 mapper 的全局设置，
+     * <p>优先级：类 / 字段上的 {@link JsonInclude} 注解高于本方法所用 mapper 的全局设置，
      * 被显式标注为 {@code Include.ALWAYS} 的类不会因本方法被裁剪
      *
      * <p>{@code Map} / {@link JsonNode} 中值为 null 的条目同样会被裁掉

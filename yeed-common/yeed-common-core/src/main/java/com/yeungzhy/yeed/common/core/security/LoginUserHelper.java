@@ -11,20 +11,20 @@ import java.util.List;
  * <p>由 {@link LoginUserProviderRegistrar} 在容器启动时绑定生效的 {@link LoginUserProvider}，
  * 业务代码无需注入 Bean，直接静态调用本类方法即可获取当前登录用户信息。
  *
- * <p><b>语义按"返回值类别"分族，调用点无需逐个权衡强弱语义</b>：
+ * <p>语义按"返回值类别"分族，调用点无需逐个权衡强弱语义：
  * <ul>
- *   <li><b>值族</b>（{@link #getUserId()} / {@link #getUsername()} / {@link #getRealName()} /
- *       {@link #getEmployeeNo()}）：取"操作主体"，<b>默认强登录语义</b>——未登录直接抛
+ *   <li>值族（{@link #getUserId()} / {@link #getUsername()} / {@link #getRealName()} /
+ *       {@link #getEmployeeNo()}）：取"操作主体"，默认强登录语义——未登录直接抛
  *       {@link IllegalStateException}，不返回 null。理由：业务代码运行在网关统一鉴权之后，
  *       （除放行名单外）匿名请求到不了这里；取不到人意味着代码跑在非请求线程（定时任务/异步执行器）
  *       或身份基础设施未装配，属编程错误——返回 null 只会让错误向下游扩散（拿 null 拼条件、落库），
  *       就地 fail-fast 才是最小代价。语义等价 {@code StpUtil.getLoginIdAsLong()}。</li>
- *   <li><b>谓词族</b>（{@link #isLogin()} / {@link #hasRole(String)} / {@link #isSuperAdmin()} /
- *       {@link #getRoleCodes()} / {@link #getPerms()}）：问身份与权限，<b>空安全</b>——
+ *   <li>谓词族（{@link #isLogin()} / {@link #hasRole(String)} / {@link #isSuperAdmin()} /
+ *       {@link #getRoleCodes()} / {@link #getPerms()}）：问身份与权限，空安全——
  *       未登录返回 false / 空集合。匿名请求做权限判断应得到安全答案，false 不会像 null 那样扩散。</li>
- *   <li><b>逃生通道</b>（{@link #getLoginUser()} / {@link #getUserId(Long)}）：面向框架与系统代码
+ *   <li>逃生通道（{@link #getLoginUser()} / {@link #getUserId(Long)}）：面向框架与系统代码
  *       （审计字段自动填充、匿名身份捕获、定时任务），场景本身就容忍"没有登录人"，
- *       由调用方通过 nullable 根方法或<b>显式兜底值</b>表达该意图。</li>
+ *       由调用方通过 nullable 根方法或显式兜底值表达该意图。</li>
  * </ul>
  *
  * @see LoginUserProviderRegistrar

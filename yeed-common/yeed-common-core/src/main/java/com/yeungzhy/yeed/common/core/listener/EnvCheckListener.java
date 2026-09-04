@@ -13,7 +13,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
  *       <p>强制要求开发环境使用非默认分组，避免服务注册冲突</li>
  * </ol>
  *
- * <p><b>SPI 注册方式</b>：通过 {@code META-INF/spring.factories} 注册（key 为
+ * <p>SPI 注册方式：通过 {@code META-INF/spring.factories} 注册（key 为
  * {@code org.springframework.context.ApplicationListener}），而非 {@code AutoConfiguration.imports}。
  * 原因：{@link ApplicationListener} 需在启动早期（{@link ApplicationEnvironmentPreparedEvent} 发布前）
  * 完成注册才能生效，而 imports 文件到自动配置阶段（较晚）才被加载，且仅用于

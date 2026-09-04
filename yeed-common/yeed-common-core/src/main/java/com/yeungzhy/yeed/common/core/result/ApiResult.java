@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
  * 统一API响应结果封装，确保所有接口返回一致的JSON结构：
  * <pre>{@code { code: int, msg: String, data: T }}</pre>
  *
- * <p><b>核心设计</b>
+ * <p>核心设计
  * <ul>
- *   <li><b>强制枚举错误码</b> – 所有业务状态码定义在 {@link CommonCode} 枚举中，禁止直接传入 int 值，避免项目内错误码散乱。</li>
- *   <li><b>静态工厂方法</b> – 仅通过 {@code ok()} 和 {@code error(...)} 系列方法构建，语义清晰，符合现代编程习惯。</li>
- *   <li><b>与 HTTP 状态码分工</b> – HTTP 状态码表达通用/稳定语义（网关层 401/403/404/5xx），
+ *   <li>强制枚举错误码 – 所有业务状态码定义在 {@link CommonCode} 枚举中，禁止直接传入 int 值，避免项目内错误码散乱。</li>
+ *   <li>静态工厂方法 – 仅通过 {@code ok()} 和 {@code error(...)} 系列方法构建，语义清晰，符合现代编程习惯。</li>
+ *   <li>与 HTTP 状态码分工 – HTTP 状态码表达通用/稳定语义（网关层 401/403/404/5xx），
  *       body 业务码表达统一结构 + 领域语义（下游 200 + 业务码透传），两者互不替代：
  *       成功固定 0（不抢占 HTTP 200 语义），业务失败 1000+；
  *       {@code CommonCode} 中的 401/403/404 仅为网关鉴权错误与 404 场景的 HTTP 语义映射。</li>
@@ -117,12 +117,12 @@ public class ApiResult<T> {
      * <p>按「HTTP 状态码表达通用/稳定语义、body 业务码表达统一结构 + 领域语义」的分工，
      * 分为三组（互不替代）：
      * <ul>
-     *   <li><b>成功</b> – {@code OK(0)}：业务成功固定为 0，不与 HTTP 200 抢占语义；
+     *   <li>成功 – {@code OK(0)}：业务成功固定为 0，不与 HTTP 200 抢占语义；
      *       前端判成功统一看 {@code code == 0}（配合 HTTP 200）。</li>
-     *   <li><b>HTTP 语义组</b> – {@code UNAUTHORIZED / FORBIDDEN / NOT_FOUND}：值对齐
+     *   <li>HTTP 语义组 – {@code UNAUTHORIZED / FORBIDDEN / NOT_FOUND}：值对齐
      *       HTTP 状态码（401/403/404），仅用于网关鉴权错误与静态资源 404 等「无领域语义」
      *       场景，使 body 状态码与 HTTP 状态码一致，前端一次读懂。</li>
-     *   <li><b>领域语义组</b> – {@code 1000~9999}：业务错误（参数/数据库/网络/远程调用等），
+     *   <li>领域语义组 – {@code 1000~9999}：业务错误（参数/数据库/网络/远程调用等），
      *       由下游服务以 HTTP 200 透传，前端按 code 分流处理。</li>
      * </ul>
      */

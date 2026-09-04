@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  * 避免 Redis 抖动直接中断业务流程；写方法返回 {@code boolean} 表示操作是否成功，
  * 调用方可据此感知写入失败（如缓存与库不一致排查）。
  *
- * <p><b>分布式锁与发布订阅提供薄封装</b>：锁模板
+ * <p>分布式锁与发布订阅提供薄封装：锁模板
  * {@link #executeWithLock(String, Duration, Supplier)} 统一「tryLock + finally 解锁」样板，
  * 锁 key 统一加 {@code yeed:lock:} 前缀（遵守
  * {@link com.yeungzhy.yeed.common.core.constant.CacheConstant} 命名规范）；
@@ -43,13 +43,13 @@ import java.util.function.Supplier;
  *
  * <p>通过 {@link com.yeungzhy.yeed.common.cache.config.RedisAutoConfiguration} 注册为 Spring Bean
  *
- * <p><b>过期时间（TTL）策略：</b>
+ * <p>过期时间（TTL）策略：
  * <ul>
  *   <li>写方法不显式传 {@code timeout} 时，使用默认过期时间
  *   （配置项 {@code yeed.cache.default-ttl}，见
  *   {@link com.yeungzhy.yeed.common.cache.config.CacheProperties}，默认 24 小时），
  *   防止数据永久堆积；</li>
- *   <li>显式传 {@code timeout} 为 {@code null} 表示<b>永久存储</b>（不设置过期时间），
+ *   <li>显式传 {@code timeout} 为 {@code null} 表示永久存储（不设置过期时间），
  *   仅适用于业务主动管理生命周期、每次整体重建覆盖的重建型缓存（如菜单接口权限缓存），
  *   调用方需在注释中说明永久存储的理由；</li>
  *   <li>非法 timeout（负数 / 零）按参数非法忽略，不执行写操作。</li>
@@ -569,7 +569,7 @@ public class RedisHelper {
     /**
      * 将 Map 数据放入缓存（先清空再写入）
      *
-     * <p>适用于<b>重建型</b>缓存（整体覆盖、无历史残留）；若需增量更新单个字段，
+     * <p>适用于重建型缓存（整体覆盖、无历史残留）；若需增量更新单个字段，
      * 使用 {@link #setMapValue(String, Object, Object, Duration)}
      *
      * @param key     键，不能为空
@@ -612,8 +612,8 @@ public class RedisHelper {
     /**
      * 设置 Map 中指定 hashKey 的值
      *
-     * <p><b>高危注意：</b>Redis Hash 的过期时间作用于<b>整个 key</b>而非单个 hashKey。
-     * 本方法在 {@code timeout} 非空时会<b>刷新整个 Map 的过期时间</b>——若该 Map
+     * <p>高危注意：Redis Hash 的过期时间作用于整个 key而非单个 hashKey。
+     * 本方法在 {@code timeout} 非空时会刷新整个 Map 的过期时间——若该 Map
      * 此前是永久存储（{@code setMap(key, map, null)}），此处会被静默降级为默认 TTL，
      * 导致重建型缓存提前过期。重建型缓存请使用 {@link #setMap(String, Map, Duration)}
      *
@@ -699,7 +699,7 @@ public class RedisHelper {
     }
 
     /**
-     * 批量获取 Map 中<b>指定 hashKey 子集</b>的值（一次网络往返）
+     * 批量获取 Map 中指定 hashKey 子集的值（一次网络往返）
      *
      * <p>与 {@link #getMap(String)}（取全部字段）区分：本方法仅取入参指定的字段子集，
      * 常用于从同一 Hash 中按需读取多个字段

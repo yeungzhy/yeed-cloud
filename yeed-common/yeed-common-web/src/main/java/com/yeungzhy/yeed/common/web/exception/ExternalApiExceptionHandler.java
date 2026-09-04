@@ -28,15 +28,16 @@ import java.sql.SQLException;
 import java.util.stream.Collectors;
 
 /**
- * 对外端点（经网关暴露给前端的 Controller）异常处理：HTTP 200 + body 业务码。
+ * 对外端点（经网关暴露给前端的 Controller）异常处理：RESTful-Style（统一封装 + 业务码）。
  *
- * <p>与 {@link InternalApiExceptionHandler} 是一对，分工只在一处：<b>失败如何表达</b>。
+ * <p>与 {@link InternalApiExceptionHandler} 是一对，分工只在一处：失败如何表达。
  * <ul>
- *   <li>本类：HTTP 状态码恒为 200（除 404 这类纯 HTTP 语义），领域语义全部放进 body 的
+ *   <li>本类（RESTful-Style）：HTTP 状态码恒为 200（除 404 这类纯 HTTP 语义），领域语义全部放进 body 的
  *       {@link ApiResult#getCode()}——前端统一按 {@code code == 0} 判成功；</li>
- *   <li>{@link InternalApiExceptionHandler}：映射成 HTTP 错误码，供 Feign ErrorDecoder 还原。</li>
+ *   <li>{@link InternalApiExceptionHandler}（RPC-Style：裸数据 + 异常）：映射成 HTTP 错误码，
+ *       供 Feign ErrorDecoder 还原。</li>
  * </ul>
- * 因此本类<b>不做选择器</b>（裸 {@code @RestControllerAdvice}），它是所有未被更具体 Advice
+ * 因此本类不做选择器（裸 {@code @RestControllerAdvice}），它是所有未被更具体 Advice
  * 接管的异常的兜底；内部端点由排序更靠前的 {@link InternalApiExceptionHandler} 先行处理。
  *
  * <p>为何显式 {@code @Order(LOWEST_PRECEDENCE)}：与对内的 {@code @Order(HIGHEST_PRECEDENCE)}

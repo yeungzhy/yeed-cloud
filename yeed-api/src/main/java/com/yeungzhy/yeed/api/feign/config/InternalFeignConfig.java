@@ -5,9 +5,9 @@ import com.yeungzhy.yeed.api.feign.interceptor.InternalTokenRelayInterceptor;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 内部 Feign 契约的 <b>FeignClient 级装配</b>（被 {@code @FeignClient(configuration = ...)} 引用）。
+ * 内部 Feign 契约的 FeignClient 级装配（被 {@code @FeignClient(configuration = ...)} 引用）。
  *
- * <p><b>不是 Spring 配置类</b>：不要标注 {@code @Component} / {@code @Configuration}，也不要让它进入
+ * <p>不是 Spring 配置类：不要标注 {@code @Component} / {@code @Configuration}，也不要让它进入
  * 组件扫描（本类故意不写 {@code @Configuration}）——它只应被实例化进引用它的各 Feign 子容器。
  * 项目里 {@code common-web/config} 下的 {@code @AutoConfiguration} 是另一回事，勿类比。
  *

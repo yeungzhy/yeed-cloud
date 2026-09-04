@@ -102,7 +102,7 @@ public abstract class BaseSorts<T extends BaseEntity> {
      * 应用单个排序字段。
      *
      * @param field 前端传入的字段名（Java 属性名，驼峰）；null 或不在白名单 → 静默忽略
-     * @param isAsc 升序标志；<b>null 默认降序</b>（业务惯例：最新记录在前）
+     * @param isAsc 升序标志；null 默认降序（业务惯例：最新记录在前）
      */
     public final void apply(LambdaQueryWrapper<T> w, String field, Boolean isAsc) {
         if (field == null) {
@@ -119,8 +119,8 @@ public abstract class BaseSorts<T extends BaseEntity> {
 
     /**
      * 应用多字段排序（兼容 PageRequest 的「单字段 + 多字段」两套接口）。
-     * <p>执行顺序：<b>先单字段 → 再多字段（列表顺序）</b>，符合 SQL ORDER BY a, b, c 的直觉。
-     * <p>isAsc 为 null 或 orders 内 isAsc 为 null → <b>默认降序</b>。
+     * <p>执行顺序：先单字段 → 再多字段（列表顺序），符合 SQL ORDER BY a, b, c 的直觉。
+     * <p>isAsc 为 null 或 orders 内 isAsc 为 null → 默认降序。
      *
      * @param orderField 单字段（便捷接口，可 null）
      * @param isAsc      单字段方向（可 null）

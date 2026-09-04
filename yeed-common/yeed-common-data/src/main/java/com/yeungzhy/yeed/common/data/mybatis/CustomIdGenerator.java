@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.incrementer.DefaultIdentifierGenerator;
  * 自定义 MyBatis-Plus 雪花 ID 生成器。
  *
  * <p>分布式高并发下，用默认构造器（固定或随机 workerId/dataCenterId）极易产生 ID 冲突。
- * 正确做法是为每个实例分配<b>全局唯一且固定</b>的 workerId/dataCenterId（0~31）。
+ * 正确做法是为每个实例分配全局唯一且固定的 workerId/dataCenterId（0~31）。
  * 本类继承 {@link DefaultIdentifierGenerator} 复用其标准雪花算法，仅在构造时注入固定参数。
  *
  * <p>workerId/dataCenterId 来源二选一：

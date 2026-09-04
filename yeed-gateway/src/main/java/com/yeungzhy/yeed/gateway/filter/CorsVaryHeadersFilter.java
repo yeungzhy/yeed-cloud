@@ -12,9 +12,9 @@ import java.util.List;
  * <p>CORS Vary（{@code Origin / Access-Control-Request-Method /
  * Access-Control-Request-Headers}）在响应中存在两个来源：
  * <ul>
- *   <li><b>网关 CorsWebFilter</b>（见 {@code WebFilterConfig#corsWebFilter()}）：请求入站时
+ *   <li>网关 CorsWebFilter（见 {@code WebFilterConfig#corsWebFilter()}）：请求入站时
  *       {@code DefaultCorsProcessor} 无条件添加一组，统一保证所有响应携带 CORS 头；</li>
- *   <li><b>下游 servlet 服务的 404 兜底响应</b>：Spring MVC 的 {@code ResourceHttpRequestHandler}
+ *   <li>下游 servlet 服务的 404 兜底响应：Spring MVC 的 {@code ResourceHttpRequestHandler}
  *       实现了 {@code CorsConfigurationSource}，{@code AbstractHandlerMapping} 对它会无条件挂载
  *       {@code CorsInterceptor}（即使服务自身零跨域配置），每请求调用 {@code DefaultCorsProcessor}
  *       又无条件追加一组同值 Vary（该方法使用 {@code addAll} 追加而非覆盖）。

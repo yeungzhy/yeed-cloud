@@ -16,9 +16,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 内部 Feign 契约的异常解码器（经 {@link InternalFeignConfig} 按客户端装配）。
+ * 内部 Feign 契约（RPC-Style：裸数据 + 异常）的异常解码器（经 {@link InternalFeignConfig} 按客户端装配）。
  *
- * <p>职责：把下游内部端点返回的 <b>HTTP 错误响应</b>（由
+ * <p>职责：把下游内部端点返回的 HTTP 错误响应（由
  * {@code InternalApiExceptionHandler} 统一映射为 500/400 + ApiResult body）翻译回业务异常：
  * <ul>
  *   <li>响应体为 ApiResult 结构 → 解析 code/msg，抛 {@code BizException(码, msg)}，

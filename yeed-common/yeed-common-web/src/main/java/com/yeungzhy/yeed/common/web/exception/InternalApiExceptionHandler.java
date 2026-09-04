@@ -20,7 +20,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 /**
  * 内部 Feign 端点（标注 {@link InternalApi} 的 Controller）专用异常处理
  *
- * <p>与对外端点（HTTP 200 + 业务码）相反，内部端点的失败一律转为 HTTP 错误码
+ * <p>RPC-Style（裸数据 + 异常）：与对外端点的 RESTful-Style（HTTP 200 + 统一封装 + 业务码）
+ * 相反，内部端点的失败一律转为 HTTP 错误码
  * （body 仍为 ApiResult 结构），供消费方 Feign 的 ErrorDecoder 解析出 code/msg：
  * <ul>
  *   <li>{@link BizException}：HTTP 500，body 携带码（无码回落 SYSTEM_ERROR）与透传话术；</li>
@@ -32,7 +33,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * </ul>
  *
  * <p>为何用 {@code @Order(HIGHEST_PRECEDENCE)}：{@link ExternalApiExceptionHandler} 同样能处理
- * {@code BizException}，但会把内部端点错误包成 HTTP 200：裸数据 Feign 契约会把错误体
+ * {@code BizException}，但会把内部端点错误包成 HTTP 200：RPC-Style 下裸数据会被错误体
  * 反序列化成"字段全 null 的假成功"。本类排序更靠前，对内部 Controller 的异常优先接管。
  *
  * <p>装配方式：本类位于 {@code common-web}，不在任何业务模块的组件扫描边界内，

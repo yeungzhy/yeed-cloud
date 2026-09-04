@@ -1,7 +1,7 @@
 package com.yeungzhy.yeed.common.core.crypto;
 
 /**
- * 密文信封格式工具 - 只负责对密文做包装/识别/解包，<b>不负责加解密</b>。
+ * 密文信封格式工具 - 只负责对密文做包装/识别/解包，不负责加解密。
  *
  * <p>存储格式约定：<pre>ENC(Base64密文)</pre>
  *

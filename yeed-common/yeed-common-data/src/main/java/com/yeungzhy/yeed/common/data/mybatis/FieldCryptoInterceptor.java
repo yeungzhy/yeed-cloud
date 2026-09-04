@@ -22,31 +22,31 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * MyBatis 字段加解密拦截器。
  *
- * <p><b>职责</b>：拦截 MyBatis 写入（{@link ParameterHandler#setParameters}）与读取
+ * <p>职责：拦截 MyBatis 写入（{@link ParameterHandler#setParameters}）与读取
  * （{@link ResultSetHandler#handleResultSets}）两条链路，对实体上标注 {@link Crypto} 的字段自动 AES
- * 加解密。Java 层 entity 字段<b>永远是明文</b>，DB 层<b>永远是密文</b>，业务代码不感知密文。
+ * 加解密。Java 层 entity 字段永远是明文，DB 层永远是密文，业务代码不感知密文。
  *
- * <p><b>覆盖场景</b>（完整递归）：单 entity、{@code @Param} 多参数 / {@code foreach} 批量、
+ * <p>覆盖场景（完整递归）：单 entity、{@code @Param} 多参数 / {@code foreach} 批量、
  * 批量集合（saveBatch）、DTO 包装类嵌套 entity、MyBatis-Plus JSON 列（JacksonTypeHandler）内部
- * 字段——写时在 TypeHandler 序列化<b>前</b>加密，读时在反序列化<b>后</b>解密，时序均成立。
+ * 字段——写时在 TypeHandler 序列化前加密，读时在反序列化后解密，时序均成立。
  *
- * <p><b>循环引用 / 深度防御</b>：双向关联（如 {@code User.dept} ↔ {@code Department.manager}）会导致
+ * <p>循环引用 / 深度防御：双向关联（如 {@code User.dept} ↔ {@code Department.manager}）会导致
  * 无限递归，用基于对象身份的 {@link IdentityHashMap} visited set 进入前判重断开环（每条 SQL 新建，
  * 不跨请求共享）；非循环深嵌套由 {@link #MAX_DEPTH} 强制截断，防异常数据结构拖垮栈。
  *
- * <p><b>异常分级</b>：
+ * <p>异常分级：
  * <ul>
- *   <li>加密失败：抛 {@link RuntimeException} 使事务回滚——<b>绝不允许明文落库</b></li>
- *   <li>解密失败：记 error 日志 + 字段降级为 null——<b>不让脏数据把整页列表 500</b></li>
+ *   <li>加密失败：抛 {@link RuntimeException} 使事务回滚——绝不允许明文落库</li>
+ *   <li>解密失败：记 error 日志 + 字段降级为 null——不让脏数据把整页列表 500</li>
  * </ul>
  *
- * <p><b>幂等性（防重入 / 防二次加密）</b>：入库值统一经 {@link CipherEnvelope} 套 {@code ENC(...)}
+ * <p>幂等性（防重入 / 防二次加密）：入库值统一经 {@link CipherEnvelope} 套 {@code ENC(...)}
  * 信封，加密前"已带信封则跳过"、解密仅处理带信封的值——即使 {@code setParameters} 被外部工具
  * （如 SQL 日志 agent 为打印带参 SQL 而 mock 调用）重复触发，也不会对上一轮密文再次加密。
- * 业务代码<b>禁止</b>再手动调用 {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则双重加密
+ * 业务代码禁止再手动调用 {@link AesUtil#encrypt} / {@link AesUtil#decrypt}，否则双重加密
  * 导致数据无法解回。
  *
- * <p><b>注册</b>：本类不标 {@code @Component}（业务模块扫不到 yeed-common 包），
+ * <p>注册：本类不标 {@code @Component}（业务模块扫不到 yeed-common 包），
  * 由 {@code MybatisPlusConfig} 以 {@code @Bean} 注册，MyBatis-Plus 自动收集容器中的
  * {@link Interceptor} Bean 注入所有 SqlSessionFactory。
  *
@@ -189,7 +189,7 @@ public class FieldCryptoInterceptor implements Interceptor {
     /**
      * 对单个 {@link Crypto} 字段执行加/解密
      *
-     * <p><b>异常分级</b>：
+     * <p>异常分级：
      * <ul>
      *   <li>加密失败：抛 {@link RuntimeException} 让事务回滚——绝不能让明文落库</li>
      *   <li>解密失败：记 error 日志 + 字段降级为 null——不让一条脏数据把整页列表 500</li>
