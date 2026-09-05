@@ -1,6 +1,7 @@
 package com.yeungzhy.yeed.gateway.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.yeungzhy.yeed.common.core.enums.FileTypeEnum;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.sensitive.SensitiveJsonUtil;
@@ -43,6 +44,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,45 +151,49 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
      *   <li>识别文件下载（{@link #isFileDownload}）：该类响应不缓存报文，只记下载摘要；</li>
      *   <li>识别"原文无归档价值"的响应（{@link #isBinaryBody}）：{@code _raw} 记一行摘要字符串。</li>
      * </ul>
-     * 两处判定的差异不在清单本身，而在个别类型是否保留原文——由扩展名区分，
-     * 见 {@link #TEXT_FILE_EXTENSIONS}。共用清单可避免新增类型时两处漏改其一。
+     * 两处判定的差异不在清单本身，而在个别类型是否保留原文——见 {@link #TEXT_BODY_MIME_TYPES}。
+     * 共用清单可避免新增类型时两处漏改其一。
      */
-    private static final Map<String, String> MIME_TYPE_TO_FILE_EXTENSION = Map.ofEntries(
-            Map.entry("application/pdf", ".pdf"),
-            Map.entry("application/msword", ".doc"),
-            Map.entry("application/vnd.ms-excel", ".xls"),
-            Map.entry("application/vnd.ms-powerpoint", ".ppt"),
-            Map.entry("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
-            Map.entry("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
-            Map.entry("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
-            Map.entry("application/zip", ".zip"),
-            Map.entry("application/x-7z-compressed", ".7z"),
-            Map.entry("application/x-rar-compressed", ".rar"),
-            Map.entry("application/x-tar", ".tar"),
-            Map.entry("application/gzip", ".gz"),
-            Map.entry("image/png", ".png"),
-            Map.entry("image/jpeg", ".jpg"),
-            Map.entry("image/gif", ".gif"),
-            Map.entry("image/webp", ".webp"),
-            Map.entry("image/svg+xml", ".svg"),
-            Map.entry("image/bmp", ".bmp"),
-            Map.entry("image/tiff", ".tiff"),
-            Map.entry("audio/mpeg", ".mp3"),
-            Map.entry("audio/wav", ".wav"),
-            Map.entry("audio/ogg", ".ogg"),
-            Map.entry("video/mp4", ".mp4"),
-            Map.entry("video/mpeg", ".mpeg"),
-            Map.entry("video/quicktime", ".mov"),
-            Map.entry("video/webm", ".webm"),
-            Map.entry("font/ttf", ".ttf"),
-            Map.entry("font/otf", ".otf")
+    private static final Set<FileTypeEnum> FILE_DOWNLOAD_TYPES = EnumSet.of(
+            FileTypeEnum.PDF,
+            FileTypeEnum.DOC,
+            FileTypeEnum.XLS,
+            FileTypeEnum.PPT,
+            FileTypeEnum.DOCX,
+            FileTypeEnum.XLSX,
+            FileTypeEnum.PPTX,
+            FileTypeEnum.ZIP,
+            FileTypeEnum.SEVEN_ZIP,
+            FileTypeEnum.RAR,
+            FileTypeEnum.TAR,
+            FileTypeEnum.GZ,
+            FileTypeEnum.PNG,
+            FileTypeEnum.JPG,
+            FileTypeEnum.GIF,
+            FileTypeEnum.WEBP,
+            FileTypeEnum.SVG,
+            FileTypeEnum.BMP,
+            FileTypeEnum.TIFF,
+            FileTypeEnum.MP3,
+            FileTypeEnum.WAV,
+            FileTypeEnum.OGG,
+            FileTypeEnum.MP4,
+            FileTypeEnum.MPEG,
+            FileTypeEnum.MOV,
+            FileTypeEnum.WEBM,
+            FileTypeEnum.TTF,
+            FileTypeEnum.OTF
     );
+
     /**
-     * {@link #MIME_TYPE_TO_FILE_EXTENSION} 名单中仍有归档价值的类型
+     * 命中文件类清单、但原文仍有归档价值的文本形态 MIME
      *
-     * <p> xml/txt 响应常是排障线索: 下游透传的错误详情、异常信息都在里面，摘要会丢掉关键内容
+     * <p>xml/txt 响应常是排障线索：下游透传的错误详情、异常信息都在里面，摘要会丢掉关键内容。
+     *
+     * <p>显式维护而非依赖"这些类型碰巧不在清单里"：将来若把 xml 纳入下载清单，本守卫仍生效，
+     * 不会静默变成只记一行摘要。
      */
-    private static final Set<String> TEXT_FILE_EXTENSIONS = Set.of(".xml", ".txt");
+    private static final Set<String> TEXT_BODY_MIME_TYPES = Set.of("text/plain", "application/xml", "text/xml");
 
 
     private final int order;
@@ -546,7 +552,7 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
             return true;
         }
         // 或按响应 Content-Type 命中文件类清单
-        return findFileExtension(exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR)) != null;
+        return findFileType(exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR)) != null;
     }
 
     /**
@@ -658,25 +664,29 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
 
-    /** 是否"原文无归档价值"的二进制响应：Content-Type 命中文件类清单且扩展名不在保留例外中；无 Content-Type 视为文本 */
+    /** 是否"原文无归档价值"的二进制响应：Content-Type 命中文件类清单且不在文本保留名单中；无 Content-Type 视为文本 */
     private static boolean isBinaryBody(MediaType contentType) {
-        String extension = findFileExtension(contentType != null ? contentType.toString() : null);
-        return extension != null && !TEXT_FILE_EXTENSIONS.contains(extension);
+        FileTypeEnum type = findFileType(contentType != null ? contentType.toString() : null);
+        return type != null && !TEXT_BODY_MIME_TYPES.contains(type.getMimeType());
     }
 
-    /** 从 Content-Type 提取文件扩展名，无对应类型返回 null */
-    private static String findFileExtension(String contentType) {
+    /**
+     * 从 Content-Type 匹配"网关认定的文件类"类型：先按 {@link FileTypeEnum} 全字典反查，
+     * 再看是否落在 {@link #FILE_DOWNLOAD_TYPES} 子集内；非文件类（含无 Content-Type）返回 null
+     */
+    private static FileTypeEnum findFileType(String contentType) {
+        FileTypeEnum type = FileTypeEnum.fromMimeTypeOrNull(normalizeMimeType(contentType));
+        return type != null && FILE_DOWNLOAD_TYPES.contains(type) ? type : null;
+    }
+
+    /** 剥离 Content-Type 的参数部分（{@code ;charset=UTF-8}）只留裸 MIME；入参为 null 或空白返回 null */
+    private static String normalizeMimeType(String contentType) {
         if (contentType == null) {
             return null;
         }
         int semicolon = contentType.indexOf(';');
         String normalized = semicolon > 0 ? contentType.substring(0, semicolon).trim() : contentType.trim();
-        for (Map.Entry<String, String> entry : MIME_TYPE_TO_FILE_EXTENSION.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(normalized)) {
-                return entry.getValue();
-            }
-        }
-        return null;
+        return normalized.isEmpty() ? null : normalized;
     }
 
     /**
