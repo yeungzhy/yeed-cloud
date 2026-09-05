@@ -4,8 +4,8 @@ import com.alibaba.excel.write.handler.WriteHandler;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.metadata.style.WriteFont;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
-import com.yeungzhy.yeed.api.export.ExportTaskTypeEnum;
-import com.yeungzhy.yeed.job.export.task.entity.ExportTask;
+import com.yeungzhy.yeed.api.export.ExportTypeEnum;
+import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -47,12 +47,12 @@ public interface ExportExecutor<R, H> {
     /**
      * 本执行器对应的导出类型
      *
-     * <p>取值必须来自 {@link ExportTaskTypeEnum}——它是类型 key 的唯一真相源，
-     * {@link ExportExecutorRegistry} 直接按该枚举的 {@link ExportTaskTypeEnum#getKey()} 建立路由表。
+     * <p>取值必须来自 {@link ExportTypeEnum}——它是类型 key 的唯一真相源，
+     * {@link ExportExecutorRegistry} 直接按该枚举的 {@link ExportTypeEnum#getKey()} 建立路由表。
      *
      * @return 导出类型枚举，不能为 null
      */
-    ExportTaskTypeEnum getExportType();
+    ExportTypeEnum getExportType();
 
     /**
      * 本执行器使用的查询模式，决定引擎走流式还是分页循环

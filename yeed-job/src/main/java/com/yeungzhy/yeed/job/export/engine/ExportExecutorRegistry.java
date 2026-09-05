@@ -1,7 +1,7 @@
 package com.yeungzhy.yeed.job.export.engine;
 
-import com.yeungzhy.yeed.api.export.ExportTaskTypeEnum;
-import com.yeungzhy.yeed.job.export.task.entity.ExportTask;
+import com.yeungzhy.yeed.api.export.ExportTypeEnum;
+import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -14,12 +14,12 @@ import java.util.Map;
  *
  * <p>构造器注入自动收集容器内全部 {@link ExportExecutor} 实现，再按各实现自报的
  * {@link ExportExecutor#getExportType()} 重建路由表——不用 bean 名作键，
- * 避免 bean 名与 {@link ExportTaskTypeEnum} 的 key 各自漂移后对不上。
+ * 避免 bean 名与 {@link ExportTypeEnum} 的 key 各自漂移后对不上。
  *
  * <p>启动期 fail-fast，两类错误都在构造时暴露，不会拖到用户点了导出按钮才发现：
  * <ul>
  *   <li>重复：同一导出类型有多个实现；</li>
- *   <li>缺失：{@link ExportTaskTypeEnum#values()} 中任一类型没有实现——「枚举加了类型、没写执行器」。</li>
+ *   <li>缺失：{@link ExportTypeEnum#values()} 中任一类型没有实现——「枚举加了类型、没写执行器」。</li>
  * </ul>
  *
  * @author yeungzhy
@@ -36,7 +36,7 @@ public class ExportExecutorRegistry {
      * 收集全部执行器并按导出类型重建路由表
      *
      * @param executors Spring 自动收集的全部 {@link ExportExecutor} 实现，允许为空集合
-     * @throws IllegalStateException 同一导出类型存在多个实现，或 {@link ExportTaskTypeEnum} 中存在类型没有实现
+     * @throws IllegalStateException 同一导出类型存在多个实现，或 {@link ExportTypeEnum} 中存在类型没有实现
      */
     public ExportExecutorRegistry(List<ExportExecutor<?, ?>> executors) {
         Map<String, ExportExecutor<?, ?>> byType = new HashMap<>();
@@ -48,7 +48,7 @@ public class ExportExecutorRegistry {
                         + existed.getClass().getName() + " 与 " + executor.getClass().getName());
             }
         }
-        for (ExportTaskTypeEnum type : ExportTaskTypeEnum.values()) {
+        for (ExportTypeEnum type : ExportTypeEnum.values()) {
             if (!byType.containsKey(type.getKey())) {
                 throw new IllegalStateException("启动异常：导出类型 [" + type.name() + "] 未找到对应 ExportExecutor 实现");
             }
@@ -59,7 +59,7 @@ public class ExportExecutorRegistry {
     /**
      * 按导出类型 key 取执行器（封闭域 fail-fast）
      *
-     * <p>key 取自 {@link ExportTaskTypeEnum#getKey()}，与 {@link ExportTask#getExportType()} 入库值同源；
+     * <p>key 取自 {@link ExportTypeEnum#getKey()}，与 {@link ExportTask#getExportType()} 入库值同源；
      * 启动期已做过全覆盖校验，运行期抛出即意味着 key 未走枚举、是脏数据。
      *
      * @param typeKey 导出类型 key，不能为 null

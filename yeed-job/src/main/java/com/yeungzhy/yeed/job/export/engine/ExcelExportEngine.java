@@ -4,10 +4,11 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.builder.ExcelWriterBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
-import com.yeungzhy.yeed.api.oss.dto.FileUploadMetadataDTO;
-import com.yeungzhy.yeed.api.oss.feign.SysOssFeignClient;
-import com.yeungzhy.yeed.job.export.task.entity.ExportTask;
-import com.yeungzhy.yeed.job.export.task.mapper.ExportTaskMapper;
+import com.yeungzhy.yeed.api.export.ExportTypeEnum;
+import com.yeungzhy.yeed.api.oss.OssFileFeignClient;
+import com.yeungzhy.yeed.api.oss.dto.FileUploadQuery;
+import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
+import com.yeungzhy.yeed.job.sys.export.task.mapper.ExportTaskMapper;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -39,9 +40,6 @@ import java.util.List;
 @Component
 public class ExcelExportEngine {
 
-    /** xlsx 的 MIME 类型：OSS 侧据此设置 Content-Type，须与 {@link ExportTask#getFileName()} 的扩展名一致 */
-    public static final String XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
     // 写盘与分页
     /** 流式模式下累积多少行刷一次 Excel。纯写盘批次，与查询分页无关 */
     private static final int WRITE_BATCH_SIZE = 5000;
@@ -64,7 +62,7 @@ public class ExcelExportEngine {
     @Resource
     private ExportTaskMapper exportTaskMapper;
     @Resource
-    private SysOssFeignClient sysOssFeignClient;
+    private OssFileFeignClient ossFileFeignClient;
 
     /**
      * 执行一次导出任务
@@ -90,12 +88,11 @@ public class ExcelExportEngine {
             // 上传前钩子可以整体替换字节（加密、水印、追加签名页），故必须用返回值覆盖原引用
             excelData = executor.beforeUpload(task, excelData);
 
-            FileUploadMetadataDTO metadata = new FileUploadMetadataDTO()
-                    .setFileName(task.getFileName())
-                    .setFileType(XLSX_CONTENT_TYPE)
-                    .setCreateBy(task.getCreateBy());
-            // getData() 已是 OSS 记录主键（Long），无需再做类型转换
-            Long ossId = sysOssFeignClient.upload(metadata, excelData).getData();
+            FileUploadQuery metadata = new FileUploadQuery()
+                    .setBizCode(ExportTypeEnum.USER_EXPORT.name())
+                    .setFileName(task.getFileName());
+            // RPC-Style：upload 契约裸返回 OSS 记录主键（Long），失败抛异常中断
+            Long ossId = ossFileFeignClient.upload(metadata, excelData);
             exportTaskMapper.updateSuccess(task.getId(), ossId, excelData.length);
 
             executor.afterExport(task, ossId);
