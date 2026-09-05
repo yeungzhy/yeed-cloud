@@ -1,7 +1,9 @@
 package com.yeungzhy.yeed.gateway.config;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,10 +27,16 @@ import java.util.List;
  * @since 2026-08-15
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "yeed-gateway.auth.permit-all")
 public class PermitAllProperties {
 
-    /** 无需认证即可访问的接口路径（Ant 风格通配），如 /auth/login */
-    private List<String> paths = new ArrayList<>();
+    /**
+     * 无需认证即可访问的接口路径（Ant 风格通配），如 /auth/login
+     *
+     * <p>元素 {@link NotBlank} 挡空项：名单由鉴权过滤器逐条匹配，混入 null / 空串会在请求期 NPE。
+     * 列表整体为空是合法的（= 不放行任何匿名接口），故不加 {@code @NotEmpty}。
+     */
+    private List<@NotBlank String> paths = new ArrayList<>();
 
 }

@@ -40,6 +40,15 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <!--
+            配置绑定校验：CacheProperties 的 @Validated + @AssertTrue 需要校验实现在 classpath。
+            yeed-common-core 只带了 provided 的 jakarta.validation-api（只有注解、无实现），
+            缺实现时 @Validated 上的约束会静默不生效——故本模块自包含引入，与 commons-pool2 同理。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
 
 
     </dependencies>

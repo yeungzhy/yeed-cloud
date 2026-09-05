@@ -1,8 +1,11 @@
 package com.yeungzhy.yeed.admin.bootstrap;
 
+import jakarta.validation.constraints.AssertTrue;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * 默认数据初始化配置项
@@ -23,6 +26,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2026-08-08
  */
 @Data
+@Validated
 @Accessors(chain = true)
 @ConfigurationProperties(prefix = "yeed-admin.init.default-data")
 public class DefaultDataProperties {
@@ -33,6 +37,17 @@ public class DefaultDataProperties {
     /** 默认超管账号配置 */
     private SuperAdmin superAdmin = new SuperAdmin();
 
+    /**
+     * 启用初始化时，超管账号三项配置必须齐备（条件必填）
+     *
+     * <p>这三项只在 {@code enabled=true} 时参与初始化，配置错误绑定期就会暴露
+     */
+    @AssertTrue(message = "启用默认数据初始化时，super-admin.username / employee-no / default-password 均不能为空")
+    public boolean isSuperAdminConfigured() {
+        return !enabled || (StringUtils.hasText(superAdmin.username)
+                && StringUtils.hasText(superAdmin.employeeNo)
+                && StringUtils.hasText(superAdmin.defaultPassword));
+    }
 
     /** 默认超管账号 */
     @Data

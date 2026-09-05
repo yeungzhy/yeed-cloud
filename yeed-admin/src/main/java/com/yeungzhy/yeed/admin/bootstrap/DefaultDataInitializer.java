@@ -18,7 +18,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 /**
  * 默认数据初始化器（系统首次上线引导）
@@ -60,14 +59,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
             return;
         }
 
-        DefaultDataProperties.SuperAdmin superAdmin = defaultDataProperties.getSuperAdmin();
-        if (!StringUtils.hasText(superAdmin.getUsername())
-                || !StringUtils.hasText(superAdmin.getEmployeeNo())
-                || !StringUtils.hasText(superAdmin.getDefaultPassword())) {
-            throw new IllegalStateException("默认数据初始化已启用，但 super-admin.username / employee-no / default-password 未配置，请检查 Nacos 配置");
-        }
-
-        initSuperAdmin(superAdmin);
+        initSuperAdmin(defaultDataProperties.getSuperAdmin());
         initRoles();
         initUserRoles();
     }
