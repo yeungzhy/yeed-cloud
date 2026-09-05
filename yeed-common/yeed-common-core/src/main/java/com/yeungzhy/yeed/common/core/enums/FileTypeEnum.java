@@ -124,11 +124,9 @@ public enum FileTypeEnum {
 
     // ---------- 文本 ----------
 
-    /** 纯文本（MIME 与 {@link #MD} 同为 {@code text/plain}，故须先于 {@link #MD} 声明） */
+    /** 纯文本 */
     TXT(".txt", "text/plain", "纯文本"),
 
-    /** Markdown 文本 */
-    MD(".md", "text/plain", "Markdown 文本"),
 
     ;
 
@@ -141,14 +139,7 @@ public enum FileTypeEnum {
     /** 中文描述（日志、字典渲染） */
     private final String desc;
 
-    /**
-     * MIME（小写）→ 枚举的反查索引，静态初始化一次
-     *
-     * <p>MIME → 类型<b>不是单射</b>：{@link #TXT} 与 {@link #MD} 同为 {@code text/plain}。
-     * 合并函数取声明顺序中最先者（即 {@link #TXT}），故 {@link #TXT} 必须先于 {@link #MD} 声明。
-     * 取舍依据：按 MIME 反查的场景（网关按响应头分类日志）只关心"是不是文本"，
-     * 不关心 txt 与 md 之分；真要区分二者的场景应直接持有枚举常量，而非按 MIME 反查。
-     */
+    /** MIME（小写）→ 枚举的反查索引，静态初始化一次 */
     private static final Map<String, FileTypeEnum> MIME_TYPE_MAP = Arrays.stream(values())
             .collect(Collectors.toUnmodifiableMap(
                     e -> e.mimeType.toLowerCase(Locale.ROOT), Function.identity(), (first, second) -> first));
