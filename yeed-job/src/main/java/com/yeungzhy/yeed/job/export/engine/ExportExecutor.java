@@ -1,9 +1,11 @@
 package com.yeungzhy.yeed.job.export.engine;
 
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
 import com.alibaba.excel.write.handler.WriteHandler;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.metadata.style.WriteFont;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
+import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.yeungzhy.yeed.api.export.ExportTypeEnum;
 import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
 import org.apache.ibatis.session.ResultHandler;
@@ -163,7 +165,7 @@ public interface ExportExecutor<R, H> {
      * @param register 注册入口，每调一次 {@code accept} 注册一个处理器
      */
     default void registerExtraWriteHandlers(Consumer<WriteHandler> register) {
-        // 默认无额外处理器
+        register.accept(new LongestMatchColumnWidthStyleStrategy());
     }
 
     /**
@@ -175,12 +177,21 @@ public interface ExportExecutor<R, H> {
      * @return 样式策略，不能为 null
      */
     default HorizontalCellStyleStrategy getDefaultWriteStrategy() {
-        // 内容样式给两个：EasyExcel 按行轮换，实现隔行异色
+        // 表头样式：宝蓝色底 + 白字
         WriteCellStyle headStyle = getHeadWriteCellStyle();
+
+        // 内容样式给两个：EasyExcel 按行轮换，实现隔行异色
         WriteCellStyle contentStyle = getContentWriteCellStyle();
         // 复刻一份内容样式再改背景，保证隔行两行的字体与对齐完全一致
         WriteCellStyle contentAltStyle = getContentWriteCellStyle();
         contentAltStyle.setFillPatternType(FillPatternType.SOLID_FOREGROUND);
+
+        /*
+         * 方案 B: 浅矢车菊蓝  RGB: #CCCCFF  亮度 0.83
+         * contentAltStyle.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+         */
+
+        // 方案 A: 经典浅灰斑马纹 (最稳妥)  RGB: #C0C0C0  亮度 0.74
         contentAltStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 
         return new HorizontalCellStyleStrategy(headStyle, List.of(contentStyle, contentAltStyle));
@@ -201,16 +212,23 @@ public interface ExportExecutor<R, H> {
     // --- 样式零件（供实现类复用或逐个重写） ---
 
     /**
-     * 表头单元格样式
+     * 表头单元格样式：宝蓝色底 + 白字
      *
      * @return 表头样式，不能为 null
      */
     default WriteCellStyle getHeadWriteCellStyle() {
+        WriteFont headFont = getDefaultFont(true);
+        headFont.setColor(IndexedColors.WHITE.getIndex());
+
         WriteCellStyle headStyle = new WriteCellStyle();
-        headStyle.setWriteFont(getDefaultFont(true));
+        headStyle.setWriteFont(headFont);
         headStyle.setFillPatternType(FillPatternType.SOLID_FOREGROUND);
-        headStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
-        setDefaultAlignment(headStyle);
+        headStyle.setFillForegroundColor(IndexedColors.ROYAL_BLUE.getIndex());
+
+        // 水平/垂直居中 + 自动换行
+        headStyle.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        headStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headStyle.setWrapped(true);
 
         return headStyle;
     }
@@ -223,7 +241,10 @@ public interface ExportExecutor<R, H> {
     default WriteCellStyle getContentWriteCellStyle() {
         WriteCellStyle contentStyle = new WriteCellStyle();
         contentStyle.setWriteFont(getDefaultFont(false));
-        setDefaultAlignment(contentStyle);
+
+        // 垂直居中 + 自动换行, 水平对齐让 Excel 按数据类型自动决定
+        contentStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        contentStyle.setWrapped(true);
 
         return contentStyle;
     }
@@ -240,17 +261,6 @@ public interface ExportExecutor<R, H> {
         font.setFontHeightInPoints((short) 10);
         font.setBold(bold);
         return font;
-    }
-
-    /**
-     * 设置默认对齐方式（水平垂直居中 + 自动换行），直接修改入参
-     *
-     * @param style 待设置的样式，不能为 null
-     */
-    default void setDefaultAlignment(WriteCellStyle style) {
-        style.setHorizontalAlignment(HorizontalAlignment.CENTER);
-        style.setVerticalAlignment(VerticalAlignment.CENTER);
-        style.setWrapped(true);
     }
 
     // ============ 生命周期钩子 ========================
