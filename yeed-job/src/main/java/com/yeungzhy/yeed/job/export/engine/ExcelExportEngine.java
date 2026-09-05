@@ -173,6 +173,7 @@ public class ExcelExportEngine {
         FastByteArrayOutputStream out = new FastByteArrayOutputStream();
         ExcelWriterBuilder builder = EasyExcel.write(out).registerWriteHandler(executor.getDefaultWriteStrategy());
         configureHead(builder, executor, task);
+        executor.registerDefaultConverter(builder);
         executor.registerExtraWriteHandlers(builder::registerWriteHandler);
 
         try (ExcelWriter writer = builder.build()) {

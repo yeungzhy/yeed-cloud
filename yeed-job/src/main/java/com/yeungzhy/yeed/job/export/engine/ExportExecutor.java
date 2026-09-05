@@ -106,7 +106,7 @@ public interface ExportExecutor<R, H> {
      * @return 本页数据；返回空列表表示已无数据，引擎据此提前结束循环
      * @throws UnsupportedOperationException 默认实现直接抛出——声明 PAGE 模式却未重写，会在导出时才发现
      */
-    default List<R> pageQuery(ExportTask task, int pageNum, int pageSize) {
+    default List<H> pageQuery(ExportTask task, int pageNum, int pageSize) {
         throw new UnsupportedOperationException("此执行器未实现分页查询");
     }
 
@@ -196,6 +196,17 @@ public interface ExportExecutor<R, H> {
 
         return new HorizontalCellStyleStrategy(headStyle, List.of(contentStyle, contentAltStyle));
     }
+
+
+    /**
+     * 注册默认的类型转换器（EasyExcel 写单元格时按类型匹配的转换规则）
+     *
+     * @param builder EasyExcel writer 构建器（转换器注册入口）
+     */
+    default void registerDefaultConverter(ExcelWriterBuilder builder) {
+        builder.registerConverter(new EnableStatusConverter());
+    }
+
 
     /**
      * Sheet 名称
