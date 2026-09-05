@@ -29,6 +29,12 @@
             <artifactId>yeed-common-web</artifactId>
             <version>20260501</version>
         </dependency>
+        <!-- 内部契约层 -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-api</artifactId>
+            <version>20260501</version>
+        </dependency>
 
         <!-- Nacos 配置中心 -->
         <dependency>

@@ -1,0 +1,82 @@
+package com.yeungzhy.yeed.oss.sys.file.controller;
+
+import com.yeungzhy.yeed.api.oss.dto.FileUploadQuery;
+import com.yeungzhy.yeed.common.web.annotation.InternalApi;
+import com.yeungzhy.yeed.oss.sys.file.service.OssFileDownload;
+import com.yeungzhy.yeed.oss.sys.file.service.OssFileService;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
+
+/**
+ * 系统文件记录表 前端控制器
+ *
+ * @author yeungzhy
+ * @since 2026-09-04 12:00:19
+ */
+@Slf4j
+@Validated
+@InternalApi
+@RestController
+@RequestMapping("/internal/oss")
+public class OssFileController {
+
+    @Resource
+    private OssFileService ossFileService;
+
+
+    /**
+     * 上传文件：Query 元数据 + Body 二进制
+     *
+     * @param query    上传元数据（fileName 必填）
+     * @param fileData 文件二进制内容
+     * @return 文件记录主键（ossId）
+     */
+    @PostMapping(value = "/upload", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public Long upload(@ModelAttribute FileUploadQuery query, @RequestBody byte[] fileData) {
+        return ossFileService.upload(query, fileData);
+    }
+
+    /**
+     * 下载文件：返回字节流与附件响应头
+     *
+     * @param id 文件记录主键（ossId）
+     * @return 文件二进制 + Content-Type/Content-Disposition（attachment 中文文件名）
+     */
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> download(@PathVariable Long id) {
+        OssFileDownload result = ossFileService.download(id);
+        String contentType = result.file().getContentType();
+
+        // 下载名由 service 给出（展示名主名 + 判真扩展名），已清洗，可直接写响应头
+        ContentDisposition disposition = ContentDisposition
+                .attachment() // 指定为附件下载
+                .filename(result.downloadName(), StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(result.data());
+    }
+
+    /**
+     * 删除文件（幂等：对象不存在视为已清理）
+     *
+     * @param id 文件记录主键（ossId）
+     */
+    @DeleteMapping("/delete/{id}")
+    public void delete(@PathVariable Long id) {
+        ossFileService.delete(id);
+    }
+
+
+}
