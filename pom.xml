@@ -322,11 +322,32 @@
     </profiles>
 
     <build>
-        <!-- 资源过滤（所有子模块共享） -->
+        <!--
+            资源过滤（所有子模块共享）
+
+            filtering=true：按文本读取文件并替换这 4 类文本配置文件内的 ${...} / @...@
+            filtering=false：除了这 4 类文本配置文件，其余一律原样拷贝
+        -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <includes>
+                    <include>**/*.yml</include>
+                    <include>**/*.yaml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/*.yml</exclude>
+                    <exclude>**/*.yaml</exclude>
+                    <exclude>**/*.properties</exclude>
+                    <exclude>**/*.xml</exclude>
+                </excludes>
             </resource>
         </resources>
 
