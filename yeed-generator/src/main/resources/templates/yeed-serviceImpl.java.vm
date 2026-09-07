@@ -73,7 +73,7 @@ public class ${table.serviceImplName}#if(${generateService}) implements ${table.
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         ${table.entityPath}Sorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        return ${table.entityPath}Mapper.selectPageVO(dto, lambdaQuery, ${table.entityPath}Convert::toVO);
+        return ${table.entityPath}Mapper.selectPageResult(dto, lambdaQuery, ${table.entityPath}Convert::toVO);
     }
 
 
@@ -101,7 +101,7 @@ public class ${table.serviceImplName}#if(${generateService}) implements ${table.
         ${table.entityPath}Sorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
         // 回收站分页：查询包含已逻辑删除的数据（与 page 的区别是不携带条件 delete_time = 0）
-        return ${table.entityPath}Mapper.selectPageVOWithDeleted(dto, lambdaQuery, ${table.entityPath}Convert::toVO);
+        return ${table.entityPath}Mapper.selectPageResultWithDeleted(dto, lambdaQuery, ${table.entityPath}Convert::toVO);
     }
 
 

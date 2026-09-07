@@ -123,7 +123,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         sysRoleSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        return sysRoleMapper.selectPageVO(dto, lambdaQuery, sysRoleConvert::toPageVO);
+        return sysRoleMapper.selectPageResult(dto, lambdaQuery, sysRoleConvert::toPageVO);
     }
 
 

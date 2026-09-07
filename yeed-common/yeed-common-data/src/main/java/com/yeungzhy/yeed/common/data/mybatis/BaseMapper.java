@@ -31,7 +31,7 @@ import java.util.function.Function;
  * <ul>
  *     <li>全表可用：{@link #existsByWrapper(Wrapper)} 系列存在性判断、
  *         {@link #alwaysUpdateSomeColumnById(Object)} 全字段更新、
- *         {@link #selectPageVO(PageRequest, Wrapper, Function)} 系列分页查询；
+ *         {@link #selectPageResult(PageRequest, Wrapper, Function)} 系列分页查询；
  *     <li>需 {@code @TableLogic} 且实体含 {@code deleteBy} 字段：
  *         {@link #logicDeleteById(Long, long, Long)} 系列逻辑删除；
  *     <li>需 {@code @TableLogic}：{@link #physicalDeleteById(Serializable)} 等逻辑删除逃逸方法，
@@ -272,7 +272,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * 根据 Wrapper 条件分页查询（包含已逻辑删除的数据）
      *
      * <p>分页由 {@link PaginationInnerInterceptor} 依据 {@link IPage} 参数自动完成；
-     * 业务侧一般不直接调用，统一走 {@link #selectPageVOWithDeleted(PageRequest, Wrapper, Function)} 便捷入口
+     * 业务侧一般不直接调用，统一走 {@link #selectPageResultWithDeleted(PageRequest, Wrapper, Function)} 便捷入口
      *
      * @param page         分页参数（current / size），同一个对象同时承载返回的记录与总数
      * @param queryWrapper 查询条件；不带“未删除”过滤，Wrapper 上设置的 entity 条件不生效
@@ -299,28 +299,47 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
     // ===== 分页查询：全表可用。PageRequest / PageResult 是 common-core 纯 POJO，业务侧不接触 ORM 分页类型 =====
 
     /**
-     * 分页查询并转换为 VO 分页结果（一行完成“入参 → Page → 查询 → PageResult”）
+     * 分页查询并把实体逐条映射成目标类型（一行完成“入参 → Page → 查询 → PageResult”）
+     *
+     * <p>目标类型由 {@code mapper} 决定：通常是 VO，但也可以是 DTO 或实体本身——
+     * 方法名指向返回类型（{@code PageResult}）而非目标类型，正是为了不把调用方钉死在 VO 上。
      *
      * <p>始终基于 {@code selectPage} 的返回对象组装结果，不会误用入参里携带的旧分页数据；
      * 无需元素转换时用 {@link #selectPageResult(PageRequest, Wrapper)}
      *
      * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
      * @param queryWrapper 查询条件；传 null 查全表
-     * @param mapper       实体到 VO 的转换函数，通常传生成器产出的 {@code XxxConvert::toVo}
-     * @param <V>          VO 类型
-     * @return 分页结果，records 已逐条转换为 VO
+     * @param mapper       实体到目标类型的转换函数，通常传生成器产出的 {@code XxxConvert::toVO}
+     * @param <V>          目标类型
+     * @return 分页结果，records 已逐条转换为目标类型
      * @since 2026-08-12
      */
-    default <V> PageResult<V> selectPageVO(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+    default <V> PageResult<V> selectPageResult(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
         Page<T> page = MybatisPageConverters.toMybatisPlusPage(pageRequest);
         return MybatisPageConverters.toPageResult(selectPage(page, queryWrapper), mapper);
     }
 
 
     /**
-     * 按页取数并转换为 VO 列表，不做 count（一行完成“入参 → Slice → 查询 → List”）
+     * 分页查询并返回实体分页结果（无需元素转换时的便捷入口）
      *
-     * <p>与 {@link #selectPageVO(PageRequest, Wrapper, Function)} 的差异是少了 {@code SELECT COUNT(*)}：
+     * <p>等价于 {@code selectPageResult(pageRequest, queryWrapper, Function.identity())}；
+     * 需要转换元素请用 {@link #selectPageResult(PageRequest, Wrapper, Function)}
+     *
+     * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
+     * @param queryWrapper 查询条件；传 null 查全表
+     * @return 分页结果，records 为实体列表
+     * @since 2026-08-12
+     */
+    default PageResult<T> selectPageResult(PageRequest pageRequest, Wrapper<T> queryWrapper) {
+        return selectPageResult(pageRequest, queryWrapper, Function.identity());
+    }
+
+
+    /**
+     * 按页取数并逐条映射成目标类型，不做 count（一行完成“入参 → Slice → 查询 → List”）
+     *
+     * <p>与 {@link #selectPageResult(PageRequest, Wrapper, Function)} 的差异是少了 {@code SELECT COUNT(*)}：
      * 只发一条带 LIMIT 的查询。适用「总数已在循环外查得、顺序翻页取数」的场景（导出 / 跑批 / 全量同步），
      * 逐页再各查一遍总数是纯浪费。
      *
@@ -329,47 +348,31 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      *
      * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
      * @param queryWrapper 查询条件；传 null 查全表
-     * @param mapper       实体到 VO 的转换函数，通常传生成器产出的 {@code XxxConvert::toVo}
-     * @param <V>          VO 类型
-     * @return 本页记录，已逐条转换为 VO；无数据时为空列表（不为 null）
+     * @param mapper       实体到目标类型的转换函数，通常传生成器产出的 {@code XxxConvert::toVO}
+     * @param <V>          目标类型
+     * @return 本页记录，已逐条转换为目标类型；无数据时为空列表（不为 null）
      * @since 2026-09-07
      */
-    default <V> List<V> selectSliceVO(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+    default <V> List<V> selectPageRecords(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
         Page<T> page = MybatisPageConverters.toMybatisPlusSlice(pageRequest);
         return MybatisPageConverters.toRecords(selectPage(page, queryWrapper), mapper);
     }
 
 
     /**
-     * 分页查询并返回实体分页结果（无需元素转换时的便捷入口）
+     * 分页查询（包含已逻辑删除的数据）并把实体逐条映射成目标类型
      *
-     * <p>等价于 {@code selectPageVO(pageRequest, queryWrapper, Function.identity())}；
-     * 需要实体转 VO 请用 {@link #selectPageVO(PageRequest, Wrapper, Function)}
-     *
-     * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
-     * @param queryWrapper 查询条件；传 null 查全表
-     * @return 分页结果，records 为实体列表
-     * @since 2026-08-12
-     */
-    default PageResult<T> selectPageResult(PageRequest pageRequest, Wrapper<T> queryWrapper) {
-        return selectPageVO(pageRequest, queryWrapper, Function.identity());
-    }
-
-
-    /**
-     * 分页查询（包含已逻辑删除的数据）并转换为 VO 分页结果
-     *
-     * <p>与 {@link #selectPageVO(PageRequest, Wrapper, Function)} 的唯一差异是不带“未删除”过滤，
+     * <p>与 {@link #selectPageResult(PageRequest, Wrapper, Function)} 的唯一差异是不带“未删除”过滤，
      * 用于回收站分页列表；仅 {@code @TableLogic} 表可用，否则对应方法未注入，调用抛 {@code BindingException}
      *
      * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
      * @param queryWrapper 查询条件；传 null 查全表（含已删）
-     * @param mapper       实体到 VO 的转换函数，通常传生成器产出的 {@code XxxConvert::toVo}
-     * @param <V>          VO 类型
-     * @return 分页结果，records 已逐条转换为 VO，包含已逻辑删除的数据
+     * @param mapper       实体到目标类型的转换函数，通常传生成器产出的 {@code XxxConvert::toVO}
+     * @param <V>          目标类型
+     * @return 分页结果，records 已逐条转换为目标类型，包含已逻辑删除的数据
      * @since 2026-08-13
      */
-    default <V> PageResult<V> selectPageVOWithDeleted(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+    default <V> PageResult<V> selectPageResultWithDeleted(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
         Page<T> page = MybatisPageConverters.toMybatisPlusPage(pageRequest);
         return MybatisPageConverters.toPageResult(selectPageWithDeleted(page, queryWrapper), mapper);
     }

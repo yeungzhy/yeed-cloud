@@ -81,7 +81,7 @@ public class ExportTaskServiceImpl implements ExportTaskService {
         // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
         exportTaskSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
-        return exportTaskMapper.selectPageVO(dto, lambdaQuery, exportTaskConvert::toVO);
+        return exportTaskMapper.selectPageResult(dto, lambdaQuery, exportTaskConvert::toVO);
     }
 
 

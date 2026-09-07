@@ -133,7 +133,7 @@ public class SysUserServiceImpl implements SysUserService {
 
     @Override
     public PageResult<SysUserVO> page(SysUserPageDTO dto) {
-        return sysUserMapper.selectPageVO(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
+        return sysUserMapper.selectPageResult(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class SysUserServiceImpl implements SysUserService {
     @Override
     public List<SysUserVO> slice(SysUserPageDTO dto) {
         // 不做 count：调用方（导出）已在循环外取得总数，逐页再查一遍纯属浪费
-        return sysUserMapper.selectSliceVO(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
+        return sysUserMapper.selectPageRecords(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
     }
 
     /**
