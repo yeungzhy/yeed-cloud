@@ -17,6 +17,9 @@ import java.util.zip.ZipInputStream;
  *
  * <p>失败语义：类型不支持 / 无法判定一律抛 {@link BizException}
  *
+ * <p>输入可以是完整文件，也可以是仅含头部的片段（流式上传场景）：判据全部基于前部字节，
+ * 且 OOXML 另有不依赖解压的回退判据，故片段输入同样能判出 docx/xlsx/pptx（见 {@link #zipFamily}）。
+ *
  * <p>同包 {@link FileUtil} 负责大小格式化、文件名解析与文件读写，本类不涉及
  *
  * @author yeungzhy
@@ -42,6 +45,18 @@ public final class FileTypeProbeUtil {
     private static final String CT_TAG_WORD = "wordprocessingml";
     private static final String CT_TAG_EXCEL = "spreadsheetml";
     private static final String CT_TAG_PPT = "presentationml";
+
+    // OOXML 回退判据：zip local file header 内的 entry 名（明文，无需解压即可搜到）
+    private static final String ENTRY_WORD = "word/document.xml";
+    private static final String ENTRY_EXCEL = "xl/workbook.xml";
+    private static final String ENTRY_PPT = "ppt/presentation.xml";
+    /**
+     * 回退判据的扫描窗口：只覆盖 zip 前部的 local file header 区
+     *
+     * <p>各条目的压缩数据紧跟其 header 之后，故主文档部件靠前时其 header 必落在本窗口内；
+     * 刻意不放大——这是「搜明文」的兜底手段，扫太大既浪费又可能命中压缩数据里的巧合字节。
+     */
+    private static final int ENTRY_SCAN_BYTES = 65536;
 
     // ============================================= OLE2 复合文档布局（MS-CFB） =============================================
 
@@ -214,7 +229,17 @@ public final class FileTypeProbeUtil {
 
     /**
      * zip 家族：先按 {@code [Content_Types].xml} 关键字做 OOXML 三分（docx/xlsx/pptx），
-     * 匹配失败则按普通 zip 处理
+     * 未命中再退到「搜 zip 条目名明文」，仍无结果才按普通 zip 处理
+     *
+     * <p>为何需要回退：{@link #readContentTypesXml} 用 {@code ZipInputStream} 从首字节顺序解压，
+     * 任一 entry 读不完即 EOF → 返回 null → 误判为 zip。实测两类真实输入会踩到：
+     * <ul>
+     *   <li>流式上传只给头部（如 16KB），zip 尾部缺失导致顺序解压中断；</li>
+     *   <li>POI SXSSF 导出的 xlsx 条目顺序与普通生成器不同，前 64 个 entry 内可能读不到
+     *       {@code [Content_Types].xml}。</li>
+     * </ul>
+     * 回退判据不解压：zip 的 local file header 里条目名是明文，直接在前部窗口搜主文档部件名即可三分。
+     * 权威判据仍在前，回退仅用于兜底。
      */
     private static FileTypeEnum zipFamily(byte[] data) {
         String contentTypeXml = readContentTypesXml(data);
@@ -228,6 +253,16 @@ public final class FileTypeProbeUtil {
             if (contentTypeXml.contains(CT_TAG_PPT)) {
                 return FileTypeEnum.PPTX;
             }
+        }
+        // 回退：只按「主文档部件名」三分，不尝试还原 [Content_Types].xml
+        if (containsAscii(data, 0, ENTRY_SCAN_BYTES, ENTRY_EXCEL)) {
+            return FileTypeEnum.XLSX;
+        }
+        if (containsAscii(data, 0, ENTRY_SCAN_BYTES, ENTRY_WORD)) {
+            return FileTypeEnum.DOCX;
+        }
+        if (containsAscii(data, 0, ENTRY_SCAN_BYTES, ENTRY_PPT)) {
+            return FileTypeEnum.PPTX;
         }
         return FileTypeEnum.ZIP;
     }
