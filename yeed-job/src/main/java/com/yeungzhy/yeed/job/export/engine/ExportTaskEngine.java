@@ -103,9 +103,9 @@ public class ExportTaskEngine {
      * @param ctx      导出上下文，由装配点从任务实体映射而来，{@code taskId} 非空
      * @param exporter 与本次导出类型匹配的导出器，由 {@link ExporterRegistry} 取得
      * @param <P>      业务查询参数类型
-     * @param <H>      Excel 行类型
+     * @param <R>      Excel 行类型
      */
-    public <P, H> void execute(ExportContext<P> ctx, Exporter<P, H> exporter) {
+    public <P, R> void execute(ExportContext<P> ctx, Exporter<P, R> exporter) {
         // 每任务一个 StopWatch：它非线程安全，绝不能做成共享字段；一次导出即一条线性流水线，正合分段计时
         StopWatch stopWatch = new StopWatch("export-" + ctx.taskId());
         log.info("导出任务开始，taskId={}，类型={}，模式={}，文件名={}",
@@ -190,14 +190,14 @@ public class ExportTaskEngine {
      * @param total    总行数，由 {@link Exporter#totalCount} 在写文件前一次性查得
      * @return 完整的 xlsx 文件字节
      */
-    private <P, H> byte[] writeByStream(ExportContext<P> ctx, Exporter<P, H> exporter, Long total) {
+    private <P, R> byte[] writeByStream(ExportContext<P> ctx, Exporter<P, R> exporter, Long total) {
         FastByteArrayOutputStream out = new FastByteArrayOutputStream();
         ExcelWriterBuilder builder = newWriterBuilder(ctx, exporter, out);
 
         try (ExcelWriter writer = builder.inMemory(true).build()) {
             WriteSheet sheet = EasyExcel.writerSheet(exporter.getSheetName(ctx)).build();
 
-            List<H> buffer = new ArrayList<>(WRITE_BATCH_SIZE);
+            List<R> buffer = new ArrayList<>(WRITE_BATCH_SIZE);
             // 游标回调是 lambda，局部变量需 effectively final，故用数组承载可变计数
             int[] processed = {0};
             int[] lastPercent = {PROGRESS_START_PERCENT};
@@ -248,7 +248,7 @@ public class ExportTaskEngine {
      * @param total    总行数，由 {@link Exporter#totalCount} 在写文件前一次性查得
      * @return 完整的 xlsx 文件字节
      */
-    private <P, H> byte[] writeByPage(ExportContext<P> ctx, Exporter<P, H> exporter, Long total) {
+    private <P, R> byte[] writeByPage(ExportContext<P> ctx, Exporter<P, R> exporter, Long total) {
         FastByteArrayOutputStream out = new FastByteArrayOutputStream();
         ExcelWriterBuilder builder = newWriterBuilder(ctx, exporter, out);
 
@@ -262,7 +262,7 @@ public class ExportTaskEngine {
             WriteSheet sheet = null;
 
             while (processed < total) {
-                List<H> pageData = exporter.pageQuery(ctx, pageNum, PAGE_SIZE);
+                List<R> pageData = exporter.pageQuery(ctx, pageNum, PAGE_SIZE);
                 if (pageData.isEmpty()) {
                     break;
                 }
@@ -361,7 +361,7 @@ public class ExportTaskEngine {
      * @param out      输出流，由调用方持有——写完后要从中取字节，故不在此封装
      * @return 已注册完毕的构造器
      */
-    private <P, H> ExcelWriterBuilder newWriterBuilder(ExportContext<P> ctx, Exporter<P, H> exporter, FastByteArrayOutputStream out) {
+    private <P, R> ExcelWriterBuilder newWriterBuilder(ExportContext<P> ctx, Exporter<P, R> exporter, FastByteArrayOutputStream out) {
         ExcelWriterBuilder builder = EasyExcel.write(out).registerWriteHandler(exporter.getDefaultWriteStrategy());
         configureHead(builder, exporter, ctx);
         exporter.registerDefaultConverter(builder);
@@ -379,7 +379,7 @@ public class ExportTaskEngine {
      * @param exporter 导出器
      * @param ctx      导出上下文
      */
-    private <P, H> void configureHead(ExcelWriterBuilder builder, Exporter<P, H> exporter, ExportContext<P> ctx) {
+    private <P, R> void configureHead(ExcelWriterBuilder builder, Exporter<P, R> exporter, ExportContext<P> ctx) {
         List<List<String>> dynamicHead = exporter.getDynamicHead(ctx);
         if (CollectionUtils.isNotEmpty(dynamicHead)) {
             builder.head(dynamicHead);

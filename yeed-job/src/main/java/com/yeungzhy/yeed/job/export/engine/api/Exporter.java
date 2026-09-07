@@ -49,14 +49,14 @@ import java.util.function.Consumer;
  * </ul>
  *
  * @param <P> 业务查询参数类型，由 {@link #getParamType()} 声明
- * @param <H> Excel 行类型
+ * @param <R> Excel 行类型
  * @author yeungzhy
  * @since 2026-08-22
  * @see ExportTaskEngine
  * @see ExporterRegistry
  * @see ExportContext
  */
-public interface Exporter<P, H> {
+public interface Exporter<P, R> {
 
     // ============ 类型与查询模式 ========================
 
@@ -130,7 +130,7 @@ public interface Exporter<P, H> {
      * @return 本页数据；返回空列表表示已无数据，引擎据此提前结束循环
      * @throws UnsupportedOperationException 默认实现直接抛出——声明 PAGE 模式却未重写，会在导出时才发现
      */
-    default List<H> pageQuery(ExportContext<P> ctx, int pageNum, int pageSize) {
+    default List<R> pageQuery(ExportContext<P> ctx, int pageNum, int pageSize) {
         throw new UnsupportedOperationException("此导出器未实现分页查询");
     }
 
@@ -151,7 +151,7 @@ public interface Exporter<P, H> {
      * @param rowConsumer 行回调，引擎在其中累积到批次阈值后统一写盘
      * @throws UnsupportedOperationException 默认实现直接抛出——声明 STREAM 模式却未重写，会在导出时才发现
      */
-    default void streamQuery(ExportContext<P> ctx, Consumer<H> rowConsumer) {
+    default void streamQuery(ExportContext<P> ctx, Consumer<R> rowConsumer) {
         throw new UnsupportedOperationException("此导出器未实现流式查询");
     }
 
@@ -177,7 +177,7 @@ public interface Exporter<P, H> {
      * @param ctx 导出上下文
      * @return 表头类，不能为 null
      */
-    Class<H> getFixedHead(ExportContext<P> ctx);
+    Class<R> getFixedHead(ExportContext<P> ctx);
 
     /**
      * 动态表头：列在运行时才能确定时（如按前端勾选列导出）重写本方法
