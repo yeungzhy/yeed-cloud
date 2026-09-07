@@ -4,9 +4,12 @@ import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuVisibleEnum;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.api.export.user.dto.UserExportDTO;
+import com.yeungzhy.yeed.api.export.user.dto.UserExportPageDTO;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -32,6 +35,12 @@ public interface SysUserConvert {
 
     /** DTO → Entity（update 入参） */
     SysUser toEntity(SysUserUpdateDTO dto);
+
+    /** 导出Page -> 查询Page */
+    SysUserPageDTO toPageDTO(UserExportPageDTO dto);
+
+    /** Entity -> 导出 DTO */
+    UserExportDTO toExportDTO(SysUserVO vo);
 
     /**
      * Entity → 用户菜单树节点（user-menus 出参）

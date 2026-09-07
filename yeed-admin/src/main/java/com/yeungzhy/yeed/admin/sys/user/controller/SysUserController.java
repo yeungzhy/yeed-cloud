@@ -1,5 +1,6 @@
 package com.yeungzhy.yeed.admin.sys.user.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
@@ -7,10 +8,15 @@ import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.api.export.ExportTypeEnum;
+import com.yeungzhy.yeed.api.export.task.ExportTaskFeignClient;
+import com.yeungzhy.yeed.api.export.task.dto.ExportTaskSaveDTO;
+import com.yeungzhy.yeed.common.core.constant.Constant;
 import com.yeungzhy.yeed.common.core.request.IdRequest;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.support.IdenticonUtil;
+import com.yeungzhy.yeed.common.core.support.JacksonUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +46,9 @@ public class SysUserController {
     private SysUserService sysUserService;
     @Resource
     private Cache<String, String> identiconCache;
+    @Resource
+    private ExportTaskFeignClient exportTaskFeignClient;
+
 
     /**
      * 新增
@@ -94,6 +104,25 @@ public class SysUserController {
     @PostMapping("/page")
     public ApiResult<PageResult<SysUserVO>> page(@Valid @RequestBody SysUserPageDTO dto) {
         return ApiResult.ok(sysUserService.page(dto));
+    }
+
+    /**
+     * 异步导出：创建导出任务并交给 job 执行
+     *
+     * <p>yeed-api 契约：任务创建失败（job 业务拒绝/不可达）抛异常经全局异常处理透传；
+     * 此处正常返回表示任务已创建成功，文件生成进度走导出列表查询。
+     *
+     * @param dto 查询入参（序列化为任务参数快照）
+     * @return 受理结果
+     */
+    @PostMapping("/export")
+    public ApiResult<Boolean> export(@Valid @RequestBody SysUserPageDTO dto) {
+        ExportTaskSaveDTO exportTaskSaveDTO = new ExportTaskSaveDTO();
+        exportTaskSaveDTO.setExportType(ExportTypeEnum.USER_EXPORT);
+        exportTaskSaveDTO.setFileName(StrUtil.format("用户导出{}.xlsx", Constant.COMPACT_DATE_TIME_FORMATTER.format(LocalDateTime.now())));
+        exportTaskSaveDTO.setQueryParam(JacksonUtil.toJsonStrIgnoreNull(dto));
+        exportTaskFeignClient.save(exportTaskSaveDTO);
+        return ApiResult.ok();
     }
 
 

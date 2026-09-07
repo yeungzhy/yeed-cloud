@@ -1,8 +1,14 @@
 package com.yeungzhy.yeed.admin.sys.user.controller;
 
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.service.SysUserConvert;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
+import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
+import com.yeungzhy.yeed.api.export.user.dto.UserExportDTO;
+import com.yeungzhy.yeed.api.export.user.dto.UserExportPageDTO;
 import com.yeungzhy.yeed.api.user.dto.UserMenuDTO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
+import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import com.yeungzhy.yeed.common.web.annotation.InternalApi;
@@ -41,6 +47,8 @@ public class SysUserInternalController {
 
     @Resource
     private SysUserService sysUserService;
+    @Resource
+    private SysUserConvert sysUserConvert;
 
 
     /**
@@ -50,8 +58,6 @@ public class SysUserInternalController {
      * @return 登录身份包（用户信息 + 角色编码 + 权限标识；菜单树走 user-menus 单独接口）
      */
     @PostMapping("/verify")
-    public ApiResult<LoginUserInfo> verify(@Valid @RequestBody UserVerifyDTO dto) {
-        return ApiResult.ok(sysUserService.verify(dto));
     public LoginUserInfo verify(@Valid @RequestBody UserVerifyDTO dto) {
         return sysUserService.verify(dto);
     }
@@ -66,5 +72,36 @@ public class SysUserInternalController {
     public List<MenuTreeInfo> userMenus(@Valid @RequestBody UserMenuDTO dto) {
         return sysUserService.listMenusByUserId(dto.getUserId());
     }
+
+
+    /**
+     * 统计命中总行数（导出任务进度分母）
+     *
+     * @param dto 查询条件（username / email / status / 创建时间区间）；分页字段不参与命中判定
+     * @return 命中总行数；远程失败抛异常（不返回）
+     */
+    @PostMapping("/export/total")
+    public Long exportTotal(@Valid @RequestBody UserExportPageDTO dto) {
+        SysUserPageDTO pageDTO = sysUserConvert.toPageDTO(dto);
+        PageResult<SysUserVO> pageResult = sysUserService.page(pageDTO);
+        return pageResult.getTotal();
+    }
+
+
+    /**
+     * 翻页取当前页用户数据（配合 exportTotal 循环调用直至取完）
+     *
+     * @param dto 查询条件 + 分页参数（pageNum / pageSize）；查询条件须与 exportTotal 保持一致，
+     *            避免翻页过程中取数口径漂移
+     * @return 当前页用户数据（含 total，可据此判断是否已取完）；远程失败抛异常（不返回）
+     */
+    @PostMapping("/export/data")
+    public PageResult<UserExportDTO> exportPage(@Valid @RequestBody UserExportPageDTO dto) {
+        PageResult<SysUserVO> pageResult = sysUserService.page(sysUserConvert.toPageDTO(dto));
+        List<UserExportDTO> dtoList = pageResult.getRecords().stream().map(sysUserConvert::toExportDTO).toList();
+        return PageResult.of(pageResult.getPageNum(), pageResult.getPageSize(), pageResult.getTotal(), dtoList);
+    }
+
+
 
 }

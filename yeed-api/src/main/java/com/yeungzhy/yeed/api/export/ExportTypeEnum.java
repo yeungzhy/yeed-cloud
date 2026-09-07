@@ -24,9 +24,10 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum ExportTaskTypeEnum {
+public enum ExportTypeEnum {
 
-
+    /** 用户列表导出 */
+    USER_EXPORT("user_export"),
 
     ;
 
