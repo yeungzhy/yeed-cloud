@@ -65,6 +65,30 @@ public interface SysUserService {
      */
     PageResult<SysUserVO> page(SysUserPageDTO dto);
 
+    /**
+     * 按查询条件统计命中行数（不计分页字段）
+     *
+     * <p>与 {@link #page} 共用同一套查询条件，二者口径必然一致；不复用 page 的结果取 total，
+     * 是因为那是「count + 取首页」两条 SQL、白查一遍首页数据。
+     *
+     * @param dto 查询条件
+     * @return 命中行数
+     * @since 2026-09-07
+     */
+    Long count(SysUserPageDTO dto);
+
+    /**
+     * 按页取数，不做 count
+     *
+     * <p>供「总数已在循环外取得、顺序翻页」的批量取数使用（异步导出）：省掉每页一次的
+     * {@code SELECT COUNT(*)}。返回 List 而非 PageResult——没有 count 就没有可信的 total。
+     *
+     * @param dto 查询条件 + 分页参数（pageNum / pageSize）
+     * @return 本页数据；无数据时为空列表（不为 null）
+     * @since 2026-09-07
+     */
+    List<SysUserVO> slice(SysUserPageDTO dto);
+
 
     /**
      * 凭据校验：校验账号密码，校验通过返回登录身份包

@@ -318,6 +318,29 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
 
     /**
+     * 按页取数并转换为 VO 列表，不做 count（一行完成“入参 → Slice → 查询 → List”）
+     *
+     * <p>与 {@link #selectPageVO(PageRequest, Wrapper, Function)} 的差异是少了 {@code SELECT COUNT(*)}：
+     * 只发一条带 LIMIT 的查询。适用「总数已在循环外查得、顺序翻页取数」的场景（导出 / 跑批 / 全量同步），
+     * 逐页再各查一遍总数是纯浪费。
+     *
+     * <p>返回 {@code List} 而非 {@link PageResult} 是刻意的设计：没有 count 就没有可信的 total，
+     * 把它包进 PageResult 只会带出一个恒为 0 的假值；总数请用 {@code selectCount} 之类单独查。
+     *
+     * @param pageRequest  分页请求（pageNum / pageSize），支持 {@link PageRequest} 子类（如 XxxPageDTO）
+     * @param queryWrapper 查询条件；传 null 查全表
+     * @param mapper       实体到 VO 的转换函数，通常传生成器产出的 {@code XxxConvert::toVo}
+     * @param <V>          VO 类型
+     * @return 本页记录，已逐条转换为 VO；无数据时为空列表（不为 null）
+     * @since 2026-09-07
+     */
+    default <V> List<V> selectSliceVO(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
+        Page<T> page = MybatisPageConverters.toMybatisPlusSlice(pageRequest);
+        return MybatisPageConverters.toRecords(selectPage(page, queryWrapper), mapper);
+    }
+
+
+    /**
      * 分页查询并返回实体分页结果（无需元素转换时的便捷入口）
      *
      * <p>等价于 {@code selectPageVO(pageRequest, queryWrapper, Function.identity())}；

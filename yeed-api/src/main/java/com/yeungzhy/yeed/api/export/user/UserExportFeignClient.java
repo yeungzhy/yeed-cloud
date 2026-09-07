@@ -3,19 +3,22 @@ package com.yeungzhy.yeed.api.export.user;
 import com.yeungzhy.yeed.api.export.user.dto.UserExportDTO;
 import com.yeungzhy.yeed.api.export.user.dto.UserExportPageDTO;
 import com.yeungzhy.yeed.api.feign.config.InternalFeignConfig;
-import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 /**
  * 系统用户导出 内部 Feign 契约（异步导出取数口）
  *
  * <p>消费方：yeed-job（导出执行器）；提供方：yeed-admin
  *
- * <p>两接口配套使用：先 {@link #exportTotal(UserExportPageDTO)} 按查询条件统计总命中行数，
- * 作为导出任务的进度分母；再循环 {@link #exportPage(UserExportPageDTO)} 翻页取数，直至取完。
+ * <p>两接口配套使用且各司其职：{@link #exportTotal(UserExportPageDTO)} 只统计总命中行数
+ * （一条 {@code SELECT COUNT(*)}），作为导出任务的进度分母；{@link #exportPage(UserExportPageDTO)}
+ * 只按页取数（一条带 LIMIT 的查询，不带 count）——总数是循环开始前一次性取得的，
+ * 逐页重复统计是纯浪费，故取数口不返回 total。
  *
  * <p>查询条件与分页参数由同一个 {@link UserExportPageDTO} 承载，统一走 POST + JSON body
  *
@@ -47,12 +50,16 @@ public interface UserExportFeignClient {
     /**
      * 翻页取当前页用户数据（配合 exportTotal 循环调用直至取完）
      *
+     * <p>不做 count：总行数由 {@link #exportTotal} 在循环开始前一次性取得，逐页重复统计是纯浪费，
+     * 故只返回本页数据、不带 total。消费方据此判断取完：返回空列表即已无数据
+     * （引擎的循环终止条件同时也受 total 约束，见 {@code Exporter#totalCount}）。
+     *
      * @param dto 查询条件 + 分页参数（pageNum / pageSize）；查询条件须与 exportTotal 保持一致，
      *            避免翻页过程中取数口径漂移
-     * @return 当前页用户数据（含 total，可据此判断是否已取完）；远程失败抛异常（不返回）
+     * @return 当前页用户数据；远程失败抛异常（不返回）
      */
     @PostMapping("/export/data")
-    PageResult<UserExportDTO> exportPage(@Valid @RequestBody UserExportPageDTO dto);
+    List<UserExportDTO> exportPage(@Valid @RequestBody UserExportPageDTO dto);
 
 
 

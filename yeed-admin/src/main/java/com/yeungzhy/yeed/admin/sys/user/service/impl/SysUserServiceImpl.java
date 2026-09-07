@@ -133,11 +133,41 @@ public class SysUserServiceImpl implements SysUserService {
 
     @Override
     public PageResult<SysUserVO> page(SysUserPageDTO dto) {
+        return sysUserMapper.selectPageVO(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
+    }
+
+    @Override
+    public Long count(SysUserPageDTO dto) {
+        // 计数不加投影：sqlSelect 会被拼进 COUNT(...) 变成多列 COUNT（MySQL 直接语法报错），
+        // ORDER BY 同样与计数无关，带上只是给优化器添一份可能被它消不掉的无谓排序
+        return sysUserMapper.selectCount(buildQueryWrapper(dto, false));
+    }
+
+    @Override
+    public List<SysUserVO> slice(SysUserPageDTO dto) {
+        // 不做 count：调用方（导出）已在循环外取得总数，逐页再查一遍纯属浪费
+        return sysUserMapper.selectSliceVO(dto, buildQueryWrapper(dto, true), sysUserConvert::toVO);
+    }
+
+    /**
+     * 构造用户查询条件（分页列表、计数、按页取数三处共用）
+     *
+     * <p>三处共用一份条件是刻意的：计数与取数一旦各写一套，任一侧加条件都会让「总数」与
+     * 「实际取到的行」对不上——导出会表现为进度分母漂移、尾页多取或少取。
+     *
+     * @param dto            查询条件（username / email / status / 创建时间区间）
+     * @param withProjection 是否带取数投影（select 列 + 排序）；计数为 false——
+     *                       {@code selectCount} 会拿 sqlSelect 拼 {@code COUNT(列1,列2,...)}，多列即语法错误
+     * @return 查询条件；分页字段（pageNum / pageSize）不在此处使用
+     */
+    private LambdaQueryWrapper<SysUser> buildQueryWrapper(SysUserPageDTO dto, boolean withProjection) {
         LambdaQueryWrapper<SysUser> lambdaQuery = Wrappers.<SysUser>lambdaQuery()
-                .select(SysUser::getId, SysUser::getUsername, SysUser::getEmail, SysUser::getStatus, SysUser::getCreateTime)
                 .like(StringUtils.isNotEmpty(dto.getUsername()), SysUser::getUsername, dto.getUsername())
                 .eq(Objects.nonNull(dto.getStatus()), SysUser::getStatus, dto.getStatus())
                 .between(dto.hasCreateTimeRange(), SysUser::getCreateTime, dto.getCreateTimeStart(), dto.getCreateTimeEnd());
+        if (withProjection) {
+            lambdaQuery.select(SysUser::getId, SysUser::getUsername, SysUser::getEmail, SysUser::getStatus, SysUser::getCreateTime);
+        }
         /*
          * 邮箱查询条件需要用邮箱信息生成盲索引进行查询。
          * 注意：不能用 .eq(condition, column, generateHex(...))
@@ -149,10 +179,11 @@ public class SysUserServiceImpl implements SysUserService {
             lambdaQuery.eq(SysUser::getEmailBidx, emailBlindIndex.generateHex(email));
         }
 
-        // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
-        sysUserSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
-
-        return sysUserMapper.selectPageVO(dto, lambdaQuery, sysUserConvert::toVO);
+        if (withProjection) {
+            // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
+            sysUserSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
+        }
+        return lambdaQuery;
     }
 
 

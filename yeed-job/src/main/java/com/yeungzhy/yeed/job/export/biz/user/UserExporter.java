@@ -55,7 +55,8 @@ public class UserExporter implements Exporter<UserExportPageDTO, UserExportRow> 
         query.setPageNum(pageNum);
         query.setPageSize(pageSize);
 
-        return userExportFeignClient.exportPage(query).getRecords().stream()
+        // RPC-Style：契约裸返回本页数据
+        return userExportFeignClient.exportPage(query).stream()
                 .map(UserExportRow::from)
                 .toList();
     }

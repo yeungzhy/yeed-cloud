@@ -7,6 +7,7 @@ import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.data.mybatis.BaseMapper;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -36,6 +37,26 @@ public final class MybatisPageConverters {
      */
     public static <T> Page<T> toMybatisPlusPage(PageRequest pageRequest) {
         return new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+    }
+
+    /**
+     * 用 PageRequest 的页码与条数构造「只取一页、不做 count」的 Page 对象
+     *
+     * <p>与 {@link #toMybatisPlusPage(PageRequest)} 的唯一差异是 {@code searchCount=false}：
+     * 分页拦截器据此跳过 {@code SELECT COUNT(*)}，只发一条带 LIMIT 的查询。
+     *
+     * <p>适用「已知总数、顺序翻页」的取数场景（导出、跑批、全量同步）：总数是循环开始前
+     * 一次性查得的，逐页再各查一遍纯属浪费——MySQL 的 count 在带条件的索引上往往是扫一片索引。
+     *
+     * @param pageRequest 分页请求，不能为 null；页码与条数的取值边界见 {@link PageRequest} 上的校验注解
+     * @param <T>         记录类型
+     * @return MyBatis-Plus 分页对象，current / size 取自 pageRequest，且不触发 count
+     * @see BaseMapper#selectSliceVO(PageRequest, com.baomidou.mybatisplus.core.conditions.Wrapper, Function)
+     */
+    public static <T> Page<T> toMybatisPlusSlice(PageRequest pageRequest) {
+        Page<T> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        page.setSearchCount(false);
+        return page;
     }
 
     /**
@@ -75,5 +96,24 @@ public final class MybatisPageConverters {
                         ? Collections.emptyList()
                         : page.getRecords().stream().map(mapper).toList()
         );
+    }
+
+    /**
+     * 取 MyBatis-Plus 分页结果里的记录并逐条转换成 VO，丢弃分页元数据
+     *
+     * <p>配合 {@link #toMybatisPlusSlice(PageRequest)} 使用：那一页没有 count，total 恒为 0，
+     * 此时再把结果包成 {@link PageResult} 会带出一个恒为 0 的假 total——下游无从分辨
+     * 「真的没数据」与「压根没查」，故这种场景直接返回 List，分页元数据一概不带。
+     *
+     * @param page   分页结果，不能为 null
+     * @param mapper 实体到 VO 的转换函数，不能为 null；通常传生成器产出的 {@code XxxConvert::toVo}
+     * @param <E>    实体类型
+     * @param <V>    VO 类型
+     * @return 已逐条转换的记录列表；records 为 null 时返回空列表
+     */
+    public static <E, V> List<V> toRecords(IPage<E> page, Function<E, V> mapper) {
+        return page.getRecords() == null
+                ? Collections.emptyList()
+                : page.getRecords().stream().map(mapper).toList();
     }
 }
