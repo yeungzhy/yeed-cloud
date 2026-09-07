@@ -3,9 +3,7 @@ package com.yeungzhy.yeed.job.export.engine.style;
 import com.alibaba.excel.write.handler.SheetWriteHandler;
 import com.alibaba.excel.write.handler.context.SheetWriteHandlerContext;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -29,11 +27,13 @@ import java.util.List;
  * <p>与 {@link HeaderFooterWatermarkHandler} 按可见时机互补。本方案的边界：
  * 不打印（sheet 背景仅屏显）、会被单元格填充色盖住、单元格保持可编辑（背景图不是图形对象，无需保护）。
  *
- * <p>只支持 XSSF：必须 {@code inMemory(true)}，SXSSF 流式下 fail-fast 抛异常，不让水印静默缺失。
+ * <p>XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载——写出时
+ * {@code <picture>} 位于 {@code <sheetData>} 之后的保留区，不会随行数据被替换，故流式导出同样有水印。
  *
  * @author yeungzhy
  * @since 2026-09-07
  * @see HeaderFooterWatermarkHandler
+ * @see WatermarkSheets
  */
 @Slf4j
 public class BackgroundImageWatermarkHandler implements SheetWriteHandler {
@@ -96,24 +96,12 @@ public class BackgroundImageWatermarkHandler implements SheetWriteHandler {
             return;
         }
 
-        Sheet sheet = context.getWriteSheetHolder().getSheet();
-        XSSFSheet xssfSheet = requireXssfSheet(sheet);
+        XSSFSheet xssfSheet = WatermarkSheets.unwrap(context);
         byte[] pictureData = WaterMarkImages.toPngBytes(renderTile());
         registerAsSheetBackground(xssfSheet, pictureData);
     }
 
     // ============ 内部辅助方法 ========================
-
-    /** 解包到 {@link XSSFSheet}：SXSSFSheet extends XSSFSheet，须先用前者拦截流式模式 */
-    private static XSSFSheet requireXssfSheet(Sheet sheet) {
-        if (sheet instanceof SXSSFSheet) {
-            throw new IllegalStateException("背景图水印不支持 SXSSF 流式模式：请调用 EasyExcel.write(...).inMemory(true) 切换到 XSSFWorkbook 后再启用本处理器");
-        }
-        if (sheet instanceof XSSFSheet xssfSheet) {
-            return xssfSheet;
-        }
-        throw new IllegalStateException("背景图水印仅支持 xlsx（XSSFWorkbook）导出");
-    }
 
     /**
      * 把整版 PNG 注册为 sheet 背景图：图片入库 → worksheet 部件建 relationship → 挂 {@code <picture>} 元素。

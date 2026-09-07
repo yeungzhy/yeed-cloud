@@ -9,9 +9,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.ss.usermodel.PrintSetup;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -51,11 +49,14 @@ import java.nio.charset.StandardCharsets;
  * <p>图尺寸按 {@link PrintSetup#getPaperSize()} 查实际纸张、给整张纸：VML 的
  * {@code mso-position-*-relative:margin} 锚点是打印区中线（不含页边距），图小于纸宽时无从裁切对齐表头。
  *
- * <p>只支持 XSSF：调用方必须 {@code inMemory(true)}，SXSSF 流式下 fail-fast 抛异常。
+ * <p>XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载——
+ * {@code <headerFooter>} 与 {@code <legacyDrawingHF>} 位于 {@code <sheetData>} 之后的保留区、
+ * VML 与图片是独立部件，都不随行数据被替换，故流式导出同样有水印。
  *
  * @author yeungzhy
  * @since 2026-09-07
  * @see BackgroundImageWatermarkHandler
+ * @see WatermarkSheets
  */
 public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
 
@@ -164,7 +165,7 @@ public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
         if (!StringUtils.hasText(waterMarkText)) {
             return;
         }
-        XSSFSheet xssfSheet = requireXssfSheet(context.getWriteSheetHolder().getSheet());
+        XSSFSheet xssfSheet = WatermarkSheets.unwrap(context);
         /*
          * 图 = 整张纸：VML 居中锚到打印区中线后，超出页边距的部分被自然裁切，
          * 剩余可见区两端精确对齐表头两端
@@ -176,22 +177,6 @@ public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
     }
 
     // ============ 内部辅助方法 ========================
-
-    /**
-     * 解包到 {@link XSSFSheet}，识别不支持的模式并给出明确提示
-     *
-     * <p>{@code SXSSFSheet extends XSSFSheet}，必须先用前者判断拦截流式模式（默认导出即流式）。
-     * 页眉图片依赖 OPC 部件与关系，只能在 XSSF 下完整落盘，这里 fail-fast，不让水印静默缺失。
-     */
-    private static XSSFSheet requireXssfSheet(Sheet sheet) {
-        if (sheet instanceof SXSSFSheet) {
-            throw new IllegalStateException("页眉页脚水印不支持 SXSSF 流式模式：请调用 EasyExcel.write(...).inMemory(true) 切换到 XSSFWorkbook 后再启用本处理器");
-        }
-        if (sheet instanceof XSSFSheet xssfSheet) {
-            return xssfSheet;
-        }
-        throw new IllegalStateException("页眉页脚水印仅支持 xlsx（XSSFWorkbook）导出");
-    }
 
     /**
      * 装配「页眉 &G → legacyDrawingHF → VML → 图片」链；每个 sheet 独立一套，

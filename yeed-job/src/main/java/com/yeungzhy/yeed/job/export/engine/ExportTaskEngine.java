@@ -13,8 +13,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 import org.springframework.util.FastByteArrayOutputStream;
+import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,7 +147,6 @@ public class ExportTaskEngine {
             Long ossId = ossFileFeignClient.upload(metadata, excelData);
             stopWatch.stop();
             log.info("导出任务上传 OSS 完成，taskId={}，ossId={}，字节={}，耗时={}ms",
-                    ctx.taskId(), ossId, excelData.length, stopWatch.lastTaskInfo());
                     ctx.taskId(), ossId, excelData.length, stopWatch.lastTaskInfo().getTimeMillis());
 
             stopWatch.start(STAGE_WRITE_SUCCESS);
@@ -195,7 +194,7 @@ public class ExportTaskEngine {
         FastByteArrayOutputStream out = new FastByteArrayOutputStream();
         ExcelWriterBuilder builder = newWriterBuilder(ctx, exporter, out);
 
-        try (ExcelWriter writer = builder.inMemory(true).build()) {
+        try (ExcelWriter writer = builder.build()) {
             WriteSheet sheet = EasyExcel.writerSheet(exporter.getSheetName(ctx)).build();
 
             List<R> buffer = new ArrayList<>(WRITE_BATCH_SIZE);
@@ -253,7 +252,7 @@ public class ExportTaskEngine {
         FastByteArrayOutputStream out = new FastByteArrayOutputStream();
         ExcelWriterBuilder builder = newWriterBuilder(ctx, exporter, out);
 
-        try (ExcelWriter writer = builder.inMemory(true).build()) {
+        try (ExcelWriter writer = builder.build()) {
             int pageNum = 1;
             int processed = 0;
             // 与流式模式同构：数组承载，共用同一个进度回写方法
