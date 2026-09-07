@@ -11,6 +11,7 @@ import com.yeungzhy.yeed.job.export.engine.ExporterRegistry;
 import com.yeungzhy.yeed.job.export.engine.style.BackgroundImageWatermarkHandler;
 import com.yeungzhy.yeed.job.export.engine.style.AdaptiveColumnWidthHandler;
 import com.yeungzhy.yeed.job.export.engine.style.EnableStatusConverter;
+import com.yeungzhy.yeed.job.export.engine.style.HeaderFooterWatermarkHandler;
 import org.apache.poi.ss.usermodel.*;
 
 import java.util.Collections;
@@ -205,6 +206,7 @@ public interface Exporter<P, R> {
     default void registerExtraWriteHandlers(Consumer<WriteHandler> register, String watermark) {
         register.accept(new AdaptiveColumnWidthHandler());
         register.accept(new BackgroundImageWatermarkHandler(watermark));
+        register.accept(new HeaderFooterWatermarkHandler(watermark));
     }
 
     /**
