@@ -119,7 +119,7 @@ public class ExportTaskEngine {
             Long total = exporter.totalCount(ctx);
             stopWatch.stop();
             log.info("导出任务取总行数完成，taskId={}，总行数={}，耗时={}ms",
-                    ctx.taskId(), total, stopWatch.getLastTaskTimeMillis());
+                    ctx.taskId(), total, stopWatch.lastTaskInfo());
 
             byte[] excelData;
             stopWatch.start(STAGE_WRITE_FILE);
@@ -130,7 +130,7 @@ public class ExportTaskEngine {
             }
             stopWatch.stop();
             log.info("导出任务写文件完成，taskId={}，总行数={}，字节={}，耗时={}ms",
-                    ctx.taskId(), total, excelData.length, stopWatch.getLastTaskTimeMillis());
+                    ctx.taskId(), total, excelData.length, stopWatch.lastTaskInfo());
 
             // 上传前钩子可以整体替换字节（加密、追加签名页），故必须用返回值覆盖原引用
             stopWatch.start(STAGE_BEFORE_UPLOAD);
@@ -147,7 +147,7 @@ public class ExportTaskEngine {
             Long ossId = ossFileFeignClient.upload(metadata, excelData);
             stopWatch.stop();
             log.info("导出任务上传 OSS 完成，taskId={}，ossId={}，字节={}，耗时={}ms",
-                    ctx.taskId(), ossId, excelData.length, stopWatch.getLastTaskTimeMillis());
+                    ctx.taskId(), ossId, excelData.length, stopWatch.lastTaskInfo());
 
             stopWatch.start(STAGE_WRITE_SUCCESS);
             exportTaskMapper.updateSuccess(ctx.taskId(), ossId, excelData.length);
