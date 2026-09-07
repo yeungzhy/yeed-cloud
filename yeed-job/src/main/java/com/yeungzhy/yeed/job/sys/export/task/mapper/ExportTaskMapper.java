@@ -28,6 +28,7 @@ public interface ExportTaskMapper extends BaseMapper<ExportTask> {
     default void updateSuccess(Long exportTaskId, Long ossId, int size) {
         update(null, Wrappers.<ExportTask>lambdaUpdate()
                 .set(ExportTask::getStatus, ExportTaskStatusEnum.SUCCESS.getCode())
+                .set(ExportTask::getProgress, 100)
                 .set(ExportTask::getOssId, ossId)
                 .set(ExportTask::getFileSize, size)
                 .set(ExportTask::getFinishTime, LocalDateTime.now())
