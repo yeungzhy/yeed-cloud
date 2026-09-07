@@ -6,6 +6,8 @@ import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
 import com.yeungzhy.yeed.job.sys.export.task.enums.ExportTaskStatusEnum;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.time.LocalDateTime;
+
 /**
  * 导出任务表 Mapper 接口
  *
@@ -17,7 +19,7 @@ public interface ExportTaskMapper extends BaseMapper<ExportTask> {
 
 
     /**
-     * 回写导出成功：状态置 SUCCESS，并记录成品文件ID
+     * 回写导出成功：状态置 SUCCESS，并记录成品文件ID、大小与结束时间
      *
      * @param exportTaskId 导出任务主键
      * @param ossId        成品文件记录主键
@@ -28,12 +30,13 @@ public interface ExportTaskMapper extends BaseMapper<ExportTask> {
                 .set(ExportTask::getStatus, ExportTaskStatusEnum.SUCCESS.getCode())
                 .set(ExportTask::getOssId, ossId)
                 .set(ExportTask::getFileSize, size)
+                .set(ExportTask::getFinishTime, LocalDateTime.now())
                 .eq(ExportTask::getId, exportTaskId));
     }
 
 
     /**
-     * 回写导出失败：状态置 FAILED，并记录失败原因
+     * 回写导出失败：状态置 FAILED，并记录失败原因与结束时间
      *
      * @param exportTaskId 导出任务主键
      * @param errorMsg     失败原因
@@ -42,6 +45,7 @@ public interface ExportTaskMapper extends BaseMapper<ExportTask> {
         update(null, Wrappers.<ExportTask>lambdaUpdate()
                 .set(ExportTask::getStatus, ExportTaskStatusEnum.FAILED.getCode())
                 .set(ExportTask::getFailReason, errorMsg)
+                .set(ExportTask::getFinishTime, LocalDateTime.now())
                 .eq(ExportTask::getId, exportTaskId));
     }
 

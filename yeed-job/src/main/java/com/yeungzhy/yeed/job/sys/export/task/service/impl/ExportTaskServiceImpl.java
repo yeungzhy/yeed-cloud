@@ -8,6 +8,7 @@ import com.yeungzhy.yeed.api.export.task.vo.ExportTaskPageVO;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.job.sys.export.task.entity.ExportTask;
+import com.yeungzhy.yeed.job.sys.export.task.enums.ExportTaskStatusEnum;
 import com.yeungzhy.yeed.job.sys.export.task.mapper.ExportTaskMapper;
 import com.yeungzhy.yeed.job.sys.export.task.service.ExportTaskConvert;
 import com.yeungzhy.yeed.job.sys.export.task.service.ExportTaskService;
@@ -15,6 +16,10 @@ import com.yeungzhy.yeed.job.sys.export.task.service.ExportTaskSorts;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 导出任务表 服务实现类
@@ -32,6 +37,31 @@ public class ExportTaskServiceImpl implements ExportTaskService {
     private ExportTaskMapper exportTaskMapper;
     @Resource
     private ExportTaskConvert exportTaskConvert;
+
+
+    @Override
+    @Transactional
+    public List<ExportTask> claimRunning(int batchSize) {
+        // 悲观锁锁定候选行（排序取最早创建的批），直到本事务提交前其他执行器读不到/改不动这 N 行
+        List<ExportTask> candidates = exportTaskMapper.selectList(Wrappers.<ExportTask>lambdaQuery()
+                .eq(ExportTask::getStatus, ExportTaskStatusEnum.WAITING)
+                .orderByAsc(ExportTask::getId)
+                .last("LIMIT " + batchSize + " FOR UPDATE"));
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = candidates.stream().map(ExportTask::getId).toList();
+        // CAS 双保险：仅当行仍是 WAITING 才置 RUNNING（与 FOR UPDATE 互为冗余，防未来锁策略调整）
+        exportTaskMapper.update(null, Wrappers.<ExportTask>lambdaUpdate()
+                .eq(ExportTask::getStatus, ExportTaskStatusEnum.WAITING)
+                .in(ExportTask::getId, ids)
+                .set(ExportTask::getStatus, ExportTaskStatusEnum.RUNNING.getCode())
+                .set(ExportTask::getStartTime, LocalDateTime.now()));
+        // 内存态同步为 RUNNING，避免下游误读返回值里的 WAITING 快照
+        LocalDateTime now = LocalDateTime.now();
+        candidates.forEach(task -> task.setStatus(ExportTaskStatusEnum.RUNNING).setStartTime(now));
+        return candidates;
+    }
 
 
     @Override
