@@ -32,6 +32,8 @@ import java.util.Map;
  *   <li>架构字段：乐观锁 version、JSON 扩展字段 extra</li>
  * </ul>
  *
+ * <p> 新建业务表的 DDL 模板见 docs/base-table.sql，公共字段与本类一一对应，改一处必须同步另一处
+ *
  * @author yeungzhy
  * @since 2026-07-30
  */
