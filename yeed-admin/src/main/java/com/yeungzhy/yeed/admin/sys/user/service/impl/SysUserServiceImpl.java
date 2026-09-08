@@ -9,6 +9,7 @@ import com.yeungzhy.yeed.admin.sys.role.entity.SysRole;
 import com.yeungzhy.yeed.admin.sys.role.mapper.SysRoleMapper;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPasswordDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.entity.SysUser;
@@ -25,6 +26,7 @@ import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
 import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
 import com.yeungzhy.yeed.common.core.support.TreeUtil;
@@ -160,6 +162,31 @@ public class SysUserServiceImpl implements SysUserService {
     }
 
 
+    @Override
+    public void changePassword(SysUserPasswordDTO dto) {
+        Long currentUserId = LoginUserHelper.getUserId();
+        Long targetId = dto.getId() == null ? currentUserId : dto.getId();
+
+        SysUser sysUser = sysUserMapper.selectById(targetId);
+        BizAssert.notNull(sysUser, "用户不存在");
+
+        // 改自己的密码必须验旧：否则拿到会话（如终端未锁屏）即可直接改密接管账号
+        if (targetId.equals(currentUserId)) {
+            BizAssert.notBlank(dto.getOldPassword(), "原密码不能为空");
+            BizAssert.isTrue(argon2PwdEncoder.matches(dto.getOldPassword(), sysUser.getPassword()), "原密码不正确");
+        }
+
+        String newPassword = dto.getNewPassword();
+        BizAssert.isFalse(argon2PwdEncoder.matches(newPassword, sysUser.getPassword()), "新密码不能与原密码相同");
+
+        // 只带 id + password，version 为 null 不触发乐观锁；审计字段由自动填充刷新（改密属资料变更）
+        sysUserMapper.updateById(SysUser.builder()
+                .id(targetId)
+                .password(argon2PwdEncoder.encode(newPassword))
+                .build());
+    }
+
+
     /**
      * 账号是否已被占用（登录名与工号共用同一个登录入口，必须跨两列判定）
      */
@@ -221,6 +248,8 @@ public class SysUserServiceImpl implements SysUserService {
     private LambdaQueryWrapper<SysUser> buildQueryWrapper(SysUserPageDTO dto, boolean withProjection) {
         LambdaQueryWrapper<SysUser> lambdaQuery = Wrappers.<SysUser>lambdaQuery()
                 .like(StringUtils.isNotEmpty(dto.getUsername()), SysUser::getUsername, dto.getUsername())
+                .like(StringUtils.isNotEmpty(dto.getRealName()), SysUser::getRealName, dto.getRealName())
+                .like(StringUtils.isNotEmpty(dto.getEmployeeNo()), SysUser::getEmployeeNo, dto.getEmployeeNo())
                 .eq(Objects.nonNull(dto.getStatus()), SysUser::getStatus, dto.getStatus())
                 .between(dto.hasCreateTimeRange(), SysUser::getCreateTime, dto.getCreateTimeStart(), dto.getCreateTimeEnd());
         if (withProjection) {

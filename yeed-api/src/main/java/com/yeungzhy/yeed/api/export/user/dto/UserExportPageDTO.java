@@ -19,11 +19,15 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class UserExportPageDTO extends PageRequest {
 
-    /** 系统登录名 */
+    /** 系统登录名（模糊） */
     private String username;
-    /** 手机号 */
+    /** 真实姓名（模糊） */
+    private String realName;
+    /** 工号（模糊） */
+    private String employeeNo;
+    /** 手机号（精确，走盲索引） */
     private String phone;
-    /** 邮箱 */
+    /** 邮箱（精确，走盲索引） */
     private String email;
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;

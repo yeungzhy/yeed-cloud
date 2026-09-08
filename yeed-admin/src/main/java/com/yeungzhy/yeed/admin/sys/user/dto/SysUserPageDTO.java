@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 /**
  * 系统用户 分页查询 DTO（前端入参）
  *
+ * <p>字段顺序与建表 DDL 一致，改列必须同步两处；
+ * 手机 / 邮箱是加密列，等值查询走盲索引（见 Service 层查询装配），不能用 like。
+ *
  * @author yeungzhy
  * @since 2026-08-13 06:48:01
  */
@@ -19,11 +22,15 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class SysUserPageDTO extends PageRequest {
 
-    /** 系统登录名 */
+    /** 系统登录名（模糊） */
     private String username;
-    /** 手机号 */
+    /** 真实姓名（模糊） */
+    private String realName;
+    /** 工号（模糊） */
+    private String employeeNo;
+    /** 手机号（精确，走盲索引） */
     private String phone;
-    /** 邮箱 */
+    /** 邮箱（精确，走盲索引） */
     private String email;
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;

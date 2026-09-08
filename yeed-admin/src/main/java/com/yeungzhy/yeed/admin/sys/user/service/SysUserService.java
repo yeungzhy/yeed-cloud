@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.admin.sys.user.service;
 
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPasswordDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
@@ -41,6 +42,16 @@ public interface SysUserService {
      * @since 2026-08-13 06:48:01
      */
     void update(SysUserUpdateDTO dto);
+
+    /**
+     * 修改密码
+     *
+     * <p>{@code id} 为空时改当前登录用户自己的密码（校验原密码），否则由管理员重置指定用户密码（不校验原密码）。
+     *
+     * @param dto 入参（目标用户 ID + 原密码 + 新密码）
+     * @since 2026-09-08
+     */
+    void changePassword(SysUserPasswordDTO dto);
 
 
     // ==================== 标准查询（R） ====================

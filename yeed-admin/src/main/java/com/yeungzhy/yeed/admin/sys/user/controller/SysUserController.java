@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserAddDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPageDTO;
+import com.yeungzhy.yeed.admin.sys.user.dto.SysUserPasswordDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.service.SysUserService;
@@ -75,6 +76,23 @@ public class SysUserController {
     @PostMapping("/update")
     public ApiResult<Boolean> update(@Valid @RequestBody SysUserUpdateDTO dto) {
         sysUserService.update(dto);
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 修改密码
+     *
+     * <p>id 为空表示改当前登录用户自己的密码（校验原密码）；
+     * id 非空为管理员重置指定用户密码（不校验原密码，能否调用由菜单权限控制）。
+     *
+     * @param dto 入参（目标用户 ID + 原密码 + 新密码）
+     * @return 操作结果
+     * @since 2026-09-08
+     */
+    @PostMapping("/change-password")
+    public ApiResult<Boolean> changePassword(@Valid @RequestBody SysUserPasswordDTO dto) {
+        sysUserService.changePassword(dto);
         return ApiResult.ok();
     }
 
