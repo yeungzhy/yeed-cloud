@@ -32,6 +32,12 @@
             <artifactId>yeed-common-security</artifactId>
             <version>20260501</version>
         </dependency>
+        <!-- RedisHelper 分布式锁：承载并发策略为"跳过"的计划，避免上次未结束时重复执行 -->
+        <dependency>
+            <groupId>com.yeungzhy</groupId>
+            <artifactId>yeed-common-cache</artifactId>
+            <version>20260501</version>
+        </dependency>
         <dependency>
             <groupId>com.yeungzhy</groupId>
             <artifactId>yeed-api</artifactId>
@@ -86,6 +92,12 @@
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-micrometer</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Quartz Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-quartz</artifactId>
         </dependency>
 
         <dependency>
