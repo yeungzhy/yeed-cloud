@@ -51,14 +51,16 @@ public class ExportTaskServiceImpl implements ExportTaskService {
             return List.of();
         }
         List<Long> ids = candidates.stream().map(ExportTask::getId).toList();
-        // CAS 双保险：仅当行仍是 WAITING 才置 RUNNING（与 FOR UPDATE 互为冗余，防未来锁策略调整）
+        LocalDateTime now = LocalDateTime.now();
         exportTaskMapper.update(null, Wrappers.<ExportTask>lambdaUpdate()
+                // CAS 双保险：仅当行仍是 WAITING 才置 RUNNING（与 FOR UPDATE 互为冗余，防未来锁策略调整）
                 .eq(ExportTask::getStatus, ExportTaskStatusEnum.WAITING)
                 .in(ExportTask::getId, ids)
                 .set(ExportTask::getStatus, ExportTaskStatusEnum.RUNNING.getCode())
-                .set(ExportTask::getStartTime, LocalDateTime.now()));
+                .set(ExportTask::getStartTime, now)
+                .set(ExportTask::getUpdateTime, now)
+        );
         // 内存态同步为 RUNNING，避免下游误读返回值里的 WAITING 快照
-        LocalDateTime now = LocalDateTime.now();
         candidates.forEach(task -> task.setStatus(ExportTaskStatusEnum.RUNNING).setStartTime(now));
         return candidates;
     }
