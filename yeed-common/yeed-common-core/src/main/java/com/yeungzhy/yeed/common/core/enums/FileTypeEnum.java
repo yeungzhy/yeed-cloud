@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 /**
  * 文件类型字典：扩展名 <-> MIME 类型
  *
- * <p>本枚举的消费者有三个：
+ * <p> 本枚举的消费者有三个：
  * <ul>
- *   <li>oss：上传判真结论落库扩展名与 contentType</li>
- *   <li>gateway：按响应 Content-Type 分类访问日志</li>
- *   <li>job：导出文件的 Content-Type</li>
+ *   <li>oss：上传判真结论落库扩展名与 contentType
+ *   <li>gateway：按响应 Content-Type 分类访问日志
+ *   <li>job：导出文件的 Content-Type
  * </ul>
  *
  * @author yeungzhy

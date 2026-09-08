@@ -11,6 +11,11 @@ import java.time.LocalDateTime;
 /**
  * 用户导出 分页查询 DTO
  *
+ * <p>字段与 admin 侧列表查询条件一一对应（由 {@code SysUserConvert} 转换），任一侧加筛选字段都要同步另一处，
+ * 否则导出结果与列表所见不一致
+ *
+ * <p>一次调用同时承载筛选与分页：{@code exportTotal} 只取筛选部分，{@code exportPage} 两者都用
+ *
  * @author yeungzhy
  * @since 2026-08-13 06:48:01
  */

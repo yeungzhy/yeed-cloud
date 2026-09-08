@@ -20,24 +20,24 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 /**
  * 内部 Feign 端点（标注 {@link InternalApi} 的 Controller）专用异常处理
  *
- * <p>RPC-Style（裸数据 + 异常）：与对外端点的 RESTful-Style（HTTP 200 + 统一封装 + 业务码）
- * 相反，内部端点的失败一律转为 HTTP 错误码
- * （body 仍为 ApiResult 结构），供消费方 Feign 的 ErrorDecoder 解析出 code/msg：
+ * <p> RPC-Style（裸数据 + 异常）：与对外端点的 RESTful-Style（HTTP 200 + 统一封装 + 业务码）
+ * 相反，内部端点失败一律转为 HTTP 错误码（body 仍为 ApiResult 结构），供消费方 Feign
+ * 的 ErrorDecoder 解析出 code/msg：
  * <ul>
- *   <li>{@link BizException}：HTTP 500，body 携带码（无码回落 SYSTEM_ERROR）与透传话术；</li>
- *   <li>参数/约束校验失败：HTTP 400 + {@code PARAM_INVALID}；</li>
- *   <li>请求体不可读（JSON 结构错误）、参数类型不匹配、缺参：HTTP 400 + {@code PARAM_INVALID}
- *       ——属调用方契约违约，必须落在 400 分支，否则会被 {@code Exception} 兜底误判成
- *       服务方 500 故障，告警与日志噪音都会指向错误的排查方向；</li>
- *   <li>其余未捕获异常：HTTP 500 + {@code SYSTEM_ERROR}（记全栈）。</li>
+ *   <li>{@link BizException}：HTTP 500，body 携带业务码（无码回落 SYSTEM_ERROR）与透传话术
+ *   <li>参数/约束校验失败：HTTP 400 + {@code PARAM_INVALID}
+ *   <li>请求体不可读（JSON 结构错误）、参数类型不匹配、缺参：HTTP 400 + {@code PARAM_INVALID}，
+ *       属调用方契约违约，必须落在 400 分支，否则会被 {@code Exception} 兜底误判成
+ *       服务方 500 故障，告警与日志噪音都指向错误的排查方向
+ *   <li>其余未捕获异常：HTTP 500 + {@code SYSTEM_ERROR}，记全栈
  * </ul>
  *
- * <p>为何用 {@code @Order(HIGHEST_PRECEDENCE)}：{@link ExternalApiExceptionHandler} 同样能处理
+ * <p> 为何用 {@code @Order(HIGHEST_PRECEDENCE)}：{@link ExternalApiExceptionHandler} 同样能处理
  * {@code BizException}，但会把内部端点错误包成 HTTP 200：RPC-Style 下裸数据会被错误体
- * 反序列化成"字段全 null 的假成功"。本类排序更靠前，对内部 Controller 的异常优先接管。
+ * 反序列化成"字段全 null 的假成功"。本类排序更靠前，内部 Controller 的异常被优先接管
  *
- * <p>装配方式：本类位于 {@code common-web}，不在任何业务模块的组件扫描边界内，
- * 由 {@link ExceptionHandlerAutoConfiguration} 显式注册为 Bean。
+ * <p> 装配方式：本类位于 {@code common-web}，不在任何业务模块的组件扫描边界内，
+ * 由 {@link ExceptionHandlerAutoConfiguration} 显式注册为 Bean
  *
  * @author yeungzhy
  * @see InternalApi
@@ -49,8 +49,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class InternalApiExceptionHandler {
 
     /**
-     * 内部业务失败：HTTP 500 + 业务码透传（无码回落 SYSTEM_ERROR）。
-     * 业务失败属契约内正常路径，不记 ERROR 日志。
+     * 内部业务失败：HTTP 500 + 业务码透传（无码回落 SYSTEM_ERROR）
+     * 业务失败属契约内正常路径，不记 ERROR 日志
      */
     @ExceptionHandler(BizException.class)
     public ResponseEntity<ApiResult<Void>> handleBiz(BizException e) {
@@ -62,8 +62,8 @@ public class InternalApiExceptionHandler {
     /**
      * 内部参数/约束校验失败（Feign 调用方契约违约）：HTTP 400 + PARAM_INVALID
      *
-     * <p>覆盖两类：字段约束不满足（{@code @Valid} / {@code @Validated}）与报文本身不可解析
-     * （JSON 结构错误、类型不匹配、缺参）。均属调用方错误，不记 ERROR 日志。
+     * <p> 覆盖两类：字段约束不满足（{@code @Valid} / {@code @Validated}）与报文本身不可解析
+     * （JSON 结构错误、类型不匹配、缺参），均属调用方错误，不记 ERROR 日志
      */
     @ExceptionHandler({
             MethodArgumentNotValidException.class,

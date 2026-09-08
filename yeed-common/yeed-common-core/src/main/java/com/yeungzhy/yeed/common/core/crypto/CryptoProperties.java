@@ -8,8 +8,8 @@ import lombok.experimental.Accessors;
 /**
  * 统一加解密配置项，集中管理 RSA、AES、HMAC 密钥配置
  *
- * <p>配置示例：
- * <pre>
+ * <p> 配置示例：
+ * <pre>{@code
  * crypto:
  *   rsa:
  *     public-key: xxx
@@ -18,7 +18,7 @@ import lombok.experimental.Accessors;
  *     key: xxx
  *   hmac:
  *     secret: xxx
- * </pre>
+ * }</pre>
  *
  * @author YangZhaoHuang
  * @since 2026-06-04

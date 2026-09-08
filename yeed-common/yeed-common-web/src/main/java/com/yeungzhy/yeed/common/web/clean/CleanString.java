@@ -9,26 +9,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 入参字符串清洗注解：标注在 DTO 字符串字段上，Jackson 反序列化时按 {@link CleanLevel} 依次清洗后注入。
+ * 入参字符串清洗注解：标注在 DTO 字符串字段上，Jackson 反序列化时按 {@link CleanLevel} 依次清洗后注入
  *
- * <p>注意事项：
+ * <p> 使用约束：
  * <ul>
- *   <li>只影响 HTTP JSON 反序列化入口（Controller {@code @RequestBody}）；
- *       程序内直接构造 DTO / Feign 传递不经清洗，如需保证需在调用侧自行处理。</li>
- *   <li>清洗先于 Service 执行，业务校验（如 notBlank、唯一性检查）天然基于清洗后值。</li>
- *   <li>{@code value} 为清洗级别序列，按声明顺序依次执行；单级别可省略花括号
- *       （如 {@code @CleanString(CleanLevel.ALL)}）。</li>
+ *   <li>只影响 HTTP JSON 反序列化入口（Controller {@code @RequestBody}）；程序内直接构造 DTO
+ *       或 Feign 传递不经清洗，需要保证时在调用侧自行处理
+ *   <li>清洗先于 Service 执行，业务校验天然基于清洗后的值
+ *   <li>{@code value} 是清洗级别序列，按声明顺序依次执行；单级别可省略数组花括号，
+ *       如 {@code @CleanString(CleanLevel.ALL)}
  * </ul>
- *
- * <p>示例：
- * <pre>
- * &#64;CleanString
- * private String name;                        // 默认 TRIM：去首尾空白
- * &#64;CleanString(CleanLevel.ALL)
- * private String perms;                       // 去全部空白（含内部）
- * &#64;CleanString({CleanLevel.TRIM, CleanLevel.EMOJI})
- * private String remark;                      // 去首尾空白 + 去除 emoji
- * </pre>
  *
  * @author yeungzhy
  * @since 2026-08-14
@@ -42,9 +32,9 @@ import java.lang.annotation.Target;
 public @interface CleanString {
 
     /**
-     * 清洗级别序列（默认仅去首尾空白 {@link CleanLevel#TRIM}）。
+     * 清洗级别序列，默认仅去首尾空白
      *
-     * @return 清洗级别
+     * @return 按声明顺序执行的清洗级别；不配置时为 {@link CleanLevel#TRIM}
      */
     CleanLevel[] value() default {CleanLevel.TRIM};
 

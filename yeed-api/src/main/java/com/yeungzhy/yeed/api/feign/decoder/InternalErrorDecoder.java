@@ -16,28 +16,40 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 内部 Feign 契约（RPC-Style：裸数据 + 异常）的异常解码器（经 {@link InternalFeignConfig} 按客户端装配）。
+ * 内部 Feign 契约（RPC-Style：裸数据 + 异常）的异常解码器（经 {@link InternalFeignConfig} 按客户端装配）
  *
- * <p>职责：把下游内部端点返回的 HTTP 错误响应（由
- * {@code InternalApiExceptionHandler} 统一映射为 500/400 + ApiResult body）翻译回业务异常：
+ * <p>职责：把下游内部端点返回的 HTTP 错误响应（由 {@code InternalApiExceptionHandler} 统一映射为
+ * 400 / 500 + ApiResult body）翻译回业务异常：
  * <ul>
- *   <li>响应体为 ApiResult 结构 → 解析 code/msg，抛 {@code BizException(码, msg)}，
- *       业务失败话术（如"账号或密码错误"）经异常链路透传给最终调用方；</li>
- *   <li>响应体不可解析或缺失（网关兜底页等）→ 回落 {@code SYSTEM_ERROR}，不透传内部细节。</li>
+ *   <li>响应体是 ApiResult 结构 → 解析 code / msg，抛 {@code BizException(码, msg)}，
+ *       业务失败话术（如「账号或密码错误」）经异常链路透传到最终调用方
+ *   <li>响应体缺失或不可解析（网关兜底页等）→ 回落 {@code SYSTEM_ERROR}，不透传内部细节
  * </ul>
  *
- * <p>边界：本解码器只处理"下游有响应"的错误；连接失败 / 超时 / 无可用实例等未发出或
- * 未收到响应的异常（{@code FeignException.RetryableException} 等）不经 ErrorDecoder，
- * 由消费方全局异常兜底为 {@code SYSTEM_ERROR}——内部依赖故障对用户统一为"系统繁忙"。
+ * <p>边界：只处理「下游有响应」的错误，连接失败 / 超时 / 无可用实例这类没发出或没收到响应的异常
+ * （{@code RetryableException} 等）不经 ErrorDecoder，由消费方全局异常兜底为 {@code SYSTEM_ERROR}，
+ * 内部依赖故障对用户统一表现为系统繁忙
  *
  * @author yeungzhy
+ * @since 2026-09-04
  * @see ApiResult.CommonCode
  */
 @Slf4j
 public class InternalErrorDecoder implements ErrorDecoder {
 
+    /** 复用 common 的共享 ObjectMapper 配置，不另建实例（本类只读不写，无并发问题） */
     private static final ObjectMapper JSON_MAPPER = JacksonUtil.newDefaultMapper();
 
+    /**
+     * 把下游错误响应解码为业务异常
+     *
+     * <p>只解析不抛出：返回异常对象由 Feign 负责抛出；解析失败一律回落 {@code SYSTEM_ERROR}，
+     * 不让解码环节再抛一次异常掩盖真正的失败原因
+     *
+     * @param methodKey 出错的 Feign 方法签名，仅用于日志定位
+     * @param response  下游响应，body 为 null 时按空响应体处理
+     * @return 待抛出的 {@code BizException}；恒不为 null
+     */
     @Override
     public Exception decode(String methodKey, Response response) {
         String bodyText = readBody(response);
@@ -53,13 +65,18 @@ public class InternalErrorDecoder implements ErrorDecoder {
             }
         }
         return new BizException(
-                // 将下游响应码映射回 通用业务状态码枚举；未知/缺失时回落 SYSTEM_ERROR(1000)
+                // 映射回通用业务状态码枚举；未知 / 缺失时回落 SYSTEM_ERROR(1000)
                 ApiResult.CommonCode.CODE_MAP.getOrDefault(code, ApiResult.CommonCode.SYSTEM_ERROR),
                 msg
         );
     }
 
-    /** 读取错误响应体；body 为 null（如无响应体的错误状态）返回 null */
+    /**
+     * 读取错误响应体
+     *
+     * @param response 下游响应，可为 null
+     * @return 响应体文本；无响应体或读取失败返回 null
+     */
     private String readBody(Response response) {
         if (response == null || response.body() == null) {
             return null;

@@ -28,7 +28,7 @@ import java.time.temporal.ChronoUnit;
  * }
  *
  * <p>时长与大小一律用 {@link Duration} / {@link DataSize} 承载：绑定层内建单位解析，
- * 调用方拿到的是已换算好的值，不必再约定"这个字段的单位是毫秒还是字节"。
+ * 调用方拿到的是已换算好的值，不必再约定"这个字段的单位是毫秒还是字节"
  *
  * @author yeungzhy
  * @since 2026-08-23
@@ -46,7 +46,7 @@ public class OssProperties {
     /**
      * 文件保留时长：上传时按此刻 + 该时长算出 {@code expireTime}，到期由清理任务回收
      *
-     * <p>{@code null} = 永久保存（Nacos 里把该键留空即可绑定为 null）；配 0 等同"立即过期"。
+     * <p>{@code null} = 永久保存（Nacos 里把该键留空即可绑定为 null）；配 0 等同"立即过期"；
      * 非负约束见 {@link #isExpireAfterNonNegative()}
      */
     @DurationUnit(ChronoUnit.DAYS)
@@ -55,9 +55,9 @@ public class OssProperties {
     /**
      * 保留时长不得为负：会算出早于上传时刻的过期时间，文件一入库即可被回收（静默丢数据）
      *
-     * <p>不用 {@code @Min}——它是数值约束，没有 {@link Duration} 的验证器实现，作用在
+     * <p>不用 {@code @Min}：它是数值约束，没有 {@link Duration} 的验证器实现，作用在
      * {@code Duration} 上会抛 {@code UnexpectedTypeException}（实测 HV000030），绑定期即启动失败。
-     * {@link AssertTrue} 是 Jakarta 标准注解且只作用于 boolean，可安全承载这类条件约束。
+     * {@link AssertTrue} 是 Jakarta 标准注解且只作用于 boolean，可安全承载这类条件约束
      */
     @AssertTrue(message = "yeed-oss.oss.expire-after 不能为负数")
     public boolean isExpireAfterNonNegative() {

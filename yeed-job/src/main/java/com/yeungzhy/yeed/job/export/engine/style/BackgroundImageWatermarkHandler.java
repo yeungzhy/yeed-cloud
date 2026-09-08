@@ -24,11 +24,11 @@ import java.util.List;
  * Excel 水印写处理器（工作表背景图方案）：把半透明斜排文字水印渲染成整版 PNG 注册为 sheet 背景图，
  * Excel 打开后自动平铺整张表
  *
- * <p>与 {@link HeaderFooterWatermarkHandler} 按可见时机互补。本方案的边界：
- * 不打印（sheet 背景仅屏显）、会被单元格填充色盖住、单元格保持可编辑（背景图不是图形对象，无需保护）。
+ * <p> 与 {@link HeaderFooterWatermarkHandler} 按可见时机互补。本方案的边界：
+ * 不打印（sheet 背景仅屏显）、会被单元格填充色盖住、单元格保持可编辑（背景图不是图形对象，无需保护）
  *
- * <p>XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载——写出时
- * {@code <picture>} 位于 {@code <sheetData>} 之后的保留区，不会随行数据被替换，故流式导出同样有水印。
+ * <p> XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载：写出时
+ * {@code <picture>} 位于 {@code <sheetData>} 之后的保留区，不会随行数据被替换，故流式导出同样有水印
  *
  * @author yeungzhy
  * @since 2026-09-07

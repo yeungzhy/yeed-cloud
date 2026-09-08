@@ -7,27 +7,25 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Identicon 头像生成工具（GitHub 默认头像风格）
  *
- * <p>算法原理：{@code SHA-256(seed)} 是确定性纯函数 —— 同一 seed 永远生成同一张图，
- * 不同 seed 视觉差异明显；因此不需要存储生成结果，每次按 seed 实时计算即可。
+ * <p> 算法原理：{@code SHA-256(seed)} 是确定性纯函数，同一 seed 永远生成同一张图，
+ * 不同 seed 视觉差异明显；因此不需要存储生成结果，每次按 seed 实时计算即可
  *
- * <p>具体规则：
+ * <p> 具体规则：
  * <ol>
- *     <li>SHA-256(seed) → 256 位位流</li>
- *     <li>第 1 字节 → HSL 色相（0°-360°），第 2 字节高/低 4 位分别映射为饱和度与亮度
- *         → 颜色饱满但不刺眼；最终转为 #RRGGBB 十六进制色值</li>
- *     <li>剩余位流中取 {@code GRID × ceil(GRID/2)} 位 = {@code GRID} 行 × 左半独立列，
- *         按位决定左半列是否填色；右半由左半水平镜像派生，
- *         形成左右对称的视觉效果</li>
- *     <li>输出 SVG（viewBox="0 0 GRID GRID"，矢量缩放不失真），
- *         前端通过 CSS width/height 控制展示尺寸</li>
+ *   <li>SHA-256(seed) → 256 位位流
+ *   <li>第 1 字节 → HSL 色相（0°-360°），第 2 字节高/低 4 位分别映射为饱和度与亮度，
+ *       颜色饱满但不刺眼；最终转为 #RRGGBB 十六进制色值
+ *   <li>剩余位流中取 {@code GRID × ceil(GRID/2)} 位 = {@code GRID} 行 × 左半独立列，
+ *       按位决定左半列是否填色；右半由左半水平镜像派生，形成左右对称的视觉效果
+ *   <li>输出 SVG（viewBox="0 0 GRID GRID"，矢量缩放不失真），前端通过 CSS width/height 控制展示尺寸
  * </ol>
  *
- * <p>GRID 安全上限：颜色固定占用前 16 位，剩 240 位供网格决策；
+ * <p> GRID 安全上限：颜色固定占用前 16 位，剩 240 位供网格决策
  * 为保证每个决策位不被循环复用（分布最佳），需满足 {@code GRID × ceil(GRID/2) ≤ 240}，
- * 即 GRID ∈ [3, 21]，默认 7。
+ * 即 GRID ∈ [3, 21]，默认 7
  *
- * <p>深色模式：{@code dark=true} 时背景切换为深灰 #1e1e1e，前景亮度区间整体提亮，
- * 确保在深色背景上对比度足够。色相与饱和度两种模式一致，同一用户切换主题时色系保持连贯。
+ * <p> 深色模式：{@code dark=true} 时背景切换为深灰 #1e1e1e，前景亮度区间整体提亮，
+ * 确保在深色背景上对比度足够。色相与饱和度两种模式一致，同一用户切换主题时色系保持连贯
  *
  * @author yeungzhy
  * @since 2026-08-06
@@ -132,9 +130,9 @@ public final class IdenticonUtil {
     }
 
     /**
-     * 从哈希前 2 字节派生 HSL 颜色，并转换为十六进制 #RRGGBB。
-     * 色相范围 0-360° 全量，饱和度 65-100%；
-     * 亮度区间随 dark 切换：浅色 40-70%（白底可读），深色 55-80%（深底可读）。
+     * 从哈希前 2 字节派生 HSL 颜色，并转换为十六进制 #RRGGBB
+     *
+     * <p> 色相范围 0-360° 全量，饱和度 65-100%；亮度区间随 dark 切换：浅色 40-70%（白底可读），深色 55-80%（深底可读）
      */
     private static String deriveColor(byte[] hash, boolean dark) {
         float hue        = (hash[0] & 0xFF) * 360.0f / 256.0f;
@@ -147,7 +145,7 @@ public final class IdenticonUtil {
     }
 
     /**
-     * 从哈希位流派生 GRID × GRID 填色网格。
+     * 从哈希位流派生 GRID × GRID 填色网格
      *
      * @param hash     哈希字节数组
      * @param grid     网格尺寸（单边）
@@ -181,7 +179,7 @@ public final class IdenticonUtil {
     }
 
     /**
-     * 标准 HSL → RGB 转换（W3C 公式）。
+     * 标准 HSL → RGB 转换（W3C 公式）
      *
      * @param h 色相 0-360（度）
      * @param s 饱和度 0-1

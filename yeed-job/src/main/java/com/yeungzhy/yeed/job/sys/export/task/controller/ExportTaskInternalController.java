@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 导出任务表 内部接口控制器（仅供 admin 经 Feign 调用）
  *
- * <p>RPC-Style：成功返回裸数据；失败抛异常，由
+ * <p> RPC-Style：成功返回裸数据；失败抛异常，由
  * {@code InternalApiExceptionHandler} 统一映射为 HTTP 错误码 + ApiResult body，
- * admin 侧经 {@code InternalErrorDecoder} 还原为 {@code BizException}。
+ * admin 侧经 {@code InternalErrorDecoder} 还原为 {@code BizException}
  *
  * @author yeungzhy
  * @since 2026-09-01 21:55:57
@@ -37,9 +37,9 @@ public class ExportTaskInternalController {
 
 
     /**
-     * 新增
+     * 新增导出任务，只落库创建快照、不触发执行
      *
-     * @param dto 入参
+     * @param dto 创建入参，字段语义见 {@link ExportTaskSaveDTO}
      * @return 新增记录的主键 ID
      * @author yeungzhy
      * @since 2026-09-01 21:55:57
@@ -51,10 +51,10 @@ public class ExportTaskInternalController {
 
 
     /**
-     * 分页查询
+     * 分页查询导出任务
      *
-     * @param dto 分页查询入参
-     * @return 分页结果
+     * @param dto 分页参数，暂无业务筛选字段，见 {@link ExportTaskPageDTO}
+     * @return 分页结果；无命中返回空页而非 null
      * @author yeungzhy
      * @since 2026-09-01 21:55:57
      */

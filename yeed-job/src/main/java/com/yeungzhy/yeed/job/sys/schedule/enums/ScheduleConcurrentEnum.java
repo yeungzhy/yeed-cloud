@@ -8,7 +8,7 @@ import lombok.Getter;
 
 /**
  * 定时计划并发策略（上次触发未结束时，本次触发如何处置）
- * <p>三态与 Quartz 能力的对应关系：
+ * <p> 三态与 Quartz 能力的对应关系：
  * <ul>
  *   <li>{@link #SKIP}：Quartz 无原生等价能力，由执行壳抢分布式锁，抢不到即放弃本次</li>
  *   <li>{@link #ALLOW}：Quartz 默认行为，同一 JobKey 的多次触发互不干涉</li>
@@ -53,7 +53,7 @@ public enum ScheduleConcurrentEnum implements IEnum<Integer> {
     /**
      * 解析数据库值（DTO/前端入参的 Integer → 枚举）
      *
-     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
+     * <p> 封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
      * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露
      *
      * @param code 数据库存储值（0/1/2）

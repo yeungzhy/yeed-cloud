@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * 定时任务定义表 服务实现类
  *
- * <p>数据库是调度的唯一真源：一律先写库再同步 Quartz，同步失败只记日志，
+ * <p> 数据库是调度的唯一真源：一律先写库再同步 Quartz，同步失败只记日志，
  * 下次启动装载会自愈；反向（先同步再写库）则可能留下库中不存在、却一直在跑的作业
  *
  * @author yeungzhy
@@ -123,8 +123,10 @@ public class ScheduleServiceImpl implements ScheduleService {
         BizAssert.notNull(id, "ID 不能为空");
         Schedule entity = scheduleMapper.selectById(id);
         BizAssert.notNull(entity, "记录不存在");
-        // 先注销调度再删库：反过来的话，注销失败会留下"库里没了、Quartz 里还在"的隐形孤儿，
-        // 而且启动装载只做覆盖不做清理，孤儿永远无法被发现
+        /*
+         * 先注销调度再删库：反过来的话，注销失败会留下「库里没了、Quartz 里还在」的隐形孤儿，
+         * 而且启动装载只做覆盖不做清理，孤儿永远无法被发现
+         */
         BizAssert.isTrue(scheduleRegistry.remove(entity), "注销 Quartz 调度失败，记录未删除");
         scheduleMapper.physicalDeleteById(id);
     }
@@ -211,7 +213,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     /**
      * 解析 CRON 表达式，非法时按业务异常抛出
      *
-     * <p>{@link CronExpression#isValidExpression(String)} 与构造器是两套校验，
+     * <p> {@link CronExpression#isValidExpression(String)} 与构造器是两套校验，
      * 先 isValid 再构造只是为了拿到受检异常之外的统一业务话术
      */
     private CronExpression parseCron(String cronExpr) {

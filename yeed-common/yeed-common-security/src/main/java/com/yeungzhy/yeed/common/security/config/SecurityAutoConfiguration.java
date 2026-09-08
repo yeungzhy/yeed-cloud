@@ -42,12 +42,9 @@ public class SecurityAutoConfiguration {
         return new SaTokenLoginUserProvider(objectMapper);
     }
 
-    // Sa-Token 整合 jwt (Simple 简单模式)
     @Bean
     public StpLogic getStpLogicJwt() {
-        // 如果希望在完全不查 Redis 的情况下，仅凭 Token 字符串就能拿到用户基本信息（如用于日志审计）
-        // 则可以使用 StpLogicJwtForMixin
-        // StpLogicJwtForSimple 就是 JWT 版的 token style
+        // 仅凭 Token 字符串取用户基本信息、完全不查 Redis 的场景（如日志审计）可改用 StpLogicJwtForMixin
         return new StpLogicJwtForSimple();
     }
 

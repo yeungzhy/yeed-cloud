@@ -17,7 +17,7 @@ public class OssFileSorts extends BaseSorts<OssFile> {
     protected OssFileSorts() {
         super(OssFile.class, new BaseSorts.Builder<OssFile>()
                 .add(BaseEntity.Fields.createTime, OssFile::getCreateTime)
-                // 多个字段排序时,要加上主键作为决胜字段,防止在其他字段相同的发生数据错乱或漏页
+                // 多字段排序时必须带主键做决胜字段，否则排序键相同的行在翻页时可能错位或漏行
                 .add(BaseEntity.Fields.id, OssFile::getId)
         );
     }

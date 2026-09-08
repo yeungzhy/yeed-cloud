@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * 计划的运行时触发时间
  *
- * <p>取自 Quartz 的触发器而非数据库：点火时间由 Quartz 计算，落库会形成第二份真相，
+ * <p> 取自 Quartz 的触发器而非数据库：点火时间由 Quartz 计算，落库会形成第二份真相，
  * 且"停用后没有下次时间"这类语义用列存很难表达
  *
  * @param previousFireTime 上次触发时间，从未触发过为 null

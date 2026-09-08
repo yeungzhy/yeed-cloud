@@ -16,12 +16,12 @@ import java.time.Duration;
 /**
  * 计划执行器：反射调用业务 Bean 方法，并承载"跳过"并发策略
  *
- * <p>并发策略的三条分支中，只有 {@link ScheduleConcurrentEnum#SKIP} 需要本类介入：
+ * <p> 并发策略的三条分支中，只有 {@link ScheduleConcurrentEnum#SKIP} 需要本类介入：
  * 抢不到分布式锁即认为上次未结束，直接返回跳过结果；
  * {@link ScheduleConcurrentEnum#ALLOW} 与 {@link ScheduleConcurrentEnum#QUEUE} 分别由
  * Quartz 默认行为与 {@link QueuedMethodInvocationJob} 的注解承载
  *
- * <p>目标方法固定为 public 且无参，存在性在注册期已校验；执行期任何异常都收敛为失败结果，
+ * <p> 目标方法固定为 public 且无参，存在性在注册期已校验；执行期任何异常都收敛为失败结果，
  * 不向 Quartz 抛出，与"引擎失败不外抛"的整体风格一致
  *
  * @author yeungzhy
@@ -41,7 +41,7 @@ public class ScheduleRunner {
     /**
      * 执行一次计划触发
      *
-     * <p>按顺序做三道判断：全局维护模式 → 跳过并发策略 → 反射调用。
+     * <p> 按顺序做三道判断：全局维护模式 → 跳过并发策略 → 反射调用。
      * 只有前两道通过才真正执行，被拦下的一律记为跳过
      *
      * @param context Quartz 作业上下文，携带 JobDataMap

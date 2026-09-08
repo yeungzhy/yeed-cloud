@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * 系统菜单 树节点出参 VO（菜单管理页 / 角色授权树形选择器）
  *
- * <p>仅承载树节点展示所需业务字段；children 由 Service 调用 {@link com.yeungzhy.yeed.common.core.support.TreeUtil}
- * 组装，非 {@link com.yeungzhy.yeed.admin.sys.menu.service.SysMenuConvert} 转换职责。
- * 审计字段不在树接口暴露（见 {@link SysMenuVO}）。
+ * <p>仅承载树节点展示所需业务字段；children 由 Service 调 {@link com.yeungzhy.yeed.common.core.support.TreeUtil}
+ * 组装，不属 {@link com.yeungzhy.yeed.admin.sys.menu.service.SysMenuConvert} 的转换职责，
+ * 审计字段同样不在树接口暴露（见 {@link SysMenuVO}）
  *
  * @author yeungzhy
  * @since 2026-08-13 06:55:30

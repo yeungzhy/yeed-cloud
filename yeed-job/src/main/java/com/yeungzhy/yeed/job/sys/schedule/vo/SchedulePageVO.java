@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 /**
  * 定时计划分页出参：列表数据与全局维护模式状态一并返回
  *
- * <p>维护模式标记是全局状态而非某条计划的属性，塞不进 {@link ScheduleVO}；
+ * <p> 维护模式标记是全局状态而非某条计划的属性，塞不进 {@link ScheduleVO}；
  * 而 {@link PageResult} 是 common-core 的通用分页类型，不能为单个业务加字段，
  * 故在此做一层包装，让前端一次请求同时拿到两者，不必为渲染顶部横幅再发一次查询
  *

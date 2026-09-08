@@ -65,8 +65,13 @@ public class AccessLogExcludeProperties {
     }
 
     /**
-     * 编译路径模式，启动绑定与
-     * Nacos 刷新（rebind 调 {@link #setPaths}）都会走到这里
+     * 编译路径模式
+     *
+     * <p>启动绑定与 Nacos 刷新（rebind 会调 {@link #setPaths}）都走这里，非法模式在绑定期即暴露，
+     * 不会留到请求期每次匹配才炸
+     *
+     * @param patterns 待编译的路径模式，元素不能为 null
+     * @return 编译结果，不可变列表
      */
     private static List<PathPattern> compile(List<String> patterns) {
         List<PathPattern> compiled = new ArrayList<>(patterns.size());

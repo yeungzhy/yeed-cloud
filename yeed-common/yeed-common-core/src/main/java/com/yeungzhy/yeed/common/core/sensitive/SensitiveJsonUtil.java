@@ -76,9 +76,9 @@ public final class SensitiveJsonUtil {
     /**
      * 把 JSON 报文中所有凭据字段的值替换为 {@code ***}
      *
-     * <p>解析失败时原样返回并记 warn：报文不是合法 JSON（多半已被上游截断）时结构信息不可用，
-     * 而本类只认键名，无结构即无从判定，只能放弃——这意味着可能有凭据漏网，值得关注。
-     * 调用方随后执行的 {@link SensitiveTextUtil#mask(String)} 不受影响：按值识别不依赖 JSON 结构。
+     * <p> 解析失败时原样返回并记 warn：报文不是合法 JSON（多半已被上游截断）时结构信息不可用，
+     * 而本类只认键名，无结构即无从判定，只能放弃，这意味着可能有凭据漏网，值得关注。
+     * 调用方随后执行的 {@link SensitiveTextUtil#mask(String)} 不受影响：按值识别不依赖 JSON 结构
      *
      * @param json 待脱敏文本；null / 空串原样返回
      * @return 脱敏后的文本

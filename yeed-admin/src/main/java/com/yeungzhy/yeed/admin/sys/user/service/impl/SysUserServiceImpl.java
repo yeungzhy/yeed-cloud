@@ -52,7 +52,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class SysUserServiceImpl implements SysUserService {
-    /* 几乎只有这里用到单向加密密码,就不@Bean注册到容器了 */
+    // 只有用户相关写操作用到密码散列，不注册成 Bean 污染容器
     private final Argon2PasswordEncoder argon2PwdEncoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 
     @Resource
@@ -199,7 +199,7 @@ public class SysUserServiceImpl implements SysUserService {
 
     /**
      * 邮箱归一化：大小写与首尾空白不改变邮箱身份，必须先归一再生成盲索引
-     * <p>否则 {@code A@b.com} 与 {@code a@b.com} 会算出两个不同 bidx，唯一索引形同虚设。
+     * <p>否则 {@code A@b.com} 与 {@code a@b.com} 会算出两个不同 bidx，唯一索引形同虚设
      */
     private String normalizeEmail(String email) {
         String trimmed = StringUtils.trimToNull(email);
@@ -211,7 +211,6 @@ public class SysUserServiceImpl implements SysUserService {
     public SysUserVO detail(Long id) {
         SysUser entity = sysUserMapper.selectById(id);
         BizAssert.notNull(entity, "记录不存在");
-        // Entity -> VO：同名字段由 MapStruct 自动映射
         return sysUserConvert.toVO(entity);
     }
 
@@ -238,10 +237,10 @@ public class SysUserServiceImpl implements SysUserService {
      * 构造用户查询条件（分页列表、计数、按页取数三处共用）
      *
      * <p>三处共用一份条件是刻意的：计数与取数一旦各写一套，任一侧加条件都会让「总数」与
-     * 「实际取到的行」对不上——导出会表现为进度分母漂移、尾页多取或少取。
+     * 「实际取到的行」对不上，导出会表现为进度分母漂移、尾页多取或少取
      *
      * @param dto            查询条件（username / phone / email / status / 创建时间区间）
-     * @param withProjection 是否带取数投影（select 列 + 排序）；计数为 false——
+     * @param withProjection 是否带取数投影（select 列 + 排序）；计数传 false，
      *                       {@code selectCount} 会拿 sqlSelect 拼 {@code COUNT(列1,列2,...)}，多列即语法错误
      * @return 查询条件；分页字段（pageNum / pageSize）不在此处使用
      */
@@ -258,10 +257,10 @@ public class SysUserServiceImpl implements SysUserService {
                     SysUser::getCreateTime, SysUser::getLastLoginTime);
         }
         /*
-         * 手机 / 邮箱是加密列，等值查询只能用明文生成盲索引后比 bidx。
-         * 注意：不能用 .eq(condition, column, generateHex(...))
-         * generateHex 会在 eq 的 condition 判断之前执行，空值会触发 BlindIndexProvider 的 null 校验——
-         * 该开关只短路 SQL 拼接，不短路实参求值；对带副作用/会抛异常的实参，必须用 if 守卫。
+         * 手机 / 邮箱是加密列，等值查询只能用明文生成盲索引后比 bidx
+         * 注意：不能写成 .eq(condition, column, generateHex(...))
+         * 实参先于 condition 求值，空值会触发 BlindIndexProvider 的 null 校验；该开关只短路 SQL 拼接，
+         * 对带副作用或会抛异常的实参必须用 if 守卫
          */
         String phone = StringUtils.trimToNull(dto.getPhone());
         if (phone != null) {
@@ -273,7 +272,7 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         if (withProjection) {
-            // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
+            // 应用排序：先单字段 → 再多字段（顺序敏感）；默认降序；白名单外字段静默忽略
             sysUserSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
         }
         return lambdaQuery;
@@ -283,8 +282,8 @@ public class SysUserServiceImpl implements SysUserService {
     /**
      * 记录最后登录时间
      *
-     * <p>用 Wrapper 更新而非 {@code updateById}：后者会带乐观锁 version，同一用户并发登录会互相覆盖失败；
-     * 且登录不该刷新 updateBy / updateTime——审计字段要留痕的是「谁改了资料」，不是「谁登录了」。
+     * <p>用 Wrapper 更新而非 {@code updateById}：后者带乐观锁 version，同一用户并发登录会互相覆盖失败，
+     * 登录也不该刷新 updateBy / updateTime，审计字段要留痕的是「谁改了资料」，不是「谁登录了」
      */
     private void updateLastLoginTime(Long userId) {
         sysUserMapper.update(null, Wrappers.<SysUser>lambdaUpdate()
@@ -300,7 +299,7 @@ public class SysUserServiceImpl implements SysUserService {
 
         /*
          * 不用 selectOne：登录名与工号是两个登录入口、共用同一命名空间，撞号时会命中两行，
-         * selectOne 抛 TooManyResultsException 会变成一次 500，这里显式判定并给可读提示。
+         * selectOne 抛 TooManyResultsException 会变成一次 500，这里显式判定并给可读提示
          */
         List<SysUser> users = sysUserMapper.selectList(Wrappers.<SysUser>lambdaQuery()
                 .eq(SysUser::getStatus, EnableStatusEnum.ENABLED)
@@ -316,7 +315,6 @@ public class SysUserServiceImpl implements SysUserService {
         BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
         updateLastLoginTime(user.getId());
 
-        // 装配身份包：角色编码 + 权限标识（菜单树由 listMenusByUserId 单独装配，会话不承载前端渲染数据）
         List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(user.getId());
         // 超管代码级短路：不依赖数据库授权配置（权限配置被改坏仍可登录修复），菜单行取全量
         boolean superAdmin = roleCodes.contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode());
@@ -377,7 +375,6 @@ public class SysUserServiceImpl implements SysUserService {
     public void grantRoles(SysUserRoleGrantDTO dto) {
         BizAssert.notNull(dto.getUserId(), "用户ID不能为空");
         BizAssert.notEmpty(dto.getRoleIds(), "角色ID集合不能为空");
-        // 用户必须存在，防止授权到不存在的用户上
         BizAssert.notNull(sysUserMapper.selectById(dto.getUserId()), "用户不存在");
         // 角色必须全部存在（去重后数量比对；角色为逻辑删除表，selectCount 自动滤已删数据）
         List<Long> roleIds = dto.getRoleIds().stream().distinct().toList();

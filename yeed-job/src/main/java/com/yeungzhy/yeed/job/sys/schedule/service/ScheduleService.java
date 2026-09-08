@@ -22,19 +22,21 @@ public interface ScheduleService {
     // ==================== 标准写入（CUD） ====================
 
     /**
-     * 新增
+     * 新增调度计划，落库并装载进 Quartz 运行库
      *
-     * @param dto 入参
-     * @return 新增记录的主键 ID
+     * <p> beanName 允许传展示名，落库前纠正为真实 Bean 名，并通过目标 Bean / 方法与名称唯一校验
+     *
+     * @param dto 新增入参，id 忽略，字段含义见 {@link ScheduleDTO}
+     * @return 新增记录的主键 ID；校验不通过抛 BizException
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
     Long save(ScheduleDTO dto);
 
     /**
-     * 更新
+     * 更新调度计划，变更实时同步进 Quartz 运行库
      *
-     * @param dto 入参
+     * @param dto 更新入参，id 不能为空，校验逻辑与新增一致
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
@@ -56,7 +58,7 @@ public interface ScheduleService {
     /**
      * 立即执行一次，不影响原有 CRON 触发器
      *
-     * <p>维护模式下人工触发仍然放行：它是运维的显式动作，与"阻止自动触发"不是一回事
+     * <p> 维护模式下人工触发仍然放行：它是运维的显式动作，与"阻止自动触发"不是一回事
      *
      * @param id 计划主键
      * @author yeungzhy
@@ -88,7 +90,7 @@ public interface ScheduleService {
     /**
      * 按当前库数据重新装载全部计划，等价于重启一次装载
      *
-     * <p>生产环境重启需要审批，库与 Quartz 出现不一致时用它兜底，不必重启进程
+     * <p> 生产环境重启需要审批，库与 Quartz 出现不一致时用它兜底，不必重启进程
      *
      * @return 装载条数
      * @author yeungzhy
@@ -109,20 +111,20 @@ public interface ScheduleService {
     // ==================== 标准查询（R） ====================
 
     /**
-     * 详情
+     * 调度计划详情
      *
-     * @param id 主键 ID
-     * @return 详情数据
+     * @param id 计划主键，不能为空
+     * @return 详情，含下次触发时间等运行时字段；记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
     ScheduleVO detail(Long id);
 
     /**
-     * 分页查询
+     * 分页查询调度计划
      *
-     * @param dto 分页查询入参
-     * @return 分页结果
+     * @param dto 分页与筛选条件，筛选字段为 null 不参与过滤
+     * @return 分页结果与全局维护模式开关；无命中返回空页而非 null
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
@@ -132,18 +134,18 @@ public interface ScheduleService {
     // ==================== 删除（物理删除 + 注销调度） ====================
 
     /**
-     * 删除（物理删除，不可恢复），同时注销 Quartz 侧的作业与触发器
+     * 删除调度计划（物理删除，不可恢复），同时注销 Quartz 侧的作业与触发器
      *
-     * @param id 主键 ID
+     * @param id 计划主键，不能为空；记录不存在或注销失败抛 BizException
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
     void delete(Long id);
 
     /**
-     * 批量删除（物理删除，不可恢复），逐个注销 Quartz 侧的作业与触发器
+     * 批量删除调度计划（物理删除，不可恢复），逐个注销 Quartz 侧的作业与触发器
      *
-     * @param ids 主键 ID 集合
+     * @param ids 主键集合，不能为空；逐个删除，注销失败的记录保留在库并抛 BizException
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */

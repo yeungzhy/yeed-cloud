@@ -1,10 +1,10 @@
 /**
  * yeed-job 模块包结构约定
  *
- * <p>本模块是独立部署的调度单元。被 {@code yeed_sys_schedule} 反射调用的目标 Bean 必须在本模块内，
+ * <p> 本模块是独立部署的调度单元。被 {@code yeed_sys_schedule} 反射调用的目标 Bean 必须在本模块内，
  * 反射用的是本模块的 ApplicationContext，跨模块的类取不到
  *
- * <p>包结构：业务域优先，平台层集中于 sys 下
+ * <p> 包结构：业务域优先，平台层集中于 sys 下
  * <pre>{@code
  * com.yeungzhy.yeed.job
  * ├── export/              导出业务域
@@ -17,7 +17,7 @@
  * ├── bootstrap/           启动钩子
  * }</pre>
  *
- * <p>新增周期作业：在对应业务域下建 schedule 子包，类名以 {@code Job} 结尾，方法固定 public 且无参
+ * <p> 新增周期作业：在对应业务域下建 schedule 子包，类名以 {@code Job} 结尾，方法固定 public 且无参
  *
  * @author yeungzhy
  * @since 2026-09-08

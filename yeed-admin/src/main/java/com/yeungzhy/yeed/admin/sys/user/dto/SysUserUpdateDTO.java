@@ -20,9 +20,9 @@ public class SysUserUpdateDTO {
 
     /** 系统登录名（登录入口，未删用户中唯一） */
     private String username;
-    /** 当前密码（用于校验操作人身份，不是新密码） */
+    /** 当前密码（校验操作人身份，不是新密码；改密走 SysUserPasswordDTO） */
     private String password;
-    /** 真实姓名(用于前台展示) */
+    /** 真实姓名（用于前台展示） */
     private String realName;
     /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;

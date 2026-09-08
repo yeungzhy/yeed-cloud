@@ -9,19 +9,23 @@ import java.util.List;
 /**
  * 透传响应头清洗：移除下游响应中可能重复的 CORS Vary 头
  *
- * <p>CORS Vary（{@code Origin / Access-Control-Request-Method /
- * Access-Control-Request-Headers}）在响应中存在两个来源：
+ * <p>CORS Vary（{@code Origin / Access-Control-Request-Method / Access-Control-Request-Headers}）
+ * 在响应中有两个来源：
  * <ul>
  *   <li>网关 CorsWebFilter（见 {@code WebFilterConfig#corsWebFilter()}）：请求入站时
- *       {@code DefaultCorsProcessor} 无条件添加一组，统一保证所有响应携带 CORS 头；</li>
+ *       {@code DefaultCorsProcessor} 无条件添加一组，统一保证所有响应携带 CORS 头
  *   <li>下游 servlet 服务的 404 兜底响应：Spring MVC 的 {@code ResourceHttpRequestHandler}
- *       实现了 {@code CorsConfigurationSource}，{@code AbstractHandlerMapping} 对它会无条件挂载
- *       {@code CorsInterceptor}（即使服务自身零跨域配置），每请求调用 {@code DefaultCorsProcessor}
- *       又无条件追加一组同值 Vary（该方法使用 {@code addAll} 追加而非覆盖）。
- *       这才是重复 Vary 的根因——并非下游主动配置了 CORS。</li>
+ *       实现了 {@code CorsConfigurationSource}，{@code AbstractHandlerMapping} 对它无条件挂载
+ *       {@code CorsInterceptor}（即使服务自身零跨域配置），每请求调 {@code DefaultCorsProcessor}
+ *       又无条件追加一组同值 Vary（该方法用 {@code addAll} 追加而非覆盖）；
+ *       这才是重复 Vary 的根因，并非下游主动配了 CORS
  * </ul>
- * 网关透传下游响应头时两组同值 Vary 合并成重复头，本过滤器在透传阶段（{@link Type#RESPONSE}）
- * 仅剔除这三项、由网关统一维护；其它 Vary（如 {@code Accept-Encoding}）原样保留，不做多余处理。
+ *
+ * <p>网关透传下游响应头时两组同值 Vary 合并成重复头，本过滤器在透传阶段（{@link Type#RESPONSE}）
+ * 只剔除这三项、由网关统一维护；其它 Vary（如 {@code Accept-Encoding}）原样保留，不做多余处理
+ *
+ * @author yeungzhy
+ * @since 2026-08-22
  */
 public class CorsVaryHeadersFilter implements HttpHeadersFilter {
 
@@ -32,14 +36,27 @@ public class CorsVaryHeadersFilter implements HttpHeadersFilter {
             HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS
     );
 
+    /**
+     * 只对响应阶段生效：请求方向没有 CORS Vary 可清洗
+     *
+     * @param type 头处理方向，不能为 null
+     * @return 响应阶段返回 true
+     */
     @Override
     public boolean supports(Type type) {
         return type == Type.RESPONSE;
     }
 
+    /**
+     * 剔除下游响应里重复的 CORS Vary
+     *
+     * @param input    下游原始响应头，不能为 null
+     * @param exchange 当前请求上下文，本过滤器不使用
+     * @return 清洗后的响应头；无 Vary 或无重复时原样返回入参对象
+     */
     @Override
     public HttpHeaders filter(HttpHeaders input, ServerWebExchange exchange) {
-        // 分支预测: 仅下游服务响应头里有 Vary 头时才做处理
+        // 仅下游响应头里有 Vary 时才做处理，绝大多数请求走不到下面
         if (!input.containsKey(HttpHeaders.VARY)) {
             return input;
         }

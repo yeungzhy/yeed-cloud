@@ -3,7 +3,7 @@ package com.yeungzhy.yeed.job.sys.schedule.quartz;
 /**
  * 计划触发在 {@link org.quartz.JobDataMap} 中传递的键名
  *
- * <p>开启 {@code org.quartz.jobStore.useProperties} 后 JobDataMap 只接受 String，
+ * <p> 开启 {@code org.quartz.jobStore.useProperties} 后 JobDataMap 只接受 String，
  * 故数值一律以字符串存放，读取端自行转换
  *
  * @author yeungzhy

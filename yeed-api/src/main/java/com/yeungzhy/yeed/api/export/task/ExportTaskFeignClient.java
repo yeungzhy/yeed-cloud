@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * 导出任务内部 Feign 契约（消费方：yeed-admin；提供方：yeed-job）
  *
- * <p>RPC-Style：方法签名直接返回裸数据，成功才返回、失败由
- * {@code InternalErrorDecoder} 解码为 {@link com.yeungzhy.yeed.common.core.exception.BizException BizException}
- * 中断调用——调用方无需（也无法）判 ApiResult 码。
+ * <p>RPC-Style：方法签名直接返回裸数据，成功才返回、失败由 {@code InternalErrorDecoder} 解码为
+ * {@link com.yeungzhy.yeed.common.core.exception.BizException BizException} 中断调用，
+ * 调用方无需（也无法）判 ApiResult 码
  *
  * @author yeungzhy
  * @since 2026-08-23
@@ -30,9 +30,10 @@ public interface ExportTaskFeignClient {
 
 
     /**
-     * 新增
+     * 创建导出任务
      *
-     * @param dto 入参
+     * @param dto 任务入参，exportType 决定 job 侧执行器路由、为空则任务无法执行；
+     *            queryParam 是查询条件快照 JSON，创建时即固化，可为 null
      * @return 新增记录的主键 ID；失败抛异常（不返回）
      * @author yeungzhy
      * @since 2026-08-22 17:08:53
@@ -42,10 +43,10 @@ public interface ExportTaskFeignClient {
 
 
     /**
-     * 分页查询
+     * 分页查询导出任务
      *
-     * @param dto 分页查询入参
-     * @return 分页结果；失败抛异常（不返回）
+     * @param dto 分页入参，当前无业务筛选条件；分页参数不能为 null
+     * @return 分页结果，无命中返回空页；失败抛异常（不返回）
      * @author yeungzhy
      * @since 2026-08-22 17:08:53
      */

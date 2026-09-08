@@ -25,21 +25,22 @@ import java.nio.charset.StandardCharsets;
  *
  * <p>覆盖三类异常：
  * <ol>
- *   <li>Sa-Token 鉴权异常 —— 由 {@code SaReactorFilter.setError} 在 WebFilter 阶段自处理，
- *       不会传播到本处理器</li>
- *   <li>路由/下游异常 —— {@link NotFoundException}（Spring Cloud Gateway 无路由匹配 / 下游无可用实例）、
+ *   <li>Sa-Token 鉴权异常：由 {@code SaReactorFilter.setError} 在 WebFilter 阶段自处理，
+ *       不会传播到本处理器
+ *   <li>路由 / 下游异常：{@link NotFoundException}（Spring Cloud Gateway 无路由匹配 / 下游无可用实例）、
  *       {@link TimeoutException}（Spring Cloud Gateway 请求超时）、
- *       {@link ResponseStatusException}（下游 5xx / 连接拒绝 / 读写超时等）</li>
- *   <li>兜底 —— 其它未捕获 {@link Throwable}</li>
+ *       {@link ResponseStatusException}（下游 5xx / 连接拒绝 / 读写超时等）
+ *   <li>兜底：其它未捕获 {@link Throwable}
  * </ol>
  *
  * <p>网关层错误返回真实 HTTP 状态码 + ApiResult body（描述见 {@code body.msg}），前端按状态码分流：
- * 401 跳登录 / 403 提示无权限 / 404 资源不存在 / 503 下游无可用实例 / 502 下游异常 / 504 请求超时 / 500 系统繁忙。
- * 下游服务自身的业务错误（参数校验、数据重复等）仍由下游以 HTTP 200 + body 业务码返回并经网关透传。
- * 分层原则：HTTP 状态码表达通用/稳定语义（网关层），业务码表达领域/多样语义（下游层），互不替代。
+ * 401 跳登录 / 403 提示无权限 / 404 资源不存在 / 503 下游无可用实例 / 502 下游异常 / 504 请求超时 / 500 系统繁忙
+ *
+ * <p>下游服务自身的业务错误（参数校验、数据重复）仍由下游以 HTTP 200 + body 业务码返回并经网关透传；
+ * 分层原则：HTTP 状态码表达通用 / 稳定语义（网关层），业务码表达领域 / 多样语义（下游层），互不替代
  *
  * <p>{@link Order} 设为 {@link Ordered#HIGHEST_PRECEDENCE}，覆盖 Spring 默认的
- * {@code DefaultErrorWebExceptionHandler}（其优先级为 {@code 0}），确保所有异常都走本处理器。
+ * {@code DefaultErrorWebExceptionHandler}（其优先级为 {@code 0}），确保所有异常都走本处理器
  *
  * @author yeungzhy
  * @since 2026-08-09
@@ -60,6 +61,15 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 把异常写成一个 JSON 错误响应
+     *
+     * <p>响应已提交时无法再替换 body，只能把异常继续传播给底层处理
+     *
+     * @param exchange 当前请求上下文，不能为 null
+     * @param ex       待处理的异常，不能为 null
+     * @return 写完响应即完成的信号；响应已提交时返回 {@code Mono.error}
+     */
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         // 响应已提交（下游已写部分数据）则无法替换 body，只能传播异常交给底层处理
@@ -84,7 +94,10 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
     }
 
     /**
-     * 把异常映射为（响应体，HTTP 状态码），并记录相应级别的日志
+     * 把异常映射为「响应体 + HTTP 状态码」，并按类型记相应级别的日志
+     *
+     * @param ex 待映射的异常，不能为 null
+     * @return 映射结果，恒不为 null
      */
     private ResolvedError resolve(Throwable ex) {
         // Spring Cloud Gateway NotFoundException 是 ResponseStatusException 子类，按 status 分流：
@@ -124,6 +137,9 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
 
     /**
      * 异常处理结果：响应体 + 对应 HTTP 状态码，两者由 {@code handle} 一起写回
+     *
+     * @param result 响应体
+     * @param status HTTP 状态码
      */
     private record ResolvedError(ApiResult<Void> result, HttpStatus status) { }
 }

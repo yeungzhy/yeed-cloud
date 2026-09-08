@@ -19,6 +19,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * MyBatis-Plus 代码生成器（一次性工具，不是 Spring 应用）
+ *
+ * <p>用法：修改下方"开发者配置区"的表名与包名后直接运行 {@link #main(String[])}，产物写进
+ * {@link #OUTPUT_MODULE} 模块；生成完毕强制退出 JVM
+ *
+ * <p>产物结构由 {@code src/main/resources/templates/} 下的自定义模板决定，
+ * 与 admin / oss 等模块既有的分层（entity / dto / vo / service / mapper / controller）保持一致
+ *
+ * @author yeungzhy
+ * @since 2026-08-23
+ */
 public class GeneratorApplication {
 
     // ==================== 开发者配置区（请根据实际需求修改以下配置项） ====================
@@ -37,10 +49,11 @@ public class GeneratorApplication {
     private static final String BASE_PACKAGE = "com.yeungzhy.yeed.admin";
 
     /**
-     * 业务枚举列映射表：DB 列名(小写) → 枚举全限定名。
-     * <p>TINYINT 且列名命中映射时，属性类型生成对应枚举（而非 Integer），import 由
-     * MyBatis-Plus 按 {@link IColumnType#getPkg()} 自动并入模板 ${importEntityJavaPackages}，
-     * entity/dto/vo 模板零改动。新增强制语义列（如字典模块 storage_type）只需在此追加一行。
+     * 业务枚举列映射表：DB 列名（小写）→ 枚举全限定名
+     *
+     * <p>TINYINT 且列名命中映射时，属性类型生成对应枚举（而非 Integer），import 由 MyBatis-Plus 按
+     * {@link IColumnType#getPkg()} 自动并入模板的 {@code ${importEntityJavaPackages}}，
+     * entity / dto / vo 模板零改动。新增强制语义列只需在此追加一行
      */
     private static final Map<String, String> ENUM_COLUMN_MAP = Map.of(
             "status", "com.yeungzhy.yeed.common.core.enums.EnableStatusEnum",
@@ -55,9 +68,9 @@ public class GeneratorApplication {
     /** 需要生成代码的表名，支持多张表 */
     private static final String[] TABLE_NAMES = {"yeed_sys_user"};
 
-    /** 业务域：决定包层级（com.yeungzhy.yeed.admin.<domain>，如 sys / nps），与 MODULE_NAME 共同决定完整包 */
+    /** 业务域：与 {@link #MODULE_NAME} 共同决定完整包（BASE_PACKAGE.域.模块） */
     private static final String DOMAIN = "sys";
-    /** 业务模块名：决定生成的包路径（如 user -> com.yeungzhy.yeed.admin.sys.user） */
+    /** 业务模块名：决定生成的包路径末段与实体类名前缀的表名部分 */
     private static final String MODULE_NAME = "user";
 
 
@@ -72,8 +85,8 @@ public class GeneratorApplication {
         // 完整包：com.yeungzhy.yeed.admin.sys.user
         String fullPackage = packageParent + "." + MODULE_NAME;
         // XML 子目录与 Java 包结构对齐：完整包相对于 BASE_PACKAGE 的部分作为子路径，
-        // 例如 com.yeungzhy.yeed.admin.sys.user 相对于 com.yeungzhy.yeed.admin -> sys/user，输出到 mapper/sys/user/；
-        // mapper-locations 用 classpath*:/mapper/**/*.xml 递归匹配，任意层级均可被扫描。
+        // 例如 com.yeungzhy.yeed.admin.sys.user 相对于 com.yeungzhy.yeed.admin -> sys/user，输出到 mapper/sys/user/
+        // mapper-locations 用 classpath*:/mapper/**/*.xml 递归匹配，任意层级均可被扫描
         String xmlSubPath = fullPackage.substring((BASE_PACKAGE + ".").length()).replace('.', '/');
         String xmlOutputDir = new File(outputModuleDir, "src/main/resources/mapper/" + xmlSubPath).getAbsolutePath();
 
@@ -226,10 +239,13 @@ public class GeneratorApplication {
     }
 
     /**
-     * 定位项目根目录。
-     * 通过当前类的编译输出位置（target/classes 或 out/production/...）逐级向上查找，
-     * 同时包含 yeed-generator 与输出模块（{@link #OUTPUT_MODULE}）的目录即为项目根。
-     * 这样无论从 IDEA、命令行还是哪个工作目录运行都能正确定位。
+     * 定位项目根目录
+     *
+     * <p>从当前类的编译输出位置逐级向上找，同时含 yeed-generator 与输出模块 {@link #OUTPUT_MODULE}
+     * 的目录即为项目根，这样无论从 IDEA、命令行还是任意工作目录运行都能定位
+     *
+     * @return 项目根目录，恒不为 null
+     * @throws IllegalStateException 定位不到根目录，或取不到自身的 code source 位置
      */
     private static File locateProjectRoot() {
         try {
@@ -252,9 +268,12 @@ public class GeneratorApplication {
     }
 
     /**
-     * 业务枚举列类型：{@link IColumnType} 最小实现。
+     * 业务枚举列类型：{@link IColumnType} 最小实现
+     *
      * <p>{@link #getPkg()} 返回全限定类名，MyBatis-Plus 构造 TableInfo 时自动并入
-     * importEntityJavaPackages，模板 ${importEntityJavaPackages} 迭代即补全 import。
+     * {@code importEntityJavaPackages}，模板迭代该变量即补全 import
+     *
+     * @param enumFullName 枚举全限定类名
      */
     private record EnumColumnType(String enumFullName) implements IColumnType {
 

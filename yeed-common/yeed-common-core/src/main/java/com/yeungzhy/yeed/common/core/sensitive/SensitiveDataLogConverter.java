@@ -36,10 +36,10 @@ public class SensitiveDataLogConverter extends MessageConverter {
     /**
      * 脱敏工具自身的 logger：命中直接透传、不再脱敏
      *
-     * <p>递归链：业务日志 → 本转换器 → 脱敏工具 {@link SensitiveJsonUtil#mask(String)} 解析失败 → 工具打日志
+     * <p> 递归链：业务日志 → 本转换器 → 脱敏工具 {@link SensitiveJsonUtil#mask(String)} 解析失败 → 工具打日志
      * → 该日志再次经过本转换器 → 若不拦截将再次委托脱敏工具 → 对非 JSON 文本再失败再告警，无限递归
      *
-     * <p>故脱敏工具的告警必须原样放行。集合须包含所有会打日志的脱敏工具，新增时同步补录。
+     * <p> 故脱敏工具的告警必须原样放行。集合须包含所有会打日志的脱敏工具，新增时同步补录
      */
     private static final Set<String> MASK_BYPASS_LOGGERS = Set.of(
             SensitiveJsonUtil.class.getName(),

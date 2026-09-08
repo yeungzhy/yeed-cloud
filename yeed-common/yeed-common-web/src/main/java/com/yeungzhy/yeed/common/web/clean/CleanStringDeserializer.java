@@ -9,10 +9,10 @@ import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import java.io.IOException;
 
 /**
- * {@link CleanString} 的 Jackson 反序列化器。
+ * {@link CleanString} 的 Jackson 反序列化器
  *
- * <p>通过 {@link ContextualDeserializer} 在构造阶段把清洗级别序列注入实例并由
- * Jackson 缓存复用，反序列化执行时零反射；levels 构造后不可变，实例线程安全。
+ * <p> 通过 {@link ContextualDeserializer} 在构造阶段把清洗级别序列注入实例并由
+ * Jackson 缓存复用，反序列化执行时零反射；levels 构造后不可变，实例线程安全
  *
  * @author yeungzhy
  * @since 2026-08-14
@@ -22,7 +22,7 @@ import java.io.IOException;
 public class CleanStringDeserializer extends JsonDeserializer<String> implements ContextualDeserializer {
 
     /**
-     * 绑定的清洗级别序列，由 {@link #createContextual} 注入，构造后不可变。
+     * 绑定的清洗级别序列，由 {@link #createContextual} 注入，构造后不可变
      */
     private CleanLevel[] levels;
 
@@ -50,15 +50,16 @@ public class CleanStringDeserializer extends JsonDeserializer<String> implements
 
     @Override
     public JsonDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
-        // 未标注 @CleanString 不应进入此反序列化器，真出现说明注解配置错误，返回默认实例兜底避免 NPE
         if (property == null) {
+            // 无字段上下文（如类型级使用）时保持共享默认实例
             return this;
         }
         CleanString annotation = property.getAnnotation(CleanString.class);
         if (annotation == null) {
+            // 字段未标注 @CleanString 却走到了这里，多半是注解配置错误，不擅自清洗，返回默认实例
             return this;
         }
-        // 返回带 levels 的实例，Jackson 会缓存到该字段的 deserializer 上
+        // 返回携带该字段 levels 的新实例：实例会被 Jackson 缓存为该字段专用反序列化器，构造一次即可
         return new CleanStringDeserializer(annotation.value());
     }
 }

@@ -17,17 +17,20 @@ import java.security.spec.KeySpec;
 import java.util.Base64;
 
 /**
- * AES 工具类 - JDK 标准实现，约定参数（方便多端统一）：
+ * AES 工具类（JDK 标准实现，参数跨端约定）
  * <ul>
- *   <li>Algorithm: AES</li>
- *   <li>Mode: GCM</li>
- *   <li>Padding: NoPadding（GCM 不需要填充）</li>
- *   <li>Key Size: 256 bit</li>
- *   <li>IV Length: 12 byte (96 bit)</li>
- *   <li>Tag Length: 128 bit (16 byte)</li>
- *   <li>Charset: UTF-8</li>
- *   <li>密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )</li>
+ *   <li>Algorithm: AES
+ *   <li>Mode: GCM
+ *   <li>Padding: NoPadding（GCM 不需要填充）
+ *   <li>Key Size: 256 bit
+ *   <li>IV Length: 12 byte (96 bit)
+ *   <li>Tag Length: 128 bit (16 byte)
+ *   <li>Charset: UTF-8
+ *   <li>密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )
  * </ul>
+ *
+ * @author yeungzhy
+ * @since 2026-05-22
  */
 public class AesUtil {
     private AesUtil() {}

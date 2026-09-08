@@ -32,7 +32,7 @@ public final class SensitiveTextUtil {
 
     /**
      * 参与文本扫描的类型：仅收集 {@link SensitiveType#discoveryPattern()} 非 null 的类型
-     * <p>顺序为枚举声明顺序，稳定可预期——掩码产物不会被后续类型再次匹配（见 {@link #mask(String)}）
+     * <p> 顺序为枚举声明顺序，稳定可预期，掩码产物不会被后续类型再次匹配（见 {@link #mask(String)}）
      */
     private static final List<SensitiveType> DISCOVERABLE_TYPES = Arrays.stream(SensitiveType.values())
             .filter(type -> Objects.nonNull(type.discoveryPattern()))
@@ -41,7 +41,7 @@ public final class SensitiveTextUtil {
     /**
      * 把文本中所有可识别的敏感数据替换为对应类型的掩码
      *
-     * <p>各类型依次扫描，每个类型在前一个类型的结果上继续；掩码产物不会被后续正则再次命中
+     * <p> 各类型依次扫描，每个类型在前一个类型的结果上继续；掩码产物不会被后续正则再次命中
      *
      * @param text 待脱敏文本；null / 空串原样返回
      * @return 脱敏后的文本
@@ -61,7 +61,7 @@ public final class SensitiveTextUtil {
 
     /**
      * 用 {@link Matcher} 逐位置替换：每匹配一处，就对该处原文求掩码再写入
-     * <p>不用 {@code text.replace(matched, masked)} 全局子串替换——会误改文本中其他位置的相同子串
+     * <p> 不用 {@code text.replace(matched, masked)} 全局子串替换，会误改文本中其他位置的相同子串
      */
     private static String maskMatched(String text, SensitiveType type) {
         Matcher matcher = type.discoveryPattern().matcher(text);

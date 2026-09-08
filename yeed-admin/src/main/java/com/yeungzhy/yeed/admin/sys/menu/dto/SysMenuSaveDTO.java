@@ -8,9 +8,12 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * 系统菜单权限表 新增入参
- * <p>仅承载业务字段：不含主键 id（雪花生成）与审计字段（框架自动填充），
- * 前端无法伪造；更新入参 {@link SysMenuUpdateDTO} 在此之上增加 id 与 version。
+ * 系统菜单 新增入参
+ *
+ * <p>只承载业务字段：不含主键 id（雪花生成）与审计字段（框架自动填充），前端伪造不了，
+ * 更新入参见 {@link SysMenuUpdateDTO}
+ *
+ * <p>按钮类型的 perms 由 path 派生，前端传了也会被覆盖
  *
  * @author yeungzhy
  * @since 2026-08-13

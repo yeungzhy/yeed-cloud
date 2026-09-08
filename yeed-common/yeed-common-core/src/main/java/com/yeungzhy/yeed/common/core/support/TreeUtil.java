@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
 /**
  * 树形结构处理工具类
  *
- * <p>不依赖任何 TreeNode 基类 / 接口，通过函数式接口传参，适用于任意带
- * 父 ID 与子列表字段的 POJO。
+ * <p> 不依赖任何 TreeNode 基类 / 接口，通过函数式接口传参，适用于任意带父 ID 与子列表字段的 POJO
  *
  * @author yeungzhy
+ * @since 2026-08-01
  */
 public class TreeUtil {
     private TreeUtil() {}
@@ -69,11 +69,12 @@ public class TreeUtil {
      * @param <E>             节点实体类型
      * @return 打平后的节点列表
      *
-     * <p>实用场景：树的深拷贝
+     * <p> 实用场景：树的深拷贝
      * 由于打平后的节点已清空子节点引用（脱离嵌套关系），此时配合 {@code BeanUtils} 等工具
      * 对单个节点进行浅拷贝是安全的；拷贝完成后再用 {@link #buildTree} 重新组装，
-     * 即可实现一整棵树的深拷贝，性能远高于 JSON 序列化方式。
-     * <p>使用示例：
+     * 即可实现一整棵树的深拷贝，性能远高于 JSON 序列化方式
+     *
+     * <p> 使用示例：
      * <pre>{@code
      * // 1. 将树打平，并清空 children 引用
      * List<TreeNode> flatList = TreeUtil.flatten(tree, TreeNode::getChildren, node -> node.setChildren(null));
@@ -194,7 +195,8 @@ public class TreeUtil {
 
     /**
      * 过滤树节点（保留命中节点及其子树，移除未命中节点及其子树）
-     * <p>注意：此方法会直接修改传入的原集合，如果原数据需要保留，请先进行深拷贝！
+     *
+     * <p> 注意：此方法会直接修改传入的原集合，如果原数据需要保留，请先进行深拷贝
      *
      * @param tree           树形结构列表
      * @param predicate      过滤条件，如：node -> node.getStatus() == 1
@@ -227,7 +229,8 @@ public class TreeUtil {
 
     /**
      * 搜索树节点（保留命中节点及其通往根节点的路径，剪除其他无关分支）
-     * <p>注意：此方法会直接修改传入的原集合（使用迭代器 remove），如果原数据需要保留，请先进行深拷贝！
+     *
+     * <p> 注意：此方法会直接修改传入的原集合（使用迭代器 remove），如果原数据需要保留，请先进行深拷贝
      *
      * @param tree           树形结构列表
      * @param predicate      搜索条件，如：node -> "target".equals(node.getName())

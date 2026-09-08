@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 系统文件记录表 前端控制器
+ * 系统文件 内部控制器（job → oss）
+ *
+ * <p>只服务于内部调用：挂载 {@code /internal/**}，网关不为该前缀定义外部路由，
+ * 外部拿不到上传下载入口，文件一律经业务服务（admin / job）代转
  *
  * @author yeungzhy
  * @since 2026-09-04 12:00:19
@@ -35,8 +38,8 @@ public class OssFileInternalController {
     /**
      * 上传文件：Query 元数据 + Body 二进制
      *
-     * @param query    上传元数据（fileName 必填）
-     * @param fileData 文件二进制内容
+     * @param query    上传元数据，fileName 不能为空
+     * @param fileData 文件二进制内容，不能为 null
      * @return 文件记录主键（ossId）
      */
     @PostMapping(value = "/upload", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -47,8 +50,8 @@ public class OssFileInternalController {
     /**
      * 下载文件：返回字节流与附件响应头
      *
-     * @param id 文件记录主键（ossId）
-     * @return 文件二进制 + Content-Type/Content-Disposition（attachment 中文文件名）
+     * @param id 文件记录主键（ossId），不能为 null
+     * @return 文件二进制 + Content-Type / Content-Disposition（attachment，下载名已清洗）
      */
     @GetMapping("/download/{id}")
     public ResponseEntity<byte[]> download(@PathVariable Long id) {
@@ -69,9 +72,11 @@ public class OssFileInternalController {
     }
 
     /**
-     * 删除文件（幂等：对象不存在视为已清理）
+     * 删除文件
      *
-     * @param id 文件记录主键（ossId）
+     * <p>幂等语义在 service 侧：先删存储对象（不存在视为已清理），再逻辑删除记录
+     *
+     * @param id 文件记录主键（ossId），不能为 null
      */
     @DeleteMapping("/delete/{id}")
     public void delete(@PathVariable Long id) {

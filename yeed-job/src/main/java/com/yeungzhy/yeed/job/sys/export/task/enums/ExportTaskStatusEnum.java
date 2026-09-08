@@ -8,15 +8,15 @@ import lombok.Getter;
 
 /**
  * 异步导出任务状态枚举（任务生命周期唯一真相源）
- * <p>覆盖导出任务的完整生命周期流转：
+ * <p> 覆盖导出任务的完整生命周期流转：
  * <ul>
  *   <li>WAITING（0-待执行）：任务创建后、执行器认领前</li>
  *   <li>RUNNING（1-执行中）：执行器认领后，分批写 Excel/上传 OSS 期间，{@code progress} 分批推进</li>
  *   <li>SUCCESS（2-成功）：文件已上传 OSS，{@code ossId}/{@code fileSize} 已回写</li>
  *   <li>FAILED（3-失败）：执行异常，{@code failReason} 记录原因，可进入重试链路</li>
  * </ul>
- * <p>DB 层经 {@link EnumValue} 与 TINYINT 互转；对外接口契约稳定为整数（{@link JsonValue} 双向）。
- * <p>禁止在业务代码中散落裸数字 0/1/2/3 判断任务状态，一律使用枚举常量或 {@link #parse(Integer)}。
+ * <p> DB 层经 {@link EnumValue} 与 TINYINT 互转；对外接口契约稳定为整数（{@link JsonValue} 双向）
+ * <p> 禁止在业务代码中散落裸数字 0/1/2/3 判断任务状态，一律使用枚举常量或 {@link #parse(Integer)}
  *
  * @author yeungzhy
  * @since 2026-08-22
@@ -55,8 +55,8 @@ public enum ExportTaskStatusEnum implements IEnum<Integer> {
 
     /**
      * 解析数据库值（DTO/前端入参的 Integer → 枚举）
-     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
-     * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露。
+     * <p> 封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
+     * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露
      *
      * @param code 数据库存储值（0/1/2/3）
      * @return 对应枚举；入参为 null 时返回 null

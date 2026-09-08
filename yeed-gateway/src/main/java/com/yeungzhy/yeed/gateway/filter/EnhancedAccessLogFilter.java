@@ -58,10 +58,10 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.O
  *
  * <p>在记录请求路径、方法、状态码等基础访问信息之外，额外提供：
  * <ul>
- *   <li>请求体/响应体采样缓存（防 OOM，超限仅存摘要）</li>
- *   <li>敏感信息自动脱敏（密码、手机号、身份证）</li>
- *   <li>接口中文操作名映射（通过 MenuCache）</li>
- *   <li>全链路 traceId 关联（通过 {@link Tracer} 取当前 span）</li>
+ *   <li>请求体/响应体采样缓存（防 OOM，超限仅存摘要）
+ *   <li>敏感信息自动脱敏（密码、手机号、身份证）
+ *   <li>接口中文操作名映射（通过 MenuCache）
+ *   <li>全链路 traceId 关联（通过 {@link Tracer} 取当前 span）
  * </ul>
  *
  * <p>日志记录时机：挂在 {@code doFinally} 上，对正常完成、异常终止、客户端取消三种信号都会记录
@@ -81,16 +81,14 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 请求体采样字节数
      *
-     * <p>采样到 N+1 字节说明原始报文超过 N
-     * <p>报文恰好等于 N 字节时也不会被误判为超限
+     * <p>取上限 +1：采样满 N+1 字节说明原始报文超过 N，报文恰好等于 N 字节时不会被误判为超限
      */
     private static final int BODY_SAMPLE_BYTES = MAX_CACHED_BODY_BYTES + 1;
     /** 空请求体时的采样结果，避免 null 判断扩散 */
     private static final byte[] EMPTY_BYTES = new byte[0];
 
     /**
-     * 请求体超限摘要：N 取 Content-Length，分块传输（-1）时记超过下限
-     * <p>占位符用 {@code %s}：两种形态分别收数字与字符串，用 {@code %d} 会在分块分支抛 IllegalFormatConversionException
+     * 请求体超限摘要：占位符取 Content-Length（long），分块传输时为 -1
      */
     private static final String REQUEST_BODY_OVER_LIMIT = """
             {"msg":"request body exceeds limit, %d bytes"}
@@ -122,8 +120,8 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
      *
      * <p>两类内容都以 {@code _raw} 单字段承接，前端渲染不分支：
      * <ul>
-     *   <li>文本 / HTML：截断原文（HTML 错误页、纯文本报错往往是排障线索）；</li>
-     *   <li>二进制（图片、音视频、压缩包、PDF 等）：解码成文本是乱码垃圾，改存一行摘要字符串</li>
+     *   <li>文本 / HTML：截断原文（HTML 错误页、纯文本报错往往是排障线索）
+     *   <li>二进制（图片、音视频、压缩包、PDF 等）：解码成文本是乱码垃圾，改存一行摘要字符串
      * </ul>
      */
     private static final String NON_JSON_FIELD_RAW = "_raw";
@@ -148,11 +146,12 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
      *
      * <p>两个用途共用这一份清单，不另建集合：
      * <ul>
-     *   <li>识别文件下载（{@link #isFileDownload}）：该类响应不缓存报文，只记下载摘要；</li>
-     *   <li>识别"原文无归档价值"的响应（{@link #isBinaryBody}）：{@code _raw} 记一行摘要字符串。</li>
+     *   <li>识别文件下载（{@link #isFileDownload}）：该类响应不缓存报文，只记下载摘要
+     *   <li>识别"原文无归档价值"的响应（{@link #isBinaryBody}）：{@code _raw} 记一行摘要字符串
      * </ul>
-     * 两处判定的差异不在清单本身，而在个别类型是否保留原文——见 {@link #TEXT_BODY_MIME_TYPES}。
-     * 共用清单可避免新增类型时两处漏改其一。
+     *
+     * <p>两处判定的差异不在清单本身，而在个别类型是否保留原文（见 {@link #TEXT_BODY_MIME_TYPES}），
+     * 共用清单可避免新增类型时两处漏改其一
      */
     private static final Set<FileTypeEnum> FILE_DOWNLOAD_TYPES = EnumSet.of(
             FileTypeEnum.PDF,
@@ -188,10 +187,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 命中文件类清单、但原文仍有归档价值的文本形态 MIME
      *
-     * <p>xml/txt 响应常是排障线索：下游透传的错误详情、异常信息都在里面，摘要会丢掉关键内容。
+     * <p>xml/txt 响应常是排障线索：下游透传的错误详情、异常信息都在里面，摘要会丢掉关键内容
      *
      * <p>显式维护而非依赖"这些类型碰巧不在清单里"：将来若把 xml 纳入下载清单，本守卫仍生效，
-     * 不会静默变成只记一行摘要。
+     * 不会静默变成只记一行摘要
      */
     private static final Set<String> TEXT_BODY_MIME_TYPES = Set.of("text/plain", "application/xml", "text/xml");
 
@@ -229,7 +228,7 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
         /*
          * 处理完请求再记录响应信息
-         * doOnError 只摘 message 不摘堆栈（堆栈由 GlobalWebExceptionHandler 按其级别打印，此处不重复）；
+         * doOnError 只摘 message 不摘堆栈（堆栈由 GlobalWebExceptionHandler 按其级别打印，此处不重复），
          * doFinally 覆盖 complete/error/cancel 三种信号，见类注释
          */
         Supplier<? extends Mono<Void>> supplier = () -> chain
@@ -308,7 +307,7 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
                     byte[] bytes = mergeBuffers(dataBuffers);
                     // 响应体写入 exchange 属性（超长只存摘要）
                     exchange.getAttributes().put(CACHED_RESPONSE_BODY_KEY, toCachedBody(bytes));
-                    // 下发完整报文：缓存可以裁剪，响应不可以——这里必须是未经裁剪的 bytes
+                    // 下发完整报文：缓存可以裁剪，响应不可以，这里必须是未经裁剪的 bytes
                     return Mono.just(responseBufferFactory.wrap(bytes));
                 }));
             }
@@ -318,21 +317,23 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 组装向下传递的 exchange：响应体装饰器 + 请求体装饰器（若已缓存）
      *
-     * <p>为何必须自己换装：{@link ServerWebExchangeUtils#cacheRequestBodyAndRequest}
-     * 只把包装后的请求放进属性 {@code cachedServerHttpRequestDecorator}，不改写 exchange 上的 request
+     * <p>为何必须自己换装：{@link ServerWebExchangeUtils#cacheRequestBodyAndRequest} 只把包装后的请求
+     * 放进属性 {@code cachedServerHttpRequestDecorator}，不改写 exchange 上的 request
      *
-     * <p>真正换装的是内置 {@link AdaptCachedBodyGlobalFilter}（order = {@code HIGHEST_PRECEDENCE + 1000}
+     * <p>真正换装的是内置 {@link AdaptCachedBodyGlobalFilter}（首个分支即"读该属性 → 移除 →
+     * {@code mutate().request(decorator)}"）。若依赖它，本过滤器必须更早执行；顺序一反属性还没写入，
+     * 请求体已被 {@code NettyRoutingFilter} 消费，下游按 {@code Content-Length} 等字节数、网关等下游响应，
+     * 双方互等 → ReadTimeoutException → 504，表象是"请求调不到下游"而非可见的 4xx。自己换装后
+     * order 不再受约束，两种排布都成立
      *
-     * <p>其 {@code filter()} 首个分支即"读该属性 → 移除 → {@code mutate().request(decorator)}"）
+     * <p>{@code mutate()} 不丢属性：{@code build()} 返回 {@code MutativeDecorator}，attributes 委托给原
+     * exchange，下游写入的属性（如路由 id）在 doFinally 里仍可读到
      *
-     * <p>若依赖它，本过滤器必须更早执行；顺序一旦相反，属性尚未写入，请求体已被{@code NettyRoutingFilter} 消费，
-     * 下游按 {@code Content-Length} 声明字节数等待 body，网关等下游响应，
-     * 双方互等 → ReadTimeoutException → 504，表象是"请求调不到下游"，而非可见的 4xx。自己换装后 order 不再受约束，两种排布都成立
+     * <p>未走缓存的分支（multipart、其它 Content-Type）读不到该属性，原样返回
      *
-     * <p>{@code mutate()} 不丢属性：其 {@code build()} 返回 {@code MutativeDecorator}，
-     * attributes 委托给原 exchange，下游写入的属性（如路由 id）在 doFinally 日志处理方法里仍可读到
-     *
-     * <p>未走缓存的分支（multipart、其他 Content-Type）读不到该属性，原样返回
+     * @param exchange          当前请求上下文，不能为 null
+     * @param decoratedResponse 响应装饰器，不能为 null
+     * @return 换装后的 exchange，恒不为 null
      */
     private static ServerWebExchange withCachedRequest(ServerWebExchange exchange,
                                                        ServerHttpResponseDecorator decoratedResponse) {
@@ -346,11 +347,11 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 日志保存具体逻辑
+     * 组装并记录一条访问日志
      *
-     * @param exchange    当前请求的上下文对象
-     * @param requestTime 请求进入的开始时间
-     * @param startNanos  请求进入的开始时刻
+     * @param exchange    当前请求上下文，不能为 null
+     * @param requestTime 请求进入网关的墙钟时间，不能为 null
+     * @param startNanos  请求进入时的单调钟读数，用于算耗时
      */
     private void saveAccessLog(ServerWebExchange exchange, LocalDateTime requestTime, long startNanos) {
         ServerHttpRequest request = exchange.getRequest();
@@ -424,7 +425,13 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
     /**
      * 取待记录的请求体（GET 为查询参数拼成的对象），各分支与响应体同一口径：超过上限只记体积
+     *
      * <p>表单与 JSON 分支读取后即从 exchange 移除缓存属性，避免大对象滞留到请求结束
+     *
+     * @param exchange  当前请求上下文，不能为 null
+     * @param request   当前请求，不能为 null
+     * @param mediaType 请求 Content-Type，无请求体时为 null
+     * @return 待记录的请求体文本；未缓存的场景返回体积摘要或占位提示，恒不为 null
      */
     private String resolveRequestBody(ServerWebExchange exchange, ServerHttpRequest request, MediaType mediaType) {
         // GET 请求：查询参数拼成对象
@@ -462,6 +469,9 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
     /**
      * 是否命中日志排除名单：命中任一排除请求头，或路径命中排除名单（精确路径 / 通配符）
+     *
+     * @param request 当前请求，不能为 null
+     * @return 命中排除名单返回 true
      */
     private boolean isLogExcluded(ServerHttpRequest request) {
         return logExcludeProperties.getHeaders().stream().anyMatch(header -> request.getHeaders().containsKey(header))
@@ -471,14 +481,13 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 采样请求体前 {@link #BODY_SAMPLE_BYTES} 字节
      *
-     * <p>为什么不走 {@code ServerRequest.bodyToMono}：解码器内部是
-     * {@code DataBufferUtils.join(...).map(decode)}，join 出来的 buffer 没有释放
+     * <p>不走 {@code ServerRequest.bodyToMono}：解码器内部 {@code join(...)} 出来的 buffer 没人释放，
+     * 释放责任在订阅方，只有自己读、自己 release 才能配平；
+     * {@link DataBufferUtils#takeUntilByteCount} 本身无释放义务，它读到上限时自行释放被丢弃的尾部，
+     * 故这里对每个收到的 buffer 释放一次即可
      *
-     * <p>释放责任在订阅方。只有自己读、自己 release 才能配平
-     *
-     * <p>{@link DataBufferUtils#takeUntilByteCount} 本身没有释放义务：它读到上限时调用
-     * {@code DataBuffer.split(index)}，自己释放掉被丢弃的尾部，只把要保留的头部发给下游。
-     * 所以这里只需对收到的每个 buffer 释放一次
+     * @param request 待采样的请求，不能为 null
+     * @return 采样的字节；空请求体返回空数组
      */
     private static Mono<byte[]> readBodySample(ServerHttpRequest request) {
         return DataBufferUtils.takeUntilByteCount(request.getBody(), BODY_SAMPLE_BYTES)
@@ -491,6 +500,9 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
      * 拷贝字节并逐个释放 {@link DataBuffer}
      *
      * <p>与响应侧 {@link #mergeBuffers} 同一手法；区别是本处带 try/finally，采样中途异常也保证释放
+     *
+     * @param buffers 待拷贝的 buffer，不能为 null
+     * @return 合并后的字节
      */
     private static byte[] copyAndRelease(List<DataBuffer> buffers) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -508,6 +520,9 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
     /**
      * 采样是否被截断：取满 {@link #BODY_SAMPLE_BYTES} 即说明原始报文超过 {@link #MAX_CACHED_BODY_BYTES}
+     *
+     * @param sample 采样结果，不能为 null
+     * @return 被截断返回 true
      */
     private static boolean isTruncated(byte[] sample) {
         return sample.length >= BODY_SAMPLE_BYTES;
@@ -515,7 +530,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
 
     /**
-     * 解析表单报文：按 & 切分并逐项 URL 解码
+     * 解析表单报文：按 {@code &} 切分并逐项 URL 解码
+     *
+     * @param sample 采样到的表单字节，不能为 null
+     * @return 表单字段；空报文返回空 map，不为 null
      */
     private static MultiValueMap<String, String> parseForm(byte[] sample) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
@@ -532,7 +550,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 解码单个表单项，非法报文转义会抛出异常，记日志不能把请求带崩，故降级为原样保留
+     * 解码单个表单项；非法转义会抛异常，记日志不能把请求带崩，故降级为原样保留
+     *
+     * @param raw 原始值，不能为 null
+     * @return 解码后的值，解码失败返回原值
      */
     private static String decodeFormValue(String raw) {
         try {
@@ -544,6 +565,11 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
     /**
      * 是否文件下载：Content-Disposition 声明 attachment，或响应 Content-Type 命中文件类清单
+     *
+     * <p>判定基于响应头、与 body 形态无关，故对 Flux / Mono 两种写法都能统一处理
+     *
+     * @param exchange 当前请求上下文，不能为 null
+     * @return 是文件下载返回 true
      */
     private static boolean isFileDownload(ServerWebExchange exchange) {
         String contentDisposition = exchange.getResponse().getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
@@ -558,8 +584,11 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 合并响应体的全部字节并释放原始 {@link DataBuffer}
      *
-     * <p>必须合并后一次性解码：逐块 {@code new String(chunk, UTF_8)}
-     * 会把被切分在两个 buffer 之间的多字节字符（中文、emoji 等）解成乱码
+     * <p>必须合并后一次性解码：逐块 {@code new String(chunk, UTF_8)} 会把被切在两个 buffer 之间的
+     * 多字节字符（中文、emoji）解成乱码
+     *
+     * @param dataBuffers 响应体的 buffer 列表，不能为 null
+     * @return 合并后的字节
      */
     private static byte[] mergeBuffers(List<? extends DataBuffer> dataBuffers) {
         ByteArrayOutputStream all = new ByteArrayOutputStream();
@@ -573,9 +602,12 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 生成待记录的响应体：未超限记原文，超限只保留根层 code/msg、data 记体积说明
+     * 生成待记录的响应体：未超限记原文，超限只保留根层 code / msg，data 记体积说明
      *
-     * <p>超限时丢 code 会让业务状态码缺失，用流式挑出根层标量，不建树，内存与报文长度无关
+     * <p>超限时丢 code 会让业务状态码缺失，故用流式挑出根层标量、不建树，内存与报文长度无关
+     *
+     * @param bytes 响应体字节，不能为 null
+     * @return 待记录的响应体文本；超限且挑不出标量时返回占位提示
      */
     private static String toCachedBody(byte[] bytes) {
         if (bytes.length > MAX_CACHED_BODY_BYTES) {
@@ -597,10 +629,13 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 报文脱敏：先 JSON 键值脱敏，再做全文文本脱敏
      *
-     * <p>顺序有讲究，不能颠倒：先按 JSON 键整值替换，不会破坏结构（零残留）；
-     * 再对剩余明文做文本脱敏。反过来"先文本后键值"会残留形似手机号的密文
+     * <p>顺序有讲究，不能颠倒：先按 JSON 键整值替换，不破坏结构（零残留）；再对剩余明文做文本脱敏；
+     * 反过来「先文本后键值」会残留形似手机号的密文
      *
-     * <p>JSON 解析失败/没有凭据键名时原样返回，由文本脱敏兜底
+     * <p>JSON 解析失败 / 没有凭据键名时原样返回，由文本脱敏兜底
+     *
+     * @param body 待脱敏的报文，可为 null
+     * @return 脱敏后的报文；入参为 null 时返回 null
      */
     private static String maskSensitive(String body) {
         return body == null ? null : SensitiveTextUtil.mask(SensitiveJsonUtil.mask(body));
@@ -609,8 +644,12 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 报文转结构化 Map：JSON 走裁剪后解析，非 JSON 按统一形态归档
      *
-     * <p>先判首字符再决定是否裁剪，而不是无条件丢给Json工具类，首字符判定成本极低，可完全避开工具类的重量级路径
-     * <p>解析结果不是 Map（根层是数组或标量）时包装为单字段 Map
+     * <p>先判首字符再决定是否裁剪，而不是无条件丢给 JSON 工具类：首字符判定成本极低，
+     * 可完全避开工具类的重量级路径
+     *
+     * @param body        报文文本，可为 null
+     * @param contentType 报文的 Content-Type，用于判定是否二进制归档，可为 null
+     * @return 结构化结果；报文为空时返回 null
      */
     @SuppressWarnings("unchecked")
     private static Map<String, Object> toBodyMap(String body, MediaType contentType) {
@@ -635,8 +674,11 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 是否疑似 JSON：只看首个非空白字符
      *
-     * <p>不是为了严格校验——合法 JSON 一定以 '{' 或 '[' 开头，反之不成立；
+     * <p>不是为了严格校验：合法 JSON 一定以 {@code {} 或 []} 开头，反之不成立，
      * 判定为 JSON 的后续仍有 try/catch 兜底，成本可控
+     *
+     * @param body 报文文本，不能为 null
+     * @return 首个非空白字符是 JSON 起始符返回 true
      */
     private static boolean looksLikeJson(String body) {
         for (int i = 0; i < body.length(); i++) {
@@ -651,10 +693,14 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 非 JSON 报文的统一归档形态：{@code {"_raw":"<字符串>"}} 单字段
      *
-     * <p>文本 / HTML 存截断原文——HTML 错误页、纯文本报错往往是排障线索，
+     * <p>文本 / HTML 存截断原文：HTML 错误页、纯文本报错往往是排障线索，
      * 例如网关把下游的 HTML 错误页原样透传时，页面里往往带着失败原因
      *
      * <p>二进制（图片、音视频、字体、压缩包、PDF 等）存一行摘要字符串："什么、多大"
+     *
+     * @param body        报文文本，不能为 null
+     * @param contentType 响应 Content-Type，用于判定是否二进制，可为 null
+     * @return 单字段 map，恒不为 null
      */
     private static Map<String, Object> toNonJsonBody(String body, MediaType contentType) {
         String raw = isBinaryBody(contentType)
@@ -664,7 +710,13 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
 
-    /** 是否"原文无归档价值"的二进制响应：Content-Type 命中文件类清单且不在文本保留名单中；无 Content-Type 视为文本 */
+    /**
+     * 是否"原文无归档价值"的二进制响应：Content-Type 命中文件类清单且不在文本保留名单中，
+     * 无 Content-Type 视为文本
+     *
+     * @param contentType 响应 Content-Type，可为 null
+     * @return 是二进制返回 true
+     */
     private static boolean isBinaryBody(MediaType contentType) {
         FileTypeEnum type = findFileType(contentType != null ? contentType.toString() : null);
         return type != null && !TEXT_BODY_MIME_TYPES.contains(type.getMimeType());
@@ -673,13 +725,21 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 从 Content-Type 匹配"网关认定的文件类"类型：先按 {@link FileTypeEnum} 全字典反查，
      * 再看是否落在 {@link #FILE_DOWNLOAD_TYPES} 子集内；非文件类（含无 Content-Type）返回 null
+     *
+     * @param contentType Content-Type 文本，可为 null
+     * @return 命中的文件类型；非文件类返回 null
      */
     private static FileTypeEnum findFileType(String contentType) {
         FileTypeEnum type = FileTypeEnum.fromMimeTypeOrNull(normalizeMimeType(contentType));
         return type != null && FILE_DOWNLOAD_TYPES.contains(type) ? type : null;
     }
 
-    /** 剥离 Content-Type 的参数部分（{@code ;charset=UTF-8}）只留裸 MIME；入参为 null 或空白返回 null */
+    /**
+     * 剥离 Content-Type 的参数部分（{@code ;charset=UTF-8}），只留裸 MIME
+     *
+     * @param contentType Content-Type 文本，可为 null
+     * @return 裸 MIME；入参为 null 或空白返回 null
+     */
     private static String normalizeMimeType(String contentType) {
         if (contentType == null) {
             return null;
@@ -691,6 +751,9 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
 
     /**
      * 截断纯文本到 {@link #MAX_CACHED_BODY_BYTES}，避免单条审计日志过大
+     *
+     * @param body 原文，不能为 null
+     * @return 截断后的文本，超长时带 {@code ...} 后缀
      */
     private static String abbreviate(String body) {
         return body.length() <= MAX_CACHED_BODY_BYTES
@@ -701,10 +764,17 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 目标微服务名：优先取命中路由 URI 的 host，取不到回退路由 ID
      *
-     * <p>{@code lb://yeed-auth} 的 host 即 Nacos 注册服务名
-     * <p>{@code http://ip:port} 的 host 也能记
-     * <p>{@code forward:/xx}）的 host 恒为 null，此时回退路由 ID
+     * <p>host 在不同 URI 形态下的含义：
+     * <ul>
+     *   <li>{@code lb://yeed-auth}：host 即 Nacos 注册服务名
+     *   <li>{@code http://ip:port}：host 是直连地址
+     *   <li>{@code forward:/xx}：host 恒为 null，回退路由 ID
+     * </ul>
+     *
      * <p>未命中路由（404 等）两者皆 null
+     *
+     * @param exchange 当前请求上下文，不能为 null
+     * @return 服务名或路由 ID；都取不到时返回 null
      */
     private static String serviceName(ServerWebExchange exchange) {
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
@@ -717,7 +787,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 客户端 IP：只认 TCP 连接对端地址，不采信 X-Forwarded-For
      *
-     * <p>代理链中它是最近一跳的真实 IP，且无法被客户端伪造
+     * <p>代理链中它是最近一跳的真实 IP，且无法被客户端伪造；XFF 原文另存供排查
+     *
+     * @param request 当前请求，不能为 null
+     * @return 对端 IP；取不到返回 null
      */
     private static String clientIp(ServerHttpRequest request) {
         InetSocketAddress remote = request.getRemoteAddress();
@@ -727,7 +800,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 网关层异常信息：只取 message 不取堆栈
      *
-     * <p>异常消息可能携带下游响应体片段，故过文本脱敏；正常请求无异常属性，返回 null
+     * <p>异常消息可能携带下游响应体片段，故过文本脱敏；正常请求无该属性，返回 null
+     *
+     * @param exchange 当前请求上下文，不能为 null
+     * @return 脱敏后的异常摘要；无异常返回 null
      */
     private static String errorMessage(ServerWebExchange exchange) {
         String message = exchange.getAttribute(CACHED_ERROR_MESSAGE_KEY);
@@ -737,7 +813,10 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     /**
      * 把查询参数 / 表单字段拼成 JSON，供后续统一脱敏与裁剪
      *
-     * <p>不含文件表单——{@link #filter} 不缓存其请求体，没有字段可提取
+     * <p>不含文件表单：{@link #filter} 不缓存其请求体，没有字段可提取
+     *
+     * @param params 查询参数或表单字段，不能为 null
+     * @return 拼成的 JSON 文本
      */
     private static String toParamsJson(MultiValueMap<String, String> params) {
         Map<String, Object> fields = new LinkedHashMap<>();
@@ -750,6 +829,11 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
     }
 
 
+    /**
+     * 一条增强型访问日志的结构化载体
+     *
+     * <p>字段按"链路 / 请求 / 响应 / 目标服务 / 操作人 / 客户端"分组，序列化成一行 JSON 落日志
+     */
     @Data
     @Accessors(chain = true)
     public static class EnhancedAccessLog {

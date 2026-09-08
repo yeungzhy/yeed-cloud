@@ -10,25 +10,23 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 
 /**
- * {@link Sensitive} 的 Jackson 序列化器。
+ * {@link Sensitive} 的 Jackson 序列化器
  *
- * <p>通过 {@link ContextualSerializer} 在构造阶段把 {@link com.yeungzhy.yeed.common.core.sensitive.SensitiveType} 注入实例并由
- * Jackson 缓存复用，序列化执行时零反射；type 构造后不可变，实例线程安全。
+ * <p> 通过 {@link ContextualSerializer} 在构造阶段把 {@link SensitiveType} 注入实例并由
+ * Jackson 缓存复用，序列化执行时零反射；type 构造后不可变，实例线程安全
  *
- * <p>掩码异常时降级写 null 并记录 error 日志，避免单字段脱敏失败拖垮整次响应序列化。
+ * <p> 掩码异常时降级写 null 并记录 error 日志，避免单字段脱敏失败拖垮整次响应序列化
  *
  * @author yeungzhy
  * @since 2026-08-07
  * @see Sensitive
- * @see com.yeungzhy.yeed.common.core.sensitive.SensitiveType
+ * @see SensitiveType
  */
 @Slf4j
 public class SensitiveJsonSerializer extends JsonSerializer<String> implements ContextualSerializer {
 
-    /**
-     * 绑定的脱敏类型，由 {@link #createContextual} 注入，构造后不可变。
-     */
-    private com.yeungzhy.yeed.common.core.sensitive.SensitiveType type;
+    /** 绑定的脱敏类型，由 {@link #createContextual} 注入，构造后不可变 */
+    private SensitiveType type;
 
     // Jackson 反射实例化需要无参构造器；type 待 createContextual 注入
     public SensitiveJsonSerializer() {}

@@ -13,20 +13,20 @@ import java.util.Base64;
 /**
  * 加密配置启动校验器
  *
- * <p>在 {@link CryptoProperties} 注入完成后立即校验密钥配置，任一项失败则抛异常让应用启动失败（fail-fast）。
+ * <p> 在 {@link CryptoProperties} 注入完成后立即校验密钥配置，任一项失败则抛异常让应用启动失败（fail-fast）
  *
- * <p>校验内容：
+ * <p> 校验内容：
  * <ul>
- *     <li>AES：Base64 解码后必须 32 字节（AES-256）</li>
- *     <li>RSA：公钥/私钥可被 KeyFactory 解析，且公私钥配对（通过 {@link RsaUtil} 加解密验证，
- *     顺带验证工具类的 OAEP 参数）</li>
- *     <li>HMAC：secret 的 UTF-8 字节长度至少 32（OWASP 推荐 HMAC-SHA256 密钥下限）</li>
+ *   <li>AES：Base64 解码后必须 32 字节（AES-256）
+ *   <li>RSA：公钥/私钥可被 KeyFactory 解析，且公私钥配对（通过 {@link RsaUtil} 加解密验证，顺带验证工具类的 OAEP 参数）
+ *   <li>HMAC：secret 的 UTF-8 字节长度至少 32（OWASP 推荐 HMAC-SHA256 密钥下限）
  * </ul>
  *
- * <p>触发时机：{@link PostConstruct} —— Bean 初始化阶段，早于 {@code ApplicationRunner}，
- * 避免配置错误时白白连接数据库/Redis/Nacos 等外部资源。
+ * <p> 触发时机：{@link PostConstruct}，Bean 初始化阶段，早于 {@code ApplicationRunner}，
+ * 避免配置错误时白白连接数据库/Redis/Nacos 等外部资源
  *
  * @author yeungzhy
+ * @since 2026-08-23
  */
 @Slf4j
 public class CryptoPropertiesValidator {

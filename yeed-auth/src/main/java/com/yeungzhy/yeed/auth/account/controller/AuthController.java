@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 认证控制器
  *
+ * <p>本服务不持有用户数据：凭据校验与菜单树都经 Feign 转调 admin 的内部端点，
+ * 这里只负责签发 Sa-Token 与拼装登录响应
+ *
  * @author yeungzhy
  * @since 2026-08-09
  */
@@ -30,10 +33,13 @@ public class AuthController {
     private AuthService authService;
 
     /**
-     * 登录
+     * 登录：校验凭据 → 签发 token → 回身份包与菜单树
      *
-     * @param dto 账号 + 密码
-     * @return 登录令牌 + 登录身份包（角色编码 + 权限标识）
+     * @param dto 账号与密码，均不能为空白；账号可以是登录名或工号
+     * @return 登录令牌 + 登录身份包（角色编码 + 权限标识）+ 菜单树；
+     *         凭据错误由 admin 抛异常经全局处理透传为业务码
+     * @author yeungzhy
+     * @since 2026-08-09
      */
     @PostMapping("/login")
     public ApiResult<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
@@ -41,9 +47,14 @@ public class AuthController {
     }
 
     /**
-     * 注销登录
+     * 注销当前会话
      *
-     * @return 操作结果
+     * <p>只清本 token 的会话，不做"是否已登录"校验：重复注销、拿过期 token 注销都不该报错，
+     * token 本身还有没有效由网关鉴权判定
+     *
+     * @return 固定成功
+     * @author yeungzhy
+     * @since 2026-08-09
      */
     @PostMapping("/logout")
     public ApiResult<Void> logout() {

@@ -9,9 +9,9 @@ import lombok.Getter;
 /**
  * OSS 文件可用状态枚举（文件生命周期领域概念）
  *
- * <p>DB 值域固定 {0,1}（封闭域）：可用是正常态、已清理是过期/主动删除后的终态，
- * 生命周期完整闭环，未来引入中间态概率低；反查使用 {@link #parse(Integer)} 抛
- * {@link IllegalArgumentException} fail-fast 暴露脏数据。
+ * <p>DB 值域固定 {0,1}（封闭域）：可用是正常态，已清理是过期或主动删除后的终态，生命周期已闭环，
+ * 未来引入中间态的概率低；反查 {@link #parse(Integer)} 对范围外取值抛
+ * {@link IllegalArgumentException}，直接暴露脏数据
  *
  * @author yeungzhy
  * @since 2026-08-23
@@ -45,7 +45,7 @@ public enum OssFileStatusEnum implements IEnum<Integer> {
     /**
      * 解析数据库值（封闭域语义：范围外取值视为脏数据，抛异常 fail-fast）
      *
-     * @param code 数据库存储值（0/1）
+     * @param code 数据库存储值（0 / 1），可为 null
      * @return 对应枚举；code 为 null 时返回 null
      * @throws IllegalArgumentException code 非法且非 null
      */

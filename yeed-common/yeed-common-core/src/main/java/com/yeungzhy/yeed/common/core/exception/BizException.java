@@ -6,15 +6,16 @@ import lombok.Getter;
 /**
  * 自定义业务异常
  *
- * <p>可仅带码（用 {@link ApiResult.CommonCode} 默认文案）
- * <p>仅带自定义消息（码回落为 {@code SYSTEM_ERROR}）
- * <p>或两者都带（如远程调用失败时透传下游业务话术 + 指定语义码）
+ * <p> 可仅带码（用 {@link ApiResult.CommonCode} 默认文案）
+ * <p> 仅带自定义消息（码回落为 {@code SYSTEM_ERROR}）
+ * <p> 或两者都带（如远程调用失败时透传下游业务话术 + 指定语义码）
  *
- * <p>消息是否透传前端由端点面向谁决定：对外端点（{@code ExternalApiExceptionHandler}）落在
+ * <p> 消息是否透传前端由端点面向谁决定：对外端点（{@code ExternalApiExceptionHandler}）落在
  * HTTP 200 的 body 里，内部端点（{@code InternalApiExceptionHandler}）落在 HTTP 错误码的 body 里，
- * 两侧均原样透传 message；业务断言（{@code BizAssert}）应优先于手动抛出
+ * 两侧均原样透传 message；业务断言（{@link BizAssert}）应优先于手动抛出
  *
  * @author yeungzhy
+ * @since 2026-08-06
  */
 @Getter
 public class BizException extends RuntimeException {

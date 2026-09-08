@@ -22,13 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 默认数据初始化器（系统首次上线引导）
  *
- * <p>在应用启动完成后，按需初始化默认角色与默认超管账号：
+ * <p>启动完成后按需初始化默认角色与默认超管账号，两类数据的来源刻意不同：
  * <ul>
- *     <li>角色编码等结构性数据定义在代码常量（{@link BuiltinRoleEnum}），随版本发布，不进配置中心；</li>
- *     <li>超管账号密码属环境敏感信息，从配置中心读取（{@link DefaultDataProperties}，不同环境各自维护；</li>
- *     <li>「先查后插」保证幂等；多实例并发首启的竞态由唯一索引兜底，
- *         捕获 {@link DuplicateKeyException} 视为其他实例已完成初始化；</li>
- *     <li>预期外异常不捕获，直接抛出终止启动（fail-fast），默认数据缺失时系统本就不应提供服务。</li>
+ *   <li>角色编码等结构性数据定义在代码常量 {@link BuiltinRoleEnum}，随版本发布、不进配置中心
+ *   <li>超管账号与初始密码属环境敏感信息，从 {@link DefaultDataProperties} 读取，按环境各自维护
+ *   <li>「先查后插」保证幂等；多实例并发首启的竞态由唯一索引兜底，捕获 {@link DuplicateKeyException} 视为其他实例已插好
+ *   <li>预期外异常不捕获，直接抛出终止启动：默认数据缺失时系统本就不该对外提供服务
  * </ul>
  *
  * @author yeungzhy
@@ -37,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 public class DefaultDataInitializer implements ApplicationRunner {
-    /* 与 SysUserServiceImpl 保持一致的 Argon2 编码器，不注册 @Bean（仅初始化场景使用） */
+    // 与 SysUserServiceImpl 保持一致的 Argon2 编码器；仅初始化场景用到，不注册成 Bean
     private final Argon2PasswordEncoder argon2PwdEncoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 
     @Resource
@@ -51,6 +50,11 @@ public class DefaultDataInitializer implements ApplicationRunner {
     private SysUserRoleMapper sysUserRoleMapper;
 
 
+    /**
+     * 按配置执行初始化，未启用则整体跳过
+     *
+     * @param args 启动参数，本初始化器不使用
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) {
@@ -70,7 +74,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
      * 初始化默认超管账号
      *
      * <p>密码经 Argon2 单向哈希后落库，与业务新增用户一致、不依赖环境密钥；
-     * 先查后插保证幂等，并发首启的插队竞态由唯一索引兜底（{@link DuplicateKeyException}）。
+     * 先查后插保证幂等，并发首启的插队竞态由唯一索引兜底（{@link DuplicateKeyException}）
      */
     private void initSuperAdmin(DefaultDataProperties.SuperAdmin superAdmin) {
         String username = superAdmin.getUsername();
@@ -108,7 +112,7 @@ public class DefaultDataInitializer implements ApplicationRunner {
      * 初始化默认角色
      *
      * <p>数据源为 {@link BuiltinRoleEnum} 全量枚举，保证各环境角色编码与代码版本强一致；
-     * 幂等与并发兜底策略同 {@link #initSuperAdmin(DefaultDataProperties.SuperAdmin)}。
+     * 幂等与并发兜底策略同 {@link #initSuperAdmin(DefaultDataProperties.SuperAdmin)}
      */
     private void initRoles() {
         for (BuiltinRoleEnum roleEnum : BuiltinRoleEnum.values()) {
@@ -157,7 +161,6 @@ public class DefaultDataInitializer implements ApplicationRunner {
 
         Long userId = admin.getId();
         Long roleId = superAdminRole.getId();
-        // 幂等：按 (userId, roleId) 判断关联是否已存在
         boolean exists = sysUserRoleMapper.selectCount(Wrappers.<SysUserRole>lambdaQuery()
                 .eq(SysUserRole::getUserId, userId)
                 .eq(SysUserRole::getRoleId, roleId)) > 0;

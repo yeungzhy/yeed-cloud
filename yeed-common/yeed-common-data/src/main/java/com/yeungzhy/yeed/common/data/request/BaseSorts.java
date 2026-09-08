@@ -12,48 +12,15 @@ import java.util.function.Consumer;
 /**
  * 排序字段白名单基类
  *
- * <p>设计思路（为什么用 Builder / Consumer）：父类构造器执行早于子类字段初始化，
- * 所以不能用「子类构造器里 super() 之后再调 add()」——那样父类的 sorts 在 super() 结束时还是空的，
- * 子类后续 add() 进去的内容无法保证在 freeze 之前完成。因此必须在 super() 调用的参数位置把白名单一次性传完。
+ * <p> 白名单必须在 {@code super(...)} 的实参位置一次性传完：父类构造器先于子类字段初始化执行，
+ * 等 super() 返回再 add() 就赶不上不可变快照的构建
  *
- * <p>子类两种写法（任选其一，效果完全相同）：
+ * <p> 未知字段静默忽略，不抛异常也不打 error 日志，避免攻击者靠响应差异枚举白名单
  *
- * <p>写法 A：Consumer lambda（紧凑）
- * <pre>{@code
- * @Component
- * public class SysUserSorts extends BaseSorts<SysUser> {
- *     public SysUserSorts() {
- *         super(SysUser.class, b -> b
- *                 .add(SysUser.Fields.username,   SysUser::getUsername)
- *                 .add(BaseEntity.Fields.createTime, SysUser::getCreateTime));
- *     }
- * }}</pre>
+ * <p> 排序方向 isAsc 为 null 时取降序，业务惯例是最新记录在前
  *
- * <p>写法 B：显式 Builder（更直观）
- * <pre>{@code
- * @Component
- * public class SysUserSorts extends BaseSorts<SysUser> {
- *     public SysUserSorts() {
- *         super(SysUser.class, new BaseSorts.Builder<SysUser>()
- *                 .add(SysUser.Fields.username,   SysUser::getUsername)
- *                 .add(BaseEntity.Fields.createTime, SysUser::getCreateTime)
- *                 .add(SysUser.Fields.status,     SysUser::getStatus));
- *     }
- * }}</pre>
- *
- * <p>安全策略：未知字段静默忽略（不抛异常、不打 error 日志），避免攻击者通过响应差异枚举白名单
- *
- * <p>默认排序方向：isAsc 为 null → 降序（业务惯例：最新记录在前）
- *
- * <p>为什么不用 static 工具类：白名单虽不可变，但做成实例化 Bean 而非 static 工具类，原因有三：
- * <ul>
- *   <li>泛型绑定：{@code BaseSorts<T extends BaseEntity>} 的泛型上下文需要实例化才能体现；
- *       static 方法无法携带泛型类型参数，也无法让 {@link #apply} 直接接收带类型的 {@code LambdaQueryWrapper<T>}。</li>
- *   <li>依赖注入：子类以 {@code @Component} 注册后可被 Service 层注入复用；
- *       未来如需按角色/租户动态裁剪白名单或注入配置类，Bean 天然支持依赖注入，static 做不到。</li>
- *   <li>可测试性：作为 Bean 可在测试中用 {@code @MockBean} 替换或注入自定义白名单子类，
- *       比直接 {@code new} 或 static 更灵活。</li>
- * </ul>
+ * <p> 做成实例化 Bean 而非 static 工具类：泛型 {@code T} 要绑到 {@link #apply} 的
+ * {@code LambdaQueryWrapper<T>} 上，且子类注册成 Bean 后可被注入、可被 {@code @MockBean} 替换
  *
  * @author yeungzhy
  * @since 2026-08-08
@@ -63,11 +30,13 @@ public abstract class BaseSorts<T extends BaseEntity> {
     private final Class<T> entityClass;
     private final Map<String, SFunction<T, ?>> sorts;
 
-    /* ============ 两个构造重载，任选其一一调用 ============ */
+    // --------- 两个构造重载，子类任选其一 ---------
 
     /**
-     * 构造器 - Consumer lambda 形式（紧凑写法）
-     * <p>例：{@code super(SysUser.class, b -> b.add("x", X::getX).add("y", X::getY)); }
+     * 构造白名单，用 Consumer lambda 逐个登记字段
+     *
+     * @param entityClass 实体类型，不能为 null
+     * @param config      白名单装配器，不能为 null；形如 {@code b -> b.add("username", SysUser::getUsername)}
      */
     protected BaseSorts(Class<T> entityClass, Consumer<Builder<T>> config) {
         this.entityClass = entityClass;
@@ -77,31 +46,47 @@ public abstract class BaseSorts<T extends BaseEntity> {
     }
 
     /**
-     * 构造器 - 显式 Builder 形式（更直观）
-     * <p>例：{@code super(SysUser.class, new BaseSorts.Builder<SysUser>().add(...).add(...)); }
+     * 构造白名单，用显式 {@link Builder} 登记字段
+     *
+     * @param entityClass 实体类型，不能为 null
+     * @param builder     装好字段的 Builder，不能为 null
      */
     protected BaseSorts(Class<T> entityClass, Builder<T> builder) {
         this.entityClass = entityClass;
         this.sorts = Map.copyOf(builder.sorts);
     }
 
-    /* ============ Builder ============ */
+    // --------- Builder ---------
 
+    /**
+     * 排序白名单装配器，登记顺序即后续 {@code ORDER BY} 的优先级
+     *
+     * @param <T> 实体类型
+     */
     public static final class Builder<T extends BaseEntity> {
+
         private final Map<String, SFunction<T, ?>> sorts = new LinkedHashMap<>();
 
+        /**
+         * 登记一个可排序字段
+         *
+         * @param field 前端传入的字段名（Java 属性名，驼峰），不能为 null；重复登记同名会被后者覆盖
+         * @param ref   实体属性的方法引用，不能为 null
+         * @return 当前 Builder，便于链式调用
+         */
         public Builder<T> add(String field, SFunction<T, ?> ref) {
             sorts.put(field, ref);
             return this;
         }
     }
 
-    /* ============ apply 系列方法 ============ */
+    // --------- apply 系列方法 ---------
 
     /**
-     * 应用单个排序字段。
+     * 应用单个排序字段
      *
-     * @param field 前端传入的字段名（Java 属性名，驼峰）；null 或不在白名单 → 静默忽略
+     * @param w     待追加排序的查询条件，不能为 null
+     * @param field 前端传入的字段名（Java 属性名，驼峰）；null 或不在白名单则静默忽略
      * @param isAsc 升序标志；null 默认降序（业务惯例：最新记录在前）
      */
     public final void apply(LambdaQueryWrapper<T> w, String field, Boolean isAsc) {
@@ -118,9 +103,9 @@ public abstract class BaseSorts<T extends BaseEntity> {
     }
 
     /**
-     * 应用多字段排序（兼容 PageRequest 的「单字段 + 多字段」两套接口）。
-     * <p>执行顺序：先单字段 → 再多字段（列表顺序），符合 SQL ORDER BY a, b, c 的直觉。
-     * <p>isAsc 为 null 或 orders 内 isAsc 为 null → 默认降序。
+     * 应用多字段排序（兼容 PageRequest 的「单字段 + 多字段」两套接口）
+     * <p> 执行顺序：先单字段 → 再多字段（列表顺序），符合 SQL ORDER BY a, b, c 的直觉
+     * <p> isAsc 为 null 或 orders 内 isAsc 为 null → 默认降序
      *
      * @param orderField 单字段（便捷接口，可 null）
      * @param isAsc      单字段方向（可 null）
@@ -130,10 +115,8 @@ public abstract class BaseSorts<T extends BaseEntity> {
                                String orderField,
                                Boolean isAsc,
                                List<com.yeungzhy.yeed.common.core.request.PageRequest.OrderItem> orders) {
-        // 1. 先应用单字段
         apply(w, orderField, isAsc);
 
-        // 2. 再按顺序应用多字段
         if (orders == null || orders.isEmpty()) {
             return;
         }
@@ -145,12 +128,19 @@ public abstract class BaseSorts<T extends BaseEntity> {
         }
     }
 
+    /**
+     * 取泛型绑定的实体类型
+     *
+     * @return 构造时传入的实体 Class
+     */
     public final Class<T> entityClass() {
         return entityClass;
     }
 
     /**
      * 返回白名单字段的只读视图（仅用于调试 / 文档生成）
+     *
+     * @return 可排序字段名，按登记顺序
      */
     public final List<String> allowedFields() {
         return List.copyOf(sorts.keySet());

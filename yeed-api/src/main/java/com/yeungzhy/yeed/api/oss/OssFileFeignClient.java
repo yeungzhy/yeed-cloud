@@ -11,25 +11,19 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 内部文件上传客户端（job → oss）
  *
- * <p>传输契约：元数据走 Query、文件二进制走 Body（application/octet-stream）
+ * <p>传输契约：元数据走 Query，文件二进制走 Body（{@code application/octet-stream}）
  *
+ * <p>两侧都是框架标准能力，无需额外依赖：
  * <ul>
- *   <li>两侧均为框架标准能力：Feign 侧 {@code @RequestBody byte[]} 由内置 ByteArrayEncoder 编码、
- *       {@code @SpringQueryMap} 自动展开 POJO 为 Query 参数并 URL 编码（中文文件名安全）；服务端
- *       {@code @ModelAttribute} 绑定 Query、{@code @RequestBody byte[]} 由 ByteArrayHttpMessageConverter
- *       处理（支持任意 media type），零额外依赖。</li>
- *   <li>Query 长度余量未触及容器/网关 Query 长度上限；Feign 调用便捷。</li>
+ *   <li>Feign 侧：{@code @RequestBody byte[]} 走内置 ByteArrayEncoder，
+ *       {@code @SpringQueryMap} 把 POJO 展开成 Query 参数并 URL 编码，中文文件名也安全
+ *   <li>oss 侧：{@code @ModelAttribute} 绑 Query，{@code @RequestBody byte[]} 由
+ *       ByteArrayHttpMessageConverter 处理
  * </ul>
  *
  * <p>RPC-Style：成功返回裸数据（文件记录主键 ossId），失败抛业务异常
  *
- * <p>演进方向（v1 不做）：
- * <ul>
- *   <li>大文件/断点续传/失败重试：拆两步——先 {@code POST /files}
- *       建元数据记录拿 ossId，再{@code PUT /files/{ossId}/content} 传内容。</li>
- *   <li>对齐对象存储 Header 语义：元数据迁至 {@code X-Oss-Meta-*}
- *       自定义 Header（中文值需{@code URLEncoder} 编码，服务端解码）。</li>
- * </ul>
+ * <p>大文件的断点续传与失败重试不走本接口，需拆成「先建元数据记录拿 ossId、再单独传内容」两步
  *
  * @author yeungzhy
  * @since 2026-08-22
@@ -45,9 +39,9 @@ public interface OssFileFeignClient {
     /**
      * 上传文件：Query 元数据 + Body 二进制
      *
-     * @param query    上传元数据（fileName 必填）
-     * @param fileData 文件二进制内容
-     * @return 文件记录主键（ossId）
+     * @param query    上传元数据，fileName 不能为空；bizCode 用于归档分组，可为空
+     * @param fileData 文件二进制内容，不能为 null
+     * @return 文件记录主键（ossId）；失败抛异常，不返回
      */
     @PostMapping(value = "/upload", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     Long upload(@SpringQueryMap FileUploadQuery query, @RequestBody byte[] fileData);
@@ -55,8 +49,8 @@ public interface OssFileFeignClient {
     /**
      * 下载文件：返回字节流与附件响应头
      *
-     * @param id 文件记录主键（ossId）
-     * @return 文件二进制 + Content-Type/Content-Disposition（attachment 中文文件名）
+     * @param id 文件记录主键（ossId），不能为 null
+     * @return 文件二进制 + Content-Type / Content-Disposition（attachment，下载名已清洗）
      */
     @GetMapping("/download/{id}")
     ResponseEntity<byte[]> download(@PathVariable Long id);

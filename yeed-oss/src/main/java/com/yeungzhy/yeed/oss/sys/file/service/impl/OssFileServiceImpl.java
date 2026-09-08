@@ -30,7 +30,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
- * 系统文件记录表 服务实现类
+ * 系统文件记录表 服务实现
+ *
+ * <p>写路径只有上传入口：判真 → 定扩展名 → 写盘 → 落记录，顺序不能调换，
+ * 因为 objectKey 与落库的 contentType 都依赖判真结果
  *
  * @author yeungzhy
  * @since 2026-09-04 12:00:19
@@ -43,7 +46,9 @@ public class OssFileServiceImpl implements OssFileService {
     private static final DateTimeFormatter DATE_PATH_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     /**
-     * 主名最大长度（字符数）：取值同时受 {@code yeed_sys_oss.file_name} 列宽与下载响应头长度约束，
+     * 主名最大长度（字符数）
+     *
+     * <p>同时受 {@code yeed_sys_oss.file_name} 列宽与 Content-Disposition 长度约束：
      * 改小安全，改大须核实这两处上限
      */
     private static final int MAX_FILE_NAME_LENGTH = 20;
@@ -113,9 +118,9 @@ public class OssFileServiceImpl implements OssFileService {
     public void delete(Long id) {
         OssFile file = requireAvailable(id);
 
-        // 1. 删存储对象（幂等：对象不存在视为已清理，不阻断）
+        // 先删对象再删记录：对象已不在也视为已清理，不阻断删除
         FileUtil.deleteIfExists(resolveLocalPath(file.getObjectKey()));
-        // 2. 逻辑删除记录（本服务不解析会话，deleteBy=0L 系统操作）
+        // 本服务不解析会话，deleteBy 记 0L 表示系统操作
         ossFileMapper.logicDeleteById(id, ossFileMapper.nanoEpoch(), 0L);
 
         log.info("文件已删除: ossId={}, objectKey={}", id, file.getObjectKey());
@@ -128,6 +133,10 @@ public class OssFileServiceImpl implements OssFileService {
      * 查询可用记录（归属校验 + 状态可用），否则抛 404
      *
      * <p>归属条件只在"已登录且非超管"时拼：超管看全部，无登录上下文（内部调用、定时任务）不做归属校验
+     *
+     * @param id 文件记录主键，不能为 null
+     * @return 可用记录，恒不为 null
+     * @throws BizException 记录不存在、无权限或状态非可用（CommonCode.NOT_FOUND）
      */
     private OssFile requireAvailable(Long id) {
         OssFile file = ossFileMapper.selectOne(Wrappers.<OssFile>lambdaQuery()
@@ -142,18 +151,35 @@ public class OssFileServiceImpl implements OssFileService {
     }
 
 
-    /** 生成 objectKey：{@code yyyy/MM/dd}/{UUID}{判真扩展名}（扩展名来自 {@link FileTypeProbeUtil}，非入参） */
+    /**
+     * 生成 objectKey：{@code yyyy/MM/dd}/{UUID}{判真扩展名}
+     *
+     * <p>扩展名取自判真结果而非入参，避免同一份字节因改名落到不同扩展名上
+     *
+     * @param extension 判真得出的扩展名（含点），不能为 null
+     * @return 存储对象 key
+     */
     private String buildObjectKey(String extension) {
         String uuid = UUID.randomUUID().toString().replace("-", "");
         return LocalDate.now().format(DATE_PATH_FORMAT) + "/" + uuid + extension;
     }
 
-    /** 解析 objectKey 到本地磁盘绝对路径（根目录取自本地存储配置） */
+    /**
+     * 解析 objectKey 到本地磁盘绝对路径（根目录取自本地存储配置）
+     *
+     * @param objectKey 存储对象 key，不能为 null
+     * @return 本地绝对路径
+     */
     private Path resolveLocalPath(String objectKey) {
         return FileUtil.resolveAbsolutePath(ossProperties.getLocal().getStoragePath(), objectKey);
     }
 
-    /** 计算过期时间：保留时长为 {@code null} 表示永久保存，落库 {@code null} */
+    /**
+     * 计算过期时间
+     *
+     * @param expireAfter 保留时长，为 null 表示永久保存
+     * @return 过期时间；永久保存返回 null
+     */
     private LocalDateTime resolveExpireTime(Duration expireAfter) {
         return expireAfter == null ? null : LocalDateTime.now().plus(expireAfter);
     }

@@ -32,11 +32,12 @@ public class SysUser extends BaseEntity {
     private String username;
     /**
      * 密码（Argon2id 单向散列）
-     * <p>不标 {@link Crypto}：散列本身不可逆，再套一层可逆加密只增加列长与解密依赖；
+     *
+     * <p>不标 {@link Crypto}：散列本身不可逆，再套一层可逆加密只增加列长与解密依赖，
      * 出参侧靠 VO 不暴露该字段兜底
      */
     private String password;
-    /** 真实姓名(用于前台展示) */
+    /** 真实姓名（用于前台展示） */
     private String realName;
     /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;

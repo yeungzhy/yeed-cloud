@@ -11,8 +11,7 @@ import java.time.LocalDateTime;
 /**
  * 系统用户 分页查询 DTO（前端入参）
  *
- * <p>字段顺序与建表 DDL 一致，改列必须同步两处；
- * 手机 / 邮箱是加密列，等值查询走盲索引（见 Service 层查询装配），不能用 like。
+ * <p>手机 / 邮箱是加密列，等值查询走盲索引，不能用 like；查询条件的装配见 Service 层
  *
  * @author yeungzhy
  * @since 2026-08-13 06:48:01
@@ -41,7 +40,13 @@ public class SysUserPageDTO extends PageRequest {
     private LocalDateTime createTimeEnd;
 
 
-    /** 是否存在创建时间范围（start/end 必须成对，缺一则视为无范围过滤） */
+    /**
+     * 是否存在创建时间范围
+     *
+     * <p>start / end 必须成对，缺一则视为不按时间过滤；单独判一端会把边界外的数据误过滤掉
+     *
+     * @return 两端都非空时返回 true
+     */
     public boolean hasCreateTimeRange() {
         return createTimeStart != null && createTimeEnd != null;
     }

@@ -8,25 +8,27 @@ import java.util.List;
 /**
  * 当前登录用户静态访问门面
  *
- * <p>由 {@link LoginUserProviderRegistrar} 在容器启动时绑定生效的 {@link LoginUserProvider}，
- * 业务代码无需注入 Bean，直接静态调用本类方法即可获取当前登录用户信息。
+ * <p> 由 {@link LoginUserProviderRegistrar} 在容器启动时绑定生效的 {@link LoginUserProvider}，
+ * 业务代码无需注入 Bean，直接静态调用本类方法即可获取当前登录用户信息
  *
- * <p>语义按"返回值类别"分族，调用点无需逐个权衡强弱语义：
+ * <p> 语义按「返回值类别」分族，调用点无需逐个权衡强弱语义：
  * <ul>
  *   <li>值族（{@link #getUserId()} / {@link #getUsername()} / {@link #getRealName()} /
- *       {@link #getEmployeeNo()}）：取"操作主体"，默认强登录语义——未登录直接抛
+ *       {@link #getEmployeeNo()}）：取「操作主体」，默认强登录语义，未登录直接抛
  *       {@link IllegalStateException}，不返回 null。理由：业务代码运行在网关统一鉴权之后，
  *       （除放行名单外）匿名请求到不了这里；取不到人意味着代码跑在非请求线程（定时任务/异步执行器）
- *       或身份基础设施未装配，属编程错误——返回 null 只会让错误向下游扩散（拿 null 拼条件、落库），
- *       就地 fail-fast 才是最小代价。语义等价 {@code StpUtil.getLoginIdAsLong()}。</li>
+ *       或身份基础设施未装配，属编程错误，返回 null 只会让错误向下游扩散（拿 null 拼条件、落库），
+ *       就地 fail-fast 才是最小代价。语义等价 {@code StpUtil.getLoginIdAsLong()}
  *   <li>谓词族（{@link #isLogin()} / {@link #hasRole(String)} / {@link #isSuperAdmin()} /
- *       {@link #getRoleCodes()} / {@link #getPerms()}）：问身份与权限，空安全——
- *       未登录返回 false / 空集合。匿名请求做权限判断应得到安全答案，false 不会像 null 那样扩散。</li>
+ *       {@link #getRoleCodes()} / {@link #getPerms()}）：问身份与权限，空安全，
+ *       未登录返回 false / 空集合。匿名请求做权限判断应得到安全答案，false 不会像 null 那样扩散
  *   <li>逃生通道（{@link #getLoginUser()} / {@link #getUserId(Long)}）：面向框架与系统代码
- *       （审计字段自动填充、匿名身份捕获、定时任务），场景本身就容忍"没有登录人"，
- *       由调用方通过 nullable 根方法或显式兜底值表达该意图。</li>
+ *       （审计字段自动填充、匿名身份捕获、定时任务），场景本身就容忍「没有登录人」，
+ *       由调用方通过 nullable 根方法或显式兜底值表达该意图
  * </ul>
  *
+ * @author yeungzhy
+ * @since 2026-08-10
  * @see LoginUserProviderRegistrar
  * @see LoginUserProvider
  */
@@ -51,8 +53,8 @@ public final class LoginUserHelper {
     /**
      * 获取完整登录身份包（nullable 根方法，逃生通道）
      *
-     * <p>本类唯一会返回 null 的取值入口：框架/系统代码需要"可能没有登录人"语义时使用
-     * （如审计字段自动填充、匿名请求身份捕获）；业务代码请用强语义的值族方法。
+     * <p>唯一会返回 null 的取值入口：框架/系统代码需要"""没有登录人"""时使用
+     * （如审计字段自动填充、匿名请求身份捕获）；业务代码请用强语义的值族方法。。。
      *
      * @return 登录身份包；未绑定上下文（common-core 单独使用）或未登录时返回 null
      */
@@ -75,8 +77,8 @@ public final class LoginUserHelper {
     /**
      * 获取当前登录用户 ID，未登录时返回 defaultValue（逃生通道）
      *
-     * <p>用于审计字段自动填充等必须容忍"非用户操作"的场景：{@code getUserId(null)} 表达
-     * "无登录上下文就填 null"，而非让无登录态成为程序错误。
+     * <p> 用于审计字段自动填充等必须容忍「非用户操作」的场景：{@code getUserId(null)} 表达
+     * 「无登录上下文就填 null」，而非让无登录态成为程序错误
      *
      * @param defaultValue 未登录时的兜底值
      * @return 登录用户 ID，或 defaultValue
@@ -169,7 +171,7 @@ public final class LoginUserHelper {
     /**
      * 当前登录用户是否为超级管理员
      *
-     * @return true-当前用户拥有 SUPER_ADMIN 角色；未登录返回 false
+     * @return true 当前用户拥有 SUPER_ADMIN 角色；未登录返回 false
      */
     public static boolean isSuperAdmin() {
         return BuiltinRoleEnum.isSuperAdmin(getRoleCodes());
@@ -180,8 +182,8 @@ public final class LoginUserHelper {
     /**
      * 强语义根方法：值族统一入口，未登录直接抛异常
      *
-     * <p>异常是"代码在错误环境取身份"的哨兵，不是面向用户的业务错误，故用
-     * {@link IllegalStateException} 而非 BizException——它不应被触达。
+     * <p> 异常是「代码在错误环境取身份」的哨兵，不是面向用户的业务错误，故用
+     * {@link IllegalStateException} 而非 BizException，它不应被触达
      */
     private static LoginUserInfo requireLoginUser() {
         LoginUserInfo user = getLoginUser();

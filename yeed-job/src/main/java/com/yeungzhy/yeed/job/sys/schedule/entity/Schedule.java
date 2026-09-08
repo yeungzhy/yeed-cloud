@@ -45,7 +45,7 @@ public class Schedule extends BaseEntity {
     private ScheduleConcurrentEnum allowConcurrent;
     /**
      * 每日可执行时段起始
-     * <p>与 {@link #endTime} 同时为 null 表示不限制时段，两列不能只填一个。
+     * <p> 与 {@link #endTime} 同时为 null 表示不限制时段，两列不能只填一个。
      * 结束时刻早于起始时刻视为跨零点，如 22:00 到次日 06:00
      */
     private LocalTime startTime;

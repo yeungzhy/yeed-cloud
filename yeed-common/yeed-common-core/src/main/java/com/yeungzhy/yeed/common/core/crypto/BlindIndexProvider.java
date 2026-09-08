@@ -10,12 +10,15 @@ import java.util.HexFormat;
 /**
  * 盲索引工具类（基于 HMAC-SHA256）
  *
- * <p>用于在加密数据库中生成可查询、不可逆的索引值：相同输入 + 相同密钥 + 相同上下文盐 = 相同输出，
- * 因此可对密文列建索引后按明文等值查询。
+ * <p> 在加密数据库中生成可查询、不可逆的索引值：相同输入 + 相同密钥 + 相同上下文盐 = 相同输出，
+ * 因此可对密文列建索引后按明文等值查询
  *
- * <p>实例由 {@link com.yeungzhy.yeed.common.core.config.CryptoAutoConfiguration} 基于
+ * <p> 实例由 {@link com.yeungzhy.yeed.common.core.config.CryptoAutoConfiguration} 基于
  * {@link CryptoProperties} 创建；业务侧的盲索引 Bean（idCard / phone / email 等数据库场景专用）
- * 由 common-data 的 BlindIndexAutoConfiguration 注册。
+ * 由 common-data 的 BlindIndexAutoConfiguration 注册
+ *
+ * @author yeungzhy
+ * @since 2026-08-23
  */
 public final class BlindIndexProvider {
 

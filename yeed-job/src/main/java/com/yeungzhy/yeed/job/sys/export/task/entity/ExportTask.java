@@ -58,9 +58,9 @@ public class ExportTask extends BaseEntity {
     /**
      * 水印文本：姓名 + 工号，供导出文件的防泄密追溯使用
      *
-     * <p>两个快照都为空时返回 null——创建人未知（如系统触发的导出）时不画水印，
+     * <p> 两个快照都为空时返回 null，创建人未知（如系统触发的导出）时不画水印，
      * 而不是铺一层空白底纹。取名不带 get 前缀：它是派生值，不是持久列，
-     * 避免 MyBatis-Plus 与 MapStruct 把它当成字段处理。
+     * 避免 MyBatis-Plus 与 MapStruct 把它当成字段处理
      *
      * @return 水印文本；创建人快照为空时返回 null
      */

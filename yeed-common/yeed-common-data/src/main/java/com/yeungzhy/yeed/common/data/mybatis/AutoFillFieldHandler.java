@@ -9,39 +9,45 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * MyBatis-Plus 审计字段自动填充处理器。
+ * MyBatis-Plus 审计字段自动填充处理器
  *
- * <p>实现 {@link MetaObjectHandler}，insert 时填充 createTime/createBy，
- * update 时填充 updateTime/updateBy，由 {@link com.yeungzhy.yeed.common.data.config.MybatisPlusAutoConfiguration} 注册。
+ * <p> 实现 {@link MetaObjectHandler}，insert 时填充 createTime/createBy，
+ * update 时填充 updateTime/updateBy，由 {@link com.yeungzhy.yeed.common.data.config.MybatisPlusAutoConfiguration} 注册
  *
- * <p>createBy/updateBy 手动判断"有字段 && 值为空"才填充的原因：
- * <ul>
- *   <li>用户角色表、角色菜单表等关联表没有这两个字段</li>
- *   <li>定时任务、启动初始化、异步执行线程等非用户操作场景没有登录信息</li>
- * </ul>
- * 此时获取登录信息仍失败，则属配置问题，应排查。
+ * <p> createBy/updateBy 要先判「实体有该字段 && 值为空」才填：
+ * 用户角色表、角色菜单表这类关联表压根没有这两个列，定时任务、启动初始化、异步线程等非用户操作场景
+ * 没有登录态（由调用方显式传值）。两者都取不到登录用户时由 {@code LoginUserHelper.getUserId(null)}
+ * 兜底为 null，再失败就属配置问题，需排查
  *
  * @author yeungzhy
  * @since 2026-08-01
  */
 public class AutoFillFieldHandler implements MetaObjectHandler {
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p> createTime 无条件覆盖；createBy 仅在实体有该字段且值为空时填，已在类注释说明
+     */
     @Override
     public void insertFill(MetaObject metaObject) {
         this.strictInsertFill(metaObject, BaseEntity.Fields.createTime, LocalDateTime.class, LocalDateTime.now());
 
-        // 仅当实体有 createBy 字段且值为空时才填充（兼容关联表无此字段、非用户操作(定时任务/异步执行线程)已显式传值）
         boolean hasCreateByField = metaObject.hasGetter(BaseEntity.Fields.createBy);
         if (hasCreateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.createBy))) {
             this.strictInsertFill(metaObject, BaseEntity.Fields.createBy, Long.class, LoginUserHelper.getUserId(null));
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p> updateTime 无条件覆盖；updateBy 沿用 createBy 的填充策略
+     */
     @Override
     public void updateFill(MetaObject metaObject) {
         this.strictUpdateFill(metaObject, BaseEntity.Fields.updateTime, LocalDateTime.class, LocalDateTime.now());
 
-        // 同上：updateBy 仅在实体有该字段且为空时填充
         boolean hasUpdateByField = metaObject.hasGetter(BaseEntity.Fields.updateBy);
         if (hasUpdateByField && Objects.isNull(metaObject.getValue(BaseEntity.Fields.updateBy))) {
             this.strictUpdateFill(metaObject, BaseEntity.Fields.updateBy, Long.class, LoginUserHelper.getUserId(null));

@@ -11,16 +11,19 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
- * RSA 工具类 - JDK 标准实现，约定参数（方便多端统一）：
+ * RSA 工具类（JDK 标准实现，参数跨端约定）
  * <ul>
- *     <li>Algorithm: RSA</li>
- *     <li>Mode: ECB (占位模式)</li>
- *     <li>Padding: OAEPWithSHA-256AndMGF1Padding（MGF1 显式指定 SHA-256，避免 JDK 默认走 SHA-1 导致多端互通失败）</li>
- *     <li>Signature: SHA256withRSA</li>
- *     <li>Key Size: 2048 bit</li>
- *     <li>Key Format: X.509(SPKI)公钥 / PKCS#8私钥, Base64编码</li>
- *     <li>Charset: UTF-8</li>
+ *   <li>Algorithm: RSA
+ *   <li>Mode: ECB（占位模式）
+ *   <li>Padding: OAEPWithSHA-256AndMGF1Padding（MGF1 显式指定 SHA-256，避免 JDK 默认走 SHA-1 导致多端互通失败）
+ *   <li>Signature: SHA256withRSA
+ *   <li>Key Size: 2048 bit
+ *   <li>Key Format: X.509(SPKI)公钥 / PKCS#8私钥，Base64 编码
+ *   <li>Charset: UTF-8
  * </ul>
+ *
+ * @author yeungzhy
+ * @since 2026-05-22
  */
 public class RsaUtil {
     private RsaUtil() {}
@@ -36,7 +39,7 @@ public class RsaUtil {
     private static final String TRANSFORMATION = KEY_ALGORITHM + "/" + MODE + "/" + PADDING;
     /**
      * OAEP 参数：主哈希 SHA-256 + MGF1 也用 SHA-256
-     * <p>JDK 默认 MGF1 走 SHA-1，会导致与前端 JS/WebCrypto 等多端互通解密失败，故显式指定
+     * <p> JDK 默认 MGF1 走 SHA-1，会导致与前端 JS/WebCrypto 等多端互通解密失败，故显式指定
      */
     private static final OAEPParameterSpec OAEP_SPEC = new OAEPParameterSpec(
             "SHA-256",

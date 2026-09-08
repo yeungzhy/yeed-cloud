@@ -11,15 +11,15 @@ import java.time.Duration;
  * Identicon 头像本地缓存配置
  *
  * <p>{@link com.yeungzhy.yeed.common.core.support.IdenticonUtil#generate(String, int, boolean)}
- * 是确定性纯函数——同一 (id, dark) 永远产出同一 SVG，结果可永久复用且无需失效。
- * 此处用 Caffeine 在 JVM 进程内缓存生成结果，避免每次请求重复做 SHA-256 哈希 + SVG 拼接。
+ * 是确定性纯函数，同一 (id, dark) 永远产出同一 SVG，结果可永久复用且无需失效，
+ * 此处用 Caffeine 在进程内缓存，避免每次请求重复做 SHA-256 哈希 + SVG 拼接
  *
- * <p>选 Caffeine 而非 Redis 的原因：纯函数结果无需跨实例共享，本地内存命中为纳秒级，
- * 远低于 Redis 的网络往返；且 identicon 一旦生成就不变，不存在多节点数据一致性问题。
+ * <p>选 Caffeine 而非 Redis：纯函数结果无需跨实例共享，本地命中是纳秒级，远低于 Redis 的网络往返，
+ * identicon 一旦生成就不变，也不存在多节点一致性问题
  *
  * <p>容量与过期策略：
  * <ul>
- *     <li>{@code maximumSize(10_000)}：单个 SVG 很小（约 1~2KB），1 万条约 10~20MB，足够后台系统使用；
+ *     <li>{@code maximumSize(10_000)}：单个 SVG 很小（约 1~2KB），1 万条约 10~20MB，足够后台系统使用，
  *         超出按 W-TinyLFU 淘汰（比传统 LRU 命中率更高）</li>
  *     <li>{@code expireAfterWrite(7d)}：纯函数本可永不失效，设 7 天仅作为兜底，
  *         防止异常情况下无限堆积；注意是 write 后过期，命中不会续期，避免热点常驻不淘汰</li>
@@ -32,6 +32,11 @@ import java.time.Duration;
 @Configuration
 public class IdenticonCacheConfig {
 
+    /**
+     * 头像 SVG 缓存，键为 {@code id:dark}
+     *
+     * @return 本地缓存实例；超过 1 万条按 W-TinyLFU 淘汰，写入 7 天后过期
+     */
     @Bean
     public Cache<String, String> identiconCache() {
         return Caffeine.newBuilder()

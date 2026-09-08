@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 启动装载器：把库中的计划全量同步到 Quartz
  *
- * <p>数据库是调度的唯一真源，实例重启后无需人工干预即可恢复全部计划。
+ * <p> 数据库是调度的唯一真源，实例重启后无需人工干预即可恢复全部计划。
  * 两个实例同时装载是幂等的，Quartz 集群共用一套 QRTZ_* 表，触发器只会被抢到一次
  *
  * @author yeungzhy
@@ -42,7 +42,7 @@ public class ScheduleLoader implements ApplicationRunner {
     /**
      * 按当前库数据重新装载全部计划，等价于重启一次装载
      *
-     * <p>用于生产环境无法重启时修复"库改了、Quartz 没同步"，同时覆盖改 CRON、改并发策略、
+     * <p> 用于生产环境无法重启时修复"库改了、Quartz 没同步"，同时覆盖改 CRON、改并发策略、
      * 改时段窗口等一切以库为准的变更。本方法只做新增与覆盖，不清理 Quartz 里多余的定义
      *
      * @return 装载条数

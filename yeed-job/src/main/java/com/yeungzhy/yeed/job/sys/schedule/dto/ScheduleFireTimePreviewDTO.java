@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 /**
  * CRON 表达式的下次执行时间预览入参
  *
- * <p>解析交给后端而非前端：Quartz 的 CRON 是 6/7 位且带 {@code L} / {@code W} / {@code #} 等扩展字符，
+ * <p> 解析交给后端而非前端：Quartz 的 CRON 是 6/7 位且带 {@code L} / {@code W} / {@code #} 等扩展字符，
  * 通用 CRON 库算出来的结果与 Quartz 实际行为不一致，用前端库预览会给出错误承诺
  *
  * @author yeungzhy

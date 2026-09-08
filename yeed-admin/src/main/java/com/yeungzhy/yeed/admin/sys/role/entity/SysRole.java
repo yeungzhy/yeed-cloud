@@ -40,7 +40,8 @@ public class SysRole extends BaseEntity {
 
     /**
      * 是否为内置角色（roleCode 命中内置白名单）
-     * <p> 用 JDK 标准 {@link Transient} 声明"非持久化"忽略，避免 POJO 依赖具体 JSON 框架注解。
+     *
+     * <p>用 JDK 标准 {@link Transient} 声明非持久化，避免 POJO 依赖具体 ORM / JSON 框架的忽略注解
      */
     @Transient
     public boolean isBuiltin() {

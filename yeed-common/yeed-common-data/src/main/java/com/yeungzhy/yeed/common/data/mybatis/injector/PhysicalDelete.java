@@ -10,8 +10,8 @@ import org.apache.ibatis.mapping.SqlSource;
 /**
  * 注入 {@code physicalDelete}：根据 Wrapper 条件物理删除，绕过 {@code @TableLogic} 过滤
  *
- * <p>WHERE 只取 {@code ew.sqlSegment}，不复用 {@link #sqlWhereEntityWrapper}——
- * 后者会强制追加“未删除”条件，那样就永远清不掉已删数据；
+ * <p> WHERE 只取 {@code ew.sqlSegment}，不复用 {@link #sqlWhereEntityWrapper}：后者会强制追加“未删除”条件，
+ * 那样就永远清不掉已删数据。
  * Wrapper 上设置的 entity 条件同样不生效，条件须全部通过 Wrapper 方法构建
  *
  * @author yeungzhy
@@ -31,16 +31,16 @@ public class PhysicalDelete extends AbstractMethod {
 
     /**
      * 物理删除模板
-     * <p>占位符依次为表名、WHERE 条件、sqlComment()
+     * <p> 占位符依次为表名、WHERE 条件、sqlComment()
      */
     private static final String SQL_PHYSICAL_DELETE = "<script>DELETE FROM %s %s %s</script>";
 
     /**
      * 声明注入的方法名
-     * <p>字符串必须与 Mapper 上声明的方法名逐字一致，否则调用方抛 {@code BindingException}：
-     * <pre>{@code
-     * int physicalDelete(@Param(Constants.WRAPPER) Wrapper<SysUser> wrapper);
-     * }</pre>
+     *
+     * <p> 字符串必须与 Mapper 上声明的方法名逐字一致，否则调用方抛 {@code BindingException}
+     *
+     * <pre>{@code int physicalDelete(@Param(Constants.WRAPPER) Wrapper<T> wrapper);}</pre>
      */
     public PhysicalDelete() {
         super("physicalDelete");
@@ -48,7 +48,7 @@ public class PhysicalDelete extends AbstractMethod {
 
     /**
      * {@inheritDoc}
-     * <p>全表可用，无注入前置条件
+     * <p> 全表可用，无注入前置条件
      */
     @Override
     public MappedStatement injectMappedStatement(Class<?> mapperClass, Class<?> modelClass, TableInfo tableInfo) {

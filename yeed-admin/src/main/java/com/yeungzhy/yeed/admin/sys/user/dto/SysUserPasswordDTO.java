@@ -12,7 +12,7 @@ import lombok.experimental.Accessors;
  *   <li>{@code id} 为空 → 改当前登录用户自己的密码，必须校验 {@code oldPassword}；</li>
  *   <li>{@code id} 非空 → 管理员重置指定用户密码，不校验旧密码（能否调用由菜单权限控制）。</li>
  * </ul>
- * 二者判定发生在 Service 层，不以「前端传不传旧密码」为准——那等于把安全判定交给调用方。
+ * 二者判定发生在 Service 层，不以「前端传不传旧密码」为准，那等于把安全判定交给调用方
  *
  * @author yeungzhy
  * @since 2026-09-08

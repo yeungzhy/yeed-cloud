@@ -5,9 +5,10 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 /**
- * 系统菜单权限表 更新入参
- * <p>在新增入参 {@link SysMenuSaveDTO} 之上增加主键 id 与乐观锁 version——
- * id 定位待更新记录，version 由编辑表单回显，配合 updateById 做并发控制（版本号不匹配即更新失败）。
+ * 系统菜单 更新入参
+ *
+ * <p>在新增入参 {@link SysMenuSaveDTO} 之上加主键 id 定位待更新记录，
+ * 乐观锁 version 由 {@code yeed_sys_menu} 行带出，本类不接收
  *
  * @author yeungzhy
  * @since 2026-08-13

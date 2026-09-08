@@ -17,13 +17,16 @@ import java.util.stream.Collectors;
 /**
  * 菜单缓存重载器
  *
+ * <p>网关鉴权与操作日志所需的两块缓存都源自本服务的菜单表，全量重建是唯一写入口：
+ * 任何一处菜单写操作都调 {@link #reload()}，不做增量更新
+ *
  * @author yeungzhy
  * @since 2026-08-28
  */
 @Slf4j
 @Component
 public class MenuCacheReloader {
-    /** 路径层级分隔符 */
+    /** 祖链描述的分隔符，与菜单 path 的 {@code /} 保持一致 */
     private static final String PATH_SEPARATOR = "/";
     /** 单层通配符 */
     private static final char SINGLE_WILDCARD  = '*';
@@ -36,10 +39,16 @@ public class MenuCacheReloader {
 
 
     /**
-     * 全量重建菜单缓存
-     * <p> 启动预热与菜单写操作自愈共用的唯一重建入口：查全量按钮菜单写入
-     * <p> Map＜接口路径, 权限码＞
-     * <p> Map＜接口路径, 祖链描述＞
+     * 全量重建菜单缓存并广播变更
+     *
+     * <p>启动预热与菜单写操作共用的唯一重建入口；按路径是否含通配符拆成两组，各写两个 Map：
+     * <ul>
+     *   <li>精确接口：路径 → 权限码、路径 → 祖链描述
+     *   <li>通配接口：同上，供网关按 Ant 模式匹配
+     * </ul>
+     *
+     * <p>副作用是整体覆盖写 Redis 并发布变更事件，不读旧值、不做增量，
+     * 发布失败不重试，由网关本地缓存 TTL 兜底
      */
     public void reload() {
         List<SysMenu> menus = sysMenuMapper.selectList(Wrappers.lambdaQuery());
@@ -62,9 +71,8 @@ public class MenuCacheReloader {
                 .collect(Collectors.toMap(SysMenu::getPath, m -> buildAncestorDesc(m, byIdMap), (a, b) -> a));
 
         /*
-         * 生命周期完全由本类管理;
-         * 初始化判据只认 ALL 键;
-         * 显式永久存储（timeout=null）：本缓存每次整体重建、无历史残留；
+         * 生命周期完全由本类管理；初始化判据只认 ALL 键
+         * 显式永久存储（timeout=null）：本缓存每次整体重建、无历史残留，
          *     且网关 fail-closed 依赖 ALL 键存在性判定，若随默认 TTL 过期将误判而拒绝所有请求
          */
         redisHelper.setMap(CacheConstant.MENU_PERMS_EXACT, exactApiPermMap, null);
@@ -73,7 +81,7 @@ public class MenuCacheReloader {
         redisHelper.setMap(CacheConstant.MENU_DESC_ANT, antApiDescMap, null);
 
         /*
-         * 发布变更事件：网关本地缓存（GatewayApiPermsCache）订阅后即时失效，权限变更精准生效；
+         * 发布变更事件：网关本地缓存（GatewayApiPermsCache）订阅后即时失效，权限变更精准生效，
          * 发布失败有网关本地缓存 TTL 自愈兜底，最坏延迟几分钟生效
          */
         redisHelper.publish(CacheConstant.MENU_CACHE_CHANGED, String.valueOf(System.currentTimeMillis()));
@@ -83,11 +91,11 @@ public class MenuCacheReloader {
 
 
     /**
-     * 菜单构建祖链描述
+     * 拼出菜单的祖链描述（操作日志用）
      *
-     * @param menu    菜单
-     * @param byIdMap id-菜单映射
-     * @return 菜单祖链描述
+     * @param menu    起点菜单，不能为 null
+     * @param byIdMap 全量菜单 id → 菜单映射；缺 id 视为断链并停止上溯
+     * @return 以 {@code /} 连接的祖链名称，至少包含起点自身名称
      */
     public String buildAncestorDesc(SysMenu menu, Map<Long, SysMenu> byIdMap) {
         Deque<String> names = new ArrayDeque<>();

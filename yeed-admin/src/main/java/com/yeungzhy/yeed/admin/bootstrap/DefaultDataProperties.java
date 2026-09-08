@@ -10,17 +10,8 @@ import org.springframework.validation.annotation.Validated;
 /**
  * 默认数据初始化配置项
  *
- * <p>配置示例（Nacos 按环境隔离，生产首次上线置 enabled=true，初始化完成后置 false）：
- * {@snippet lang="yaml":
- * yeed-admin:
- *   init:
- *     default-data:
- *       enabled: true
- *       super-admin:
- *         username: admin
- *         employee-no: 1
- *         default-password: ${ADMIN_INIT_PASSWORD}
- * }
+ * <p>初始密码属环境敏感信息，走配置中心按环境各自维护；生产首次上线置 {@code enabled=true}，
+ * 初始化完成后改回 false（不落"已初始化"标记，幂等靠先查后插与唯一索引）
  *
  * @author yeungzhy
  * @since 2026-08-08
@@ -40,7 +31,7 @@ public class DefaultDataProperties {
     /**
      * 启用初始化时，超管账号三项配置必须齐备（条件必填）
      *
-     * <p>这三项只在 {@code enabled=true} 时参与初始化，配置错误绑定期就会暴露
+     * <p>这三项只在 {@code enabled=true} 时参与初始化，配置缺失在绑定期即暴露
      */
     @AssertTrue(message = "启用默认数据初始化时，super-admin.username / employee-no / default-password 均不能为空")
     public boolean isSuperAdminConfigured() {

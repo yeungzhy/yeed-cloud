@@ -40,13 +40,13 @@ public class SysMenuController {
 
 
     /**
-     * 新增
+     * 新增菜单
      *
-     * <p> 网关已开启 spring.cloud.gateway.server.webflux.routes[*].predicates[0]=Path=/微服务名(yee-admin/auth)/**
-     * <p> 所以添加/更新按钮类菜单时,前端入参的path 应该是带上微服务名的(yee-admin/auth)
+     * <p>网关按 {@code Path=/微服务名/**} 前缀路由（如 yeed-admin、yeed-auth），
+     * 因此按钮类菜单的 path 入参要带上微服务名，否则请求根本到不了本服务
      *
-     * @param dto 入参
-     * @return 新增记录的主键 ID
+     * @param dto 新增入参，menuName / menuType / parentId 必填；按钮类型还须带 path
+     * @return 新增记录的主键 ID；校验失败抛 BizException，不返回失败结果
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
@@ -57,10 +57,10 @@ public class SysMenuController {
 
 
     /**
-     * 更新
+     * 更新菜单
      *
-     * @param dto 入参
-     * @return 操作结果
+     * @param dto 更新入参，id 不能为空
+     * @return 固定成功；记录不存在或目标父级非法抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
@@ -72,12 +72,15 @@ public class SysMenuController {
 
 
     /**
-     * 拖拽调整层级（移动菜单到新的父级下）
-     * <p>仅更新 parentId；目标父级为 0 表示移动到顶级（项目约定不存在 null），
-     * 目标父级存在性 + 防循环依赖（直接/间接自环）由 Service 校验。
+     * 拖拽调整层级（只改 parentId）
      *
-     * @param dto 移动入参（id + 目标 parentId）
-     * @return 操作结果
+     * <p>目标父级为 0 表示移到顶级（项目约定不存在 null）；父级存在性与循环依赖由 Service 校验，
+     * 后者会把「目标父级是自己后代」的间接自环一并拦掉
+     *
+     * @param dto 移动入参，id 与 parentId 均不能为空
+     * @return 固定成功；父级非法抛 BizException
+     * @author yeungzhy
+     * @since 2026-08-13
      */
     @PostMapping("/move")
     public ApiResult<Boolean> move(@Valid @RequestBody SysMenuMoveDTO dto) {
@@ -87,10 +90,10 @@ public class SysMenuController {
 
 
     /**
-     * 详情
+     * 菜单详情
      *
-     * @param id 主键 ID
-     * @return 详情数据
+     * @param id 主键，不能为空
+     * @return 详情，含审计字段与 version；记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
@@ -101,10 +104,10 @@ public class SysMenuController {
 
 
     /**
-     * 分页查询
+     * 分页查询菜单
      *
-     * @param dto 分页查询入参
-     * @return 分页结果（仅业务字段，不含审计字段）
+     * @param dto 分页与筛选条件，筛选字段为 null 即不参与过滤
+     * @return 分页结果，出参不含审计字段；无命中返回空页而非 null
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
@@ -116,10 +119,13 @@ public class SysMenuController {
 
     /**
      * 菜单树（菜单管理页 / 角色授权树形选择器共用）
-     * <p>返回含按钮权限点的完整树，按 sort 升序；树节点仅承载业务字段。
-     * 侧边栏渲染不依赖本接口——侧边栏菜单由用户拥有的角色权限动态组装。
      *
-     * @return 完整菜单树
+     * <p>返回含按钮权限点的完整树，按 sort 升序，节点仅承载业务字段；侧边栏渲染不走本接口，
+     * 侧边栏菜单由当前用户拥有的角色权限动态组装
+     *
+     * @return 完整菜单树；无菜单时为空列表
+     * @author yeungzhy
+     * @since 2026-08-13
      */
     @PostMapping("/tree")
     public ApiResult<List<SysMenuTreeVO>> tree() {
@@ -128,10 +134,10 @@ public class SysMenuController {
 
 
     /**
-     * 删除（逻辑删除）
+     * 删除菜单（逻辑删除）
      *
-     * @param id 主键 ID
-     * @return 操作结果
+     * @param id 主键，不能为空；存在子菜单时拒绝删除
+     * @return 固定成功；不满足删除条件抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */
@@ -143,10 +149,10 @@ public class SysMenuController {
 
 
     /**
-     * 批量删除（逻辑删除）
+     * 批量删除菜单（逻辑删除）
      *
-     * @param request 主键 ID 集合请求体
-     * @return 操作结果
+     * @param request 主键集合，不能为空；这批菜单任意一个有子菜单即整体拒绝
+     * @return 固定成功；不满足删除条件抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:30
      */

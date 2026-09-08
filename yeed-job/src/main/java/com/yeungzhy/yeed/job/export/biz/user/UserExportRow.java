@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 用户导出的 Excel 行对象：字段即列，列名与列序由 {@code @ExcelProperty} 声明
  *
- * <p>当前尚未定义字段——引擎反射本类生成表头，字段为空时导出的是只有表头的空文件。
+ * <p> 当前尚未定义字段：引擎反射本类生成表头，字段为空时导出的是只有表头的空文件
  *
  * @author yeungzhy
  * @since 2026-08-23

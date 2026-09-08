@@ -42,7 +42,7 @@ public class ScheduleController {
     /**
      * 新增
      *
-     * @param dto 入参
+     * @param dto 新增入参，id 忽略，字段含义见 {@link ScheduleDTO}
      * @return 新增记录的主键 ID
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
@@ -56,7 +56,7 @@ public class ScheduleController {
     /**
      * 更新
      *
-     * @param dto 入参
+     * @param dto 更新入参，id 不能为空，校验逻辑与新增一致
      * @return 操作结果
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
@@ -71,8 +71,8 @@ public class ScheduleController {
     /**
      * 详情
      *
-     * @param id 主键 ID
-     * @return 详情数据
+     * @param id 包装计划主键，非空
+     * @return 详情数据；记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
@@ -85,8 +85,8 @@ public class ScheduleController {
     /**
      * 分页查询，同时返回全局维护模式状态
      *
-     * @param dto 分页查询入参
-     * @return 分页结果与维护模式开关
+     * @param dto 分页与筛选条件，筛选字段为 null 不参与过滤
+     * @return 分页结果与维护模式开关；无命中返回空页而非 null
      * @author yeungzhy
      * @since 2026-09-02 23:52:19
      */
@@ -99,7 +99,7 @@ public class ScheduleController {
     /**
      * 启停切换，停用后不再触发，重新启用接续原有触发时间
      *
-     * @param req 主键 ID 与目标状态
+     * @param req 包装计划主键与目标状态，均非空
      * @return 操作结果
      * @author yeungzhy
      * @since 2026-09-08
@@ -114,8 +114,8 @@ public class ScheduleController {
     /**
      * 立即执行一次，不影响原有 CRON 触发器
      *
-     * @param id 主键 ID
-     * @return 操作结果
+     * @param id 包装计划主键，非空
+     * @return 操作结果；记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-09-08
      */
@@ -129,8 +129,8 @@ public class ScheduleController {
     /**
      * 删除（物理删除，不可恢复）并注销 Quartz 侧的作业
      *
-     * @param id 主键 ID
-     * @return 操作结果
+     * @param id 包装计划主键，非空
+     * @return 操作结果；记录不存在或注销失败抛 BizException
      * @author yeungzhy
      * @since 2026-09-08
      */
@@ -144,8 +144,8 @@ public class ScheduleController {
     /**
      * 批量删除（物理删除，不可恢复）并逐个注销 Quartz 侧的作业
      *
-     * @param req 主键 ID 集合
-     * @return 操作结果
+     * @param req 包装主键集合，非空
+     * @return 操作结果；注销失败的记录保留在库并抛 BizException
      * @author yeungzhy
      * @since 2026-09-08
      */
@@ -159,7 +159,7 @@ public class ScheduleController {
     /**
      * 预览 CRON 表达式接下来的触发时间
      *
-     * <p>由后端解析：Quartz 的 CRON 与通用 CRON 库语义不同，前端自行解析会给出错误承诺
+     * <p> 由后端解析：Quartz 的 CRON 与通用 CRON 库语义不同，前端自行解析会给出错误承诺
      *
      * @param dto 表达式与预览条数
      * @return 触发时间列表
@@ -190,7 +190,7 @@ public class ScheduleController {
     /**
      * 按当前库数据重新装载全部计划
      *
-     * <p>库与 Quartz 不一致时的修复入口，效果等同重启一次，用于生产不便重启的场景
+     * <p> 库与 Quartz 不一致时的修复入口，效果等同重启一次，用于生产不便重启的场景
      *
      * @return 装载条数
      * @author yeungzhy

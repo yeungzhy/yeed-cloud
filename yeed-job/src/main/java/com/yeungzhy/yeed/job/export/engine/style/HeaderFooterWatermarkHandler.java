@@ -32,26 +32,26 @@ import java.nio.charset.StandardCharsets;
 /**
  * Excel 水印写处理器（页眉页脚方案）：把整版半透明水印图设为页眉图片，打印 / 打印预览时每页都带水印
  *
- * <p>与 {@link BackgroundImageWatermarkHandler} 按可见时机互补：sheet 背景只在屏显可见、打印不出来，
- * 页眉只在页面布局视图 / 打印预览 / 打印输出可见，普通编辑视图看不到。两者同时注册才能「屏幕和打印都有水印」。
+ * <p> 与 {@link BackgroundImageWatermarkHandler} 按可见时机互补：sheet 背景只在屏显可见、打印不出来，
+ * 页眉只在页面布局视图 / 打印预览 / 打印输出可见，普通编辑视图看不到。两者同时注册才能「屏幕和打印都有水印」
  *
- * <p>页眉图片依赖三段配合，缺一不可（POI 5.4.0 实证）：
+ * <p> 页眉图片依赖三段配合，缺一不可（POI 5.4.0 实证）：
  * <ul>
- *   <li>页眉文本 {@code &G}：Excel 的图形占位符，{@code setCenter("&G")} 序列化为 {@code &C&G}；</li>
- *   <li>sheet 挂 {@code <legacyDrawingHF r:id/>} 指向 VML 部件——页眉页脚专用，
+ *   <li>页眉文本 {@code &G}：Excel 的图形占位符，{@code setCenter("&G")} 序列化为 {@code &C&G}</li>
+ *   <li>sheet 挂 {@code <legacyDrawingHF r:id/>} 指向 VML 部件：页眉页脚专用，
  *       与批注用的 {@code <legacyDrawing>} 不是同一个元素；</li>
  *   <li>VML 内 {@code <v:shape>} 的 {@code <v:imagedata o:relid/>} 指向图片。注意图片关系必须建在
- *       <b>VML 部件</b>上：{@code o:relid} 以 VML 为基准解析，挂到 sheet 上取不到图（与背景图方案相反）。</li>
+ *       VML 部件上：{@code o:relid} 以 VML 为基准解析，挂到 sheet 上取不到图（与背景图方案相反）</li>
  * </ul>
  * POI 无页眉 VML API（{@code XSSFVMLDrawing} 只支持批注图形），故自建 {@link HeaderPictureVml} 覆写
- * {@code commit} 直接写 VML 文本。
+ * {@code commit} 直接写 VML 文本
  *
- * <p>图尺寸按 {@link PrintSetup#getPaperSize()} 查实际纸张、给整张纸：VML 的
- * {@code mso-position-*-relative:margin} 锚点是打印区中线（不含页边距），图小于纸宽时无从裁切对齐表头。
+ * <p> 图尺寸按 {@link PrintSetup#getPaperSize()} 查实际纸张、给整张纸：VML 的
+ * {@code mso-position-*-relative:margin} 锚点是打印区中线（不含页边距），图小于纸宽时无从裁切对齐表头
  *
- * <p>XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载——
+ * <p> XSSF 与 SXSSF 均可：SXSSF 下经 {@link WatermarkSheets} 解到内部 XSSFSheet 挂载，
  * {@code <headerFooter>} 与 {@code <legacyDrawingHF>} 位于 {@code <sheetData>} 之后的保留区、
- * VML 与图片是独立部件，都不随行数据被替换，故流式导出同样有水印。
+ * VML 与图片是独立部件，都不随行数据被替换，故流式导出同样有水印
  *
  * @author yeungzhy
  * @since 2026-09-07
@@ -70,8 +70,8 @@ public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
     /**
      * 查询纸张物理尺寸（磅）
      *
-     * <p>必须查表而不能写死 A4：{@code pageSetup} 留空时 Excel 按打印机默认纸（常为信纸 612×792）出图，
-     * 图小于纸宽时 VML 居中锚后左右留白、无法靠裁切对齐表头。
+     * <p> 必须查表而不能写死 A4：{@code pageSetup} 留空时 Excel 按打印机默认纸（常为信纸 612×792）出图，
+     * 图小于纸宽时 VML 居中锚后左右留白、无法靠裁切对齐表头
      *
      * @param paperSize {@link PrintSetup#getPaperSize()} 的纸张代码
      * @param landscape 是否横向打印
@@ -97,8 +97,8 @@ public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
     /**
      * 垂直空白比 = 带间空白 / 水印高度，观感「密还是稀」的决定性指标；水印字高占比恒 = 1/(1+本值)
      *
-     * <p>行数不写死，由「字高 × (1 + 本比值)」自适应推出——否则字号被水平约束压小后垂直周期不变，
-     * 凭空多出空白。默认 1.08 与背景图方案观感对齐；调小 = 更密，调大 = 更疏。
+     * <p> 行数不写死，由「字高 × (1 + 本比值)」自适应推出，否则字号被水平约束压小后垂直周期不变，
+     * 凭空多出空白。默认 1.08 与背景图方案观感对齐；调小 = 更密，调大 = 更疏
      */
     private static final float VERTICAL_GAP_RATIO = 1.08F;
     /** 单格内文字可用比例：留边防止相邻格水印贴边 */
@@ -116,8 +116,8 @@ public class HeaderFooterWatermarkHandler implements SheetWriteHandler {
     /**
      * 页眉图形模板：%1$s 图形 id、%2$s/%3$s 宽高（磅）、%4$s 图片关系 id、%5$s 标题
      *
-     * <p>{@code mso-width-percent:0;mso-height-percent:0} 表示按 style 里的绝对尺寸渲染，
-     * 缺省会被 Excel 按百分比缩放；{@code o:relid} 是 VML 引用图片关系的固定写法。
+     * <p> {@code mso-width-percent:0;mso-height-percent:0} 表示按 style 里的绝对尺寸渲染，
+     * 缺省会被 Excel 按百分比缩放；{@code o:relid} 是 VML 引用图片关系的固定写法
      */
     private static final String VML_TEMPLATE = """
             <xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">

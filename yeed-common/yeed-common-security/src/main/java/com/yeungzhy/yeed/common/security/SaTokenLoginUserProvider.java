@@ -41,11 +41,11 @@ public class SaTokenLoginUserProvider implements LoginUserProvider {
             if (raw == null) {
                 return null;
             }
-            // 正常情况：sa-token 反序列化后即为 LoginUserVO
+            // 会话值在登录时写入，原始类型就是 LoginUserInfo
             if (raw instanceof LoginUserInfo) {
                 return (LoginUserInfo) raw;
             }
-            // 兜底：泛型擦除导致反序列化为 LinkedHashMap 时，用 Jackson 转回
+            // 兜底：会话值经序列化往返后类型信息可能丢失，退化为 LinkedHashMap，用 Jackson 转回
             return objectMapper.convertValue(raw, LoginUserInfo.class);
         } catch (Exception e) {
             log.error("从 Sa-Token 会话获取登录用户失败, 未登录 / token 过期 / 无 sa-token 上下文", e);

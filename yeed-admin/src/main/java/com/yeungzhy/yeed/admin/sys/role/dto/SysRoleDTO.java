@@ -10,6 +10,8 @@ import java.util.Map;
 /**
  * 系统角色 DTO（前端入参）
  *
+ * <p>新增与更新共用：新增时 id 为空（主键由雪花生成），更新时必须带 id
+ *
  * @author yeungzhy
  * @since 2026-08-13 06:55:14
  */
@@ -42,7 +44,7 @@ public class SysRoleDTO {
     private LocalDateTime updateTime;
     /** 删除人 */
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /** 逻辑删除，0-未删，时间戳-已删 */
     private Long deleteTime;
     /** 乐观锁 */
     private Integer version;

@@ -9,7 +9,7 @@ import lombok.Getter;
 /**
  * 错过触发补偿策略（服务停机、线程池占满导致该触发的时刻没触发）
  *
- * <p>常见误解是"补跑"等于"把错过的每一次都补上"：{@link #FIRE_ONCE} 只补跑一次，
+ * <p> 常见误解是"补跑"等于"把错过的每一次都补上"：{@link #FIRE_ONCE} 只补跑一次，
  * 与错过多久、错过几次无关。Quartz 的 CronTrigger 未提供"补跑全部"，
  * 想全量补偿只能让业务方法自己按"上次成功时间"回溯处理
  *
@@ -47,7 +47,7 @@ public enum ScheduleMisfireEnum implements IEnum<Integer> {
     /**
      * 解析数据库值（DTO/前端入参的 Integer → 枚举）
      *
-     * <p>{@code null} 入参返回 {@code null}；范围外取值视为脏数据 fail-fast 暴露
+     * <p> {@code null} 入参返回 {@code null}；范围外取值视为脏数据 fail-fast 暴露
      *
      * @param code 数据库存储值（0/1）
      * @return 对应枚举；入参为 null 时返回 null

@@ -9,8 +9,8 @@ import java.util.regex.Pattern;
 /**
  * 文件通用工具：大小格式化、不可信文件名的解析、文件读写删
  *
- * <p>与 {@link FileTypeProbeUtil} 的分工：本类只做入参整形与字节搬运，不做类型判真；
- * 落库扩展名一律取自判真结果，本类对用户扩展名的处理只有"丢弃"。
+ * <p> 与 {@link FileTypeProbeUtil} 的分工：本类只做入参整形与字节搬运，不做类型判真
+ * 落库扩展名一律取自判真结果，本类对用户扩展名的处理只有「丢弃」
  *
  * @author yeungzhy
  * @since 2026-09-05
@@ -25,9 +25,10 @@ public final class FileUtil {
     private static final String[] SIZE_UNITS = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
 
     /**
-     * 文件名非法字符：控制字符（含 CRLF，防响应头与日志注入）+ 格式字符。
-     * 后者含 {@code U+202E}（RLO）——可把 {@code photo‮gpj.exe} 反写显示为 {@code photoexe.jpg}，
-     * 是"文件名只做展示"这一收口下仍然成立的钓鱼手法。
+     * 文件名非法字符：控制字符（含 CRLF，防响应头与日志注入）+ 格式字符
+     *
+     * <p> 后者含 {@code U+202E}（RLO），可把 {@code photo‮gpj.exe} 反写显示为 {@code photoexe.jpg}，
+     * 是「文件名只做展示」这一收口下仍然成立的钓鱼手法
      */
     private static final Pattern UNSAFE_FILE_NAME_CHARS = Pattern.compile("[\\p{Cntrl}\\p{Cf}]");
 
@@ -36,13 +37,13 @@ public final class FileUtil {
     /**
      * 将字节数格式化为可读大小（1024 进制，只展示最大的单位）
      *
-     * <p>展示规则：B 恒为整数；[10,100) 保留 1 位小数、[100,1024) 取整，
+     * <p> 展示规则：B 恒为整数；[10,100) 保留 1 位小数、[100,1024) 取整，
      * KB/MB/GB/TB/PB/EB 同此规则，低于 10 保留 2 位。示例：{@code 512 → "512 B"}、
-     * {@code 1536 → "1.50 KB"}、{@code 104857600 → "100 MB"}。
+     * {@code 1536 → "1.50 KB"}、{@code 104857600 → "100 MB"}
      *
-     * <p>只展示最大单位（而非 "1 MB 24 KB" 逐级展开）是通用惯例（Linux {@code ls -h}、
-     * Spring {@code DataSize}、commons-io 等）：字符串长度稳定，便于日志对齐与程序解析；
-     * 逐级展开只服务于人眼速读字节数，不便于机器消费。
+     * <p> 只展示最大单位（而非 "1 MB 24 KB" 逐级展开）是通用惯例（Linux {@code ls -h}、
+     * Spring {@code DataSize}、commons-io 等）：字符串长度稳定，便于日志对齐与程序解析
+     * 逐级展开只服务于人眼速读字节数，不便于机器消费
      *
      * @param bytes 字节数；非正数统一返回 "0 B"
      * @return 形如 "1.50 KB" 的可读字符串
@@ -69,16 +70,16 @@ public final class FileUtil {
     /**
      * 解析入库主名：剥离路径 → 删控制/格式字符 → 去首尾空白 → 超限截断 → 剥用户扩展名
      *
-     * <p>原始文件名不参与类型判真、也不参与存储路径，但会进下载响应头与列表页展示，仍属不可信入参：
-     * 路径段防穿越语义残留，控制字符防响应头/日志注入，格式字符防 RLO 反写欺诈。
+     * <p> 原始文件名不参与类型判真、也不参与存储路径，但会进下载响应头与列表页展示，仍属不可信入参：
+     * 路径段防穿越语义残留，控制字符防响应头/日志注入，格式字符防 RLO 反写欺诈
      *
-     * <p>末步剥扩展名是落库模型要求：主名字段只存主名，扩展名字段一律取
-     * {@link FileTypeProbeUtil} 判真结果，用户扩展名必须丢弃，否则改名即可给下载产物挂任意扩展名。
-     * 无点、或以点开头（如 {@code .gitignore}）时原样返回，故该步不会产生空值。
+     * <p> 末步剥扩展名是落库模型要求：主名字段只存主名，扩展名字段一律取
+     * {@link FileTypeProbeUtil} 判真结果，用户扩展名必须丢弃，否则改名即可给下载产物挂任意扩展名
+     * 无点、或以点开头（如 {@code .gitignore}）时原样返回，故该步不会产生空值
      *
      * @param rawFileName 原始文件名（不可信入参）
      * @param maxLength   主名最大长度（字符数），超长按此截断；由调用方按自身 DB 列宽与响应头上限给出
-     * @return 入库主名（不含扩展名）；清洗后为空返回 {@code null}（由调用方转为"文件名为空"）
+     * @return 入库主名（不含扩展名）；清洗后为空返回 {@code null}（由调用方转为「文件名为空」）
      * @throws IllegalArgumentException {@code maxLength} 非正数（截断会得到空串，且调用方只判 null，
      *                                  空主名会让完整名退化成纯扩展名，故直接拒绝而非静默产生）
      */
@@ -105,8 +106,8 @@ public final class FileUtil {
     /**
      * 将相对路径解析到 {@code rootPath} 之下的绝对路径（防御穿越根目录）
      *
-     * <p>相对路径若来自外部输入（如对象存储 key）不可直接 resolve：{@code ..} 与绝对前缀都能跳出根目录，
-     * 故先 normalize 再校验前缀落在根目录内。
+     * <p> 相对路径若来自外部输入（如对象存储 key）不可直接 resolve：{@code ..} 与绝对前缀都能跳出根目录，
+     * 故先 normalize 再校验前缀落在根目录内
      *
      * @throws IllegalArgumentException 解析后不在 {@code rootPath} 之内
      */

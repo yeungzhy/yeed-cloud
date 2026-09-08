@@ -21,27 +21,27 @@ import java.util.Map;
 public class OssFileVO {
 
     // ================== 主键 ==================
-    /** 雪花ID主键 */
+    /** 雪花 ID 主键 */
     private Long id;
 
     // ================== 业务字段 ==================
     /** 完整展示名（主名 + 判真扩展名，由 {@code OssFile#displayName()} 拼出，非入参原名） */
     private String fileName;
-    /** 存储对象key */
+    /** 存储对象 key */
     private String objectKey;
-    /** 存储类型:0-本地磁盘,1-阿里云OSS等 */
+    /** 存储类型：0-本地磁盘，1-阿里云OSS */
     private OssStorageTypeEnum storageType;
-    /** 文件大小(字节) */
+    /** 文件大小（字节） */
     private Long fileSize;
-    /** MIME类型 */
+    /** MIME 类型 */
     private String contentType;
     /** 业务编码 */
     private String bizCode;
-    /** 文件内容MD5 */
+    /** 文件内容 MD5 */
     private String md5;
-    /** 过期时间,null=永久保存;到期由OSS内部统一清理 */
+    /** 过期时间，null=永久保存；到期由 OSS 内部统一清理 */
     private LocalDateTime expireTime;
-    /** 可用状态:0-已清理,1-可用 */
+    /** 可用状态：0-已清理，1-可用 */
     private OssFileStatusEnum status;
 
     // ================== 审计字段 ==================
@@ -55,7 +55,7 @@ public class OssFileVO {
     private LocalDateTime updateTime;
     /** 删除人 */
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /** 逻辑删除，0-未删，时间戳-已删 */
     private Long deleteTime;
     /** 乐观锁 */
     private Integer version;

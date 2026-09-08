@@ -34,8 +34,7 @@ public enum EnableStatusEnum implements IEnum<Integer> {
 
     /**
      * 数据库存储值（0-禁用，1-启用）
-     * <p>MP {@link EnumValue} + {@link IEnum#getValue()} 双保险，
-     * 兼容 MP 3.5.x 的两种枚举识别机制。
+     * <p> MP {@link EnumValue} + {@link IEnum#getValue()} 双保险，兼容 MP 3.5.x 的两种枚举识别机制
      */
     @EnumValue
     @JsonValue

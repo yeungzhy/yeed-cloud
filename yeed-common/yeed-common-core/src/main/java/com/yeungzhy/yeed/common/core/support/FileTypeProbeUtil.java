@@ -12,15 +12,15 @@ import java.util.zip.ZipInputStream;
 /**
  * 文件真实类型探测工具
  *
- * <p>OSS 等存储服务应在落库前用本工具判真，探测结果决定
+ * <p> OSS 等存储服务应在落库前用本工具判真，探测结果决定
  * 存储对象 key 的扩展名与回放的 Content-Type，原始文件名只作为展示字段入库
  *
- * <p>失败语义：类型不支持 / 无法判定一律抛 {@link BizException}
+ * <p> 失败语义：类型不支持 / 无法判定一律抛 {@link BizException}
  *
- * <p>输入可以是完整文件，也可以是仅含头部的片段（流式上传场景）：判据全部基于前部字节，
- * 且 OOXML 另有不依赖解压的回退判据，故片段输入同样能判出 docx/xlsx/pptx（见 {@link #zipFamily}）。
+ * <p> 输入可以是完整文件，也可以是仅含头部的片段（流式上传场景）：判据全部基于前部字节，
+ * 且 OOXML 另有不依赖解压的回退判据，故片段输入同样能判出 docx/xlsx/pptx（见 {@link #zipFamily}）
  *
- * <p>同包 {@link FileUtil} 负责大小格式化、文件名解析与文件读写，本类不涉及
+ * <p> 同包 {@link FileUtil} 负责大小格式化、文件名解析与文件读写，本类不涉及
  *
  * @author yeungzhy
  * @since 2026-09-04
@@ -53,8 +53,8 @@ public final class FileTypeProbeUtil {
     /**
      * 回退判据的扫描窗口：只覆盖 zip 前部的 local file header 区
      *
-     * <p>各条目的压缩数据紧跟其 header 之后，故主文档部件靠前时其 header 必落在本窗口内；
-     * 刻意不放大——这是「搜明文」的兜底手段，扫太大既浪费又可能命中压缩数据里的巧合字节。
+     * <p> 各条目的压缩数据紧跟其 header 之后，故主文档部件靠前时其 header 必落在本窗口内
+     * 刻意不放大，这是「搜明文」的兜底手段，扫太大既浪费又可能命中压缩数据里的巧合字节
      */
     private static final int ENTRY_SCAN_BYTES = 65536;
 
@@ -106,12 +106,12 @@ public final class FileTypeProbeUtil {
     /**
      * 按文件头字节顺序比对魔数，返回命中类型；未命中（含非文本内容）返回 null
      *
-     * <p>判据优先级注意点：
+     * <p> 判据优先级注意点：
      * <ul>
-     *   <li>docx/xlsx/pptx 是 zip 容器，必须置于普通 zip 之前（zip 分支内做 OOXML 三分）；</li>
-     *   <li>doc/xls/ppt 的 OLE2 魔数独立于 zip，置于 zip 前（OLE2 不是 zip 容器）；</li>
-     *   <li>webp/wav 同为 RIFF 容器，按 +8 偏移的格式标识区分；</li>
-     *   <li>mp3 帧同步（{@code 0xFF 0xEx}）属弱魔数，置于强魔数之后避免误伤。</li>
+     *   <li>docx/xlsx/pptx 是 zip 容器，必须置于普通 zip 之前（zip 分支内做 OOXML 三分）
+     *   <li>doc/xls/ppt 的 OLE2 魔数独立于 zip，置于 zip 前（OLE2 不是 zip 容器）
+     *   <li>webp/wav 同为 RIFF 容器，按 +8 偏移的格式标识区分
+     *   <li>mp3 帧同步（{@code 0xFF 0xEx}）属弱魔数，置于强魔数之后避免误伤
      * </ul>
      */
     private static FileTypeEnum matchByMagic(byte[] data) {
@@ -193,8 +193,8 @@ public final class FileTypeProbeUtil {
     /**
      * OLE2 复合文档（doc/xls/ppt）：三者共用同一魔数，按目录项里的主数据流名三分
      *
-     * <p>目录扇区由头部给出（{@code (扇区号 + 1) * 扇区大小}），扇区内是定长 128B 的目录项，
-     * 0 号恒为 Root Entry，故从 1 号起扫描。主数据流由生成器首个写入，必在同一个扇区内。
+     * <p> 目录扇区由头部给出（{@code (扇区号 + 1) * 扇区大小}），扇区内是定长 128B 的目录项，
+     * 0 号恒为 Root Entry，故从 1 号起扫描。主数据流由生成器首个写入，必在同一个扇区内
      *
      * @throws BizException 头部结构异常（扇区大小非法 / 目录扇区越界）、是加密文档、或无任何已知主数据流
      */
@@ -231,15 +231,16 @@ public final class FileTypeProbeUtil {
      * zip 家族：先按 {@code [Content_Types].xml} 关键字做 OOXML 三分（docx/xlsx/pptx），
      * 未命中再退到「搜 zip 条目名明文」，仍无结果才按普通 zip 处理
      *
-     * <p>为何需要回退：{@link #readContentTypesXml} 用 {@code ZipInputStream} 从首字节顺序解压，
+     * <p> 为何需要回退：{@link #readContentTypesXml} 用 {@code ZipInputStream} 从首字节顺序解压，
      * 任一 entry 读不完即 EOF → 返回 null → 误判为 zip。实测两类真实输入会踩到：
      * <ul>
-     *   <li>流式上传只给头部（如 16KB），zip 尾部缺失导致顺序解压中断；</li>
+     *   <li>流式上传只给头部（如 16KB），zip 尾部缺失导致顺序解压中断
      *   <li>POI SXSSF 导出的 xlsx 条目顺序与普通生成器不同，前 64 个 entry 内可能读不到
-     *       {@code [Content_Types].xml}。</li>
+     *       {@code [Content_Types].xml}
      * </ul>
-     * 回退判据不解压：zip 的 local file header 里条目名是明文，直接在前部窗口搜主文档部件名即可三分。
-     * 权威判据仍在前，回退仅用于兜底。
+     *
+     * <p> 回退判据不解压：zip 的 local file header 里条目名是明文，直接在前部窗口搜主文档部件名即可三分
+     * 权威判据仍在前，回退仅用于兜底
      */
     private static FileTypeEnum zipFamily(byte[] data) {
         String contentTypeXml = readContentTypesXml(data);
@@ -297,8 +298,9 @@ public final class FileTypeProbeUtil {
     }
 
     /**
-     * ISO BMFF（mp4/mov）：容器同构，按 {@code ftyp} 的 major_brand 区分——
-     * Apple QuickTime 系列（{@code qt  }）为 mov，其余（isom/mp42/avc1 等）为 mp4
+     * ISO BMFF（mp4/mov）：容器同构，按 {@code ftyp} 的 major_brand 区分
+     *
+     * <p> Apple QuickTime 系列（{@code qt  }）为 mov，其余（isom/mp42/avc1 等）为 mp4
      */
     private static FileTypeEnum isoBmffFamily(byte[] data) {
         boolean quickTime = data.length >= 12
@@ -309,8 +311,8 @@ public final class FileTypeProbeUtil {
     /**
      * 文本类型（svg/txt）：无魔数，仅当内容经启发确为文本时才进入
      *
-     * <p>svg 需含 {@code <svg} 特征（其 MIME 与纯文本不同，必须区分）；其余文本一律归为
-     * {@link FileTypeEnum#TXT}，md 无字节特征可区分且 MIME 同为 {@code text/plain}。
+     * <p> svg 需含 {@code <svg} 特征（其 MIME 与纯文本不同，必须区分）；其余文本一律归为
+     * {@link FileTypeEnum#TXT}，md 无字节特征可区分且 MIME 同为 {@code text/plain}
      */
     private static FileTypeEnum matchText(byte[] data) {
         if (!looksLikeText(data)) {
@@ -392,7 +394,9 @@ public final class FileTypeProbeUtil {
 
     /**
      * 文本启发：前 {@link #TEXT_SCAN_BYTES} 字节中不可打印控制字符占比低于 3% 视为文本
-     * <p>保留 \t \n \r 换页符，避免正常文本被误判；\0 一律计入控制字符（UTF-16 文本会被判非文本，属有意取舍）
+     *
+     * <p> 保留 \t \n \r 换页符，避免正常文本被误判；\0 一律计入控制字符
+     * （UTF-16 文本会被判非文本，属有意取舍）
      */
     private static boolean looksLikeText(byte[] data) {
         int limit = Math.min(data.length, TEXT_SCAN_BYTES);

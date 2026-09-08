@@ -10,19 +10,26 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
- * 内部 Feign 客户端的请求头透传拦截器：把当前请求上下文中的 token 透传到下游。
+ * 内部 Feign 客户端的请求头透传拦截器：把当前请求上下文中的 token 透传到下游
  *
- * <p>生效范围：经 {@link InternalFeignConfig} 注册为 Feign 子容器 Bean，只对
- * {@code @FeignClient(configuration = InternalFeignConfig.class)} 的客户端生效；
- * 不是全局 {@code RequestInterceptor}，不会波及其它 Feign 客户端。
+ * <p>生效范围：经 {@link InternalFeignConfig} 注册为 Feign 子容器 Bean，只对显式引用该配置的客户端生效；
+ * 不是全局 {@code RequestInterceptor}，不会波及其它 Feign 客户端
  *
- * <p>仅透传当前请求线程的上下文：异步/多线程场景需自行从主线程传递，子线程取不到
- * 请求上下文时跳过（不伪造身份）。
+ * <p>只透传当前请求线程的上下文：异步 / 多线程场景需自行从主线程传递，子线程取不到请求上下文时跳过，
+ * 不伪造身份
  *
  * @author yeungzhy
+ * @since 2026-09-04
  */
 public class InternalTokenRelayInterceptor implements RequestInterceptor {
 
+    /**
+     * 把当前请求的 token 写入下游请求头
+     *
+     * <p>读不到上下文或没有 token 时直接跳过，不写空头、也不构造假身份
+     *
+     * @param template 待发出的请求模板，不能为 null
+     */
     @Override
     public void apply(RequestTemplate template) {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();

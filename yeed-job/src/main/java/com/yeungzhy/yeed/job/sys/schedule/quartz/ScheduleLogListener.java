@@ -18,7 +18,7 @@ import java.time.ZoneId;
 /**
  * 计划执行日志监听器：每次触发结束落一条 {@link ScheduleLog}
  *
- * <p>结果取自 {@link ScheduleRunResult}（执行器写入上下文），
+ * <p> 结果取自 {@link ScheduleRunResult}（执行器写入上下文），
  * 跳过与失败都由执行器收敛为结果对象，故本处只做落库与慢执行告警。
  * 落库失败只记日志，绝不向 Quartz 抛异常，避免影响调度主流程
  *

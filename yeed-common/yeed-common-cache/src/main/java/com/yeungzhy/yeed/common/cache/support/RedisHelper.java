@@ -28,32 +28,33 @@ import java.util.function.Supplier;
 /**
  * 基于 {@link RedissonClient} 封装常用的缓存操作
  *
- * <p>统一做参数校验与异常捕获：写操作参数非法时直接忽略并返回 {@code false}，
- * 读操作参数非法或 Redis 异常时记录日志并返回安全默认值（null / 空集合 / 0 / false），
- * 避免 Redis 抖动直接中断业务流程；写方法返回 {@code boolean} 表示操作是否成功，
- * 调用方可据此感知写入失败（如缓存与库不一致排查）。
+ * <p> 统一做参数校验与异常兜底：写方法参数非法直接忽略并返回 {@code false}，
+ * 读方法参数非法或 Redis 异常记日志并返回安全默认值（null / 空集合 / 0 / false），
+ * 不让 Redis 抖动中断业务流程
  *
- * <p>分布式锁与发布订阅提供薄封装：锁模板
- * {@link #executeWithLock(String, Duration, Supplier)} 统一「tryLock + finally 解锁」样板，
- * 锁 key 统一加 {@code yeed:lock:} 前缀（遵守
- * {@link com.yeungzhy.yeed.common.core.constant.CacheConstant} 命名规范）；
- * 锁方法参数非法时 fail-fast 抛 {@link IllegalArgumentException}，避免静默无锁执行。
- * 限流（RRateLimiter）、订阅（RTopic 监听器生命周期）等其余能力不在此封装，
- * 业务代码直接注入 {@link RedissonClient} 使用。
+ * <p> 无状态（只持有 {@link RedissonClient} 与默认 TTL），由
+ * {@link com.yeungzhy.yeed.common.cache.config.RedisAutoConfiguration} 注册为单例，多线程共享安全
  *
- * <p>通过 {@link com.yeungzhy.yeed.common.cache.config.RedisAutoConfiguration} 注册为 Spring Bean
- *
- * <p>过期时间（TTL）策略：
+ * <p> 写方法的 {@code timeout} 是三态的：
  * <ul>
- *   <li>写方法不显式传 {@code timeout} 时，使用默认过期时间
- *   （配置项 {@code yeed.cache.default-ttl}，见
- *   {@link com.yeungzhy.yeed.common.cache.config.CacheProperties}，默认 24 小时），
- *   防止数据永久堆积；</li>
- *   <li>显式传 {@code timeout} 为 {@code null} 表示永久存储（不设置过期时间），
- *   仅适用于业务主动管理生命周期、每次整体重建覆盖的重建型缓存（如菜单接口权限缓存），
- *   调用方需在注释中说明永久存储的理由；</li>
- *   <li>非法 timeout（负数 / 零）按参数非法忽略，不执行写操作。</li>
+ *   <li>不传：取默认 TTL（{@code yeed.cache.default-ttl}，见
+ *   {@link com.yeungzhy.yeed.common.cache.config.CacheProperties}，默认 24 小时）
+ *   <li>传 {@code null}：永久存储，仅适用于每次整体重建覆盖的重建型缓存，
+ *   调用方需在注释里写明永久存储的理由
+ *   <li>传负数 / 零：参数非法，不执行写操作
  * </ul>
+ *
+ * <p> TTL 作用于整个 key 而不是单个元素：对永久存储的 key 调用增量方法
+ * （setMapValue / addSetValue / removeSetValue / listAdd / incr*）会把它降级为默认 TTL，
+ * 这类场景必须显式传 {@code null}
+ *
+ * <p> 值走 Jackson 序列化，写入的对象需可被 Jackson 处理
+ *
+ * <p> 分布式锁只做薄封装：{@link #executeWithLock(String, Duration, Supplier)}
+ * 统一「tryLock + finally 解锁」样板，锁 key 自动加 {@code yeed:lock:} 前缀（见
+ * {@link com.yeungzhy.yeed.common.core.constant.CacheConstant}），
+ * 参数非法时抛 {@link IllegalArgumentException} 而非静默无锁执行；
+ * 限流、订阅监听器生命周期等其余能力直接注入 {@link RedissonClient} 使用
  *
  * @author yeungzhy
  * @since 2026-08-11
@@ -80,20 +81,20 @@ public class RedisHelper {
     }
 
     /**
-     * timeout 是否非法：null 合法（表示永久存储），负数/零非法
+     * timeout 是否非法：null 合法（表示永久存储），负数 / 零非法
      */
     private static boolean isInvalidTtl(Duration timeout) {
         return timeout != null && (timeout.isNegative() || timeout.isZero());
     }
 
 
-    /* ==================== 对象存取（RBucket）===================== */
+    // ======================== 对象存取（RBucket）=======================
 
     /**
-     * 设置指定 key 的值（使用默认过期时间，见类注释 TTL 策略）
+     * 设置指定 key 的值，过期时间取默认 TTL（见类注释）
      *
-     * @param key   键，不能为空
-     * @param value 值
+     * @param key   键，为空直接返回 false
+     * @param value 值，需可被 Jackson 序列化
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public boolean set(String key, Object value) {
@@ -103,9 +104,9 @@ public class RedisHelper {
     /**
      * 设置指定 key 的值和过期时间
      *
-     * @param key     键，不能为空
-     * @param value   值
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key     键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public boolean set(String key, Object value, Duration timeout) {
@@ -129,10 +130,12 @@ public class RedisHelper {
     /**
      * 设置指定 key 的值和过期时间
      *
-     * @param key     键，不能为空
-     * @param value   值
-     * @param timeout 过期时间，必须大于 0
-     * @param unit    时间单位，不能为空
+     * <p> 本重载表达不了「永久存储」（{@code long} 取不到 null），需要永久存储请用 Duration 重载
+     *
+     * @param key     键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
+     * @param timeout 过期时长，必须大于 0，否则按参数非法返回 false
+     * @param unit    timeout 的单位，为空抛 NullPointerException
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public boolean set(String key, Object value, long timeout, TimeUnit unit) {
@@ -142,8 +145,8 @@ public class RedisHelper {
     /**
      * 获取指定 key 的值
      *
-     * @param key 键
-     * @return 值；key为空、不存在或异常返回 null
+     * @param key 键，为空直接返回 null
+     * @return 值；key 为空、不存在或 Redis 异常返回 null
      */
     @SuppressWarnings("unchecked")
     public <T> T get(String key) {
@@ -159,11 +162,11 @@ public class RedisHelper {
     }
 
     /**
-     * 只有在 key 不存在时设置 key 的值（使用默认过期时间，见类注释 TTL 策略）
+     * 只有在 key 不存在时设置 key 的值，过期时间取默认 TTL（见类注释）
      *
-     * @param key   键，不能为空
-     * @param value 值
-     * @return true 设置成功；false key已存在或异常
+     * @param key   键，为空直接返回 false
+     * @param value 值，需可被 Jackson 序列化
+     * @return true 设置成功；false key 已存在、参数非法或 Redis 异常
      */
     public boolean setIfAbsent(String key, Object value) {
         return setIfAbsent(key, value, defaultTtl);
@@ -172,10 +175,10 @@ public class RedisHelper {
     /**
      * 只有在 key 不存在时设置 key 的值和过期时间
      *
-     * @param key     键，不能为空
-     * @param value   值
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
-     * @return true 设置成功；false key已存在或异常
+     * @param key     键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
+     * @return true 设置成功；false key 已存在、参数非法或 Redis 异常
      */
     public boolean setIfAbsent(String key, Object value, Duration timeout) {
         if (!StringUtils.hasText(key) || isInvalidTtl(timeout)) {
@@ -196,11 +199,11 @@ public class RedisHelper {
     /**
      * 只有在 key 不存在时设置 key 的值和过期时间
      *
-     * @param key     键，不能为空
-     * @param value   值
-     * @param timeout 过期时间，必须大于 0
-     * @param unit    时间单位，不能为空
-     * @return true 设置成功；false key已存在或异常
+     * @param key     键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
+     * @param timeout 过期时长，必须大于 0，否则按参数非法返回 false
+     * @param unit    timeout 的单位，为空抛 NullPointerException
+     * @return true 设置成功；false key 已存在、参数非法或 Redis 异常
      */
     public boolean setIfAbsent(String key, Object value, long timeout, TimeUnit unit) {
         return setIfAbsent(key, value, Duration.of(timeout, unit.toChronoUnit()));
@@ -209,8 +212,8 @@ public class RedisHelper {
     /**
      * 获取并删除指定 key 的值（一次性消费场景：防重令牌、一次性凭证等）
      *
-     * @param key 键
-     * @return 删除前的值；key为空、不存在或异常返回 null
+     * @param key 键，为空直接返回 null
+     * @return 删除前的值；key 为空、不存在或 Redis 异常返回 null
      */
     @SuppressWarnings("unchecked")
     public <T> T getAndDelete(String key) {
@@ -226,13 +229,16 @@ public class RedisHelper {
     }
 
 
-    /* ==================== 批量操作（RBatch / RBuckets）============= */
+    // ======================== 批量操作（RBatch / RBuckets）=============
 
     /**
-     * 批量获取多个 key 的值（一次网络往返）
+     * 批量获取多个 key 的值
      *
-     * @param keys 键集合，不能为空
-     * @return 键值映射（{@code Map<K, V>}）；异常或参数非法返回空集合
+     * <p> 一次网络往返取回全部 key，数量上千时分批调用，避免单条命令拖慢 Redis
+     * 结果是按 T 强转的，同一批 key 的值类型需一致，混入其他类型要等取值时才抛 ClassCastException
+     *
+     * @param keys 键集合，为空返回空 Map
+     * @return key 到值的映射；参数非法或 Redis 异常返回空 Map
      */
     @SuppressWarnings("unchecked")
     public <T> Map<String, T> getBatch(Collection<String> keys) {
@@ -249,9 +255,11 @@ public class RedisHelper {
     }
 
     /**
-     * 批量设置多个 key 的值（一次网络往返，使用默认过期时间，见类注释 TTL 策略）
+     * 批量设置多个 key 的值，过期时间取默认 TTL（见类注释）
      *
-     * @param map 键值对集合，不能为空
+     * <p> 一次网络往返提交，其余约束见 {@link #setBatch(Map, Duration)}
+     *
+     * @param map 键值对集合，为空返回 false
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public boolean setBatch(Map<String, Object> map) {
@@ -261,12 +269,13 @@ public class RedisHelper {
     /**
      * 批量设置多个 key 的值和过期时间
      *
-     * <p>通过 RBatch 一次网络往返提交，且每条命令自带 TTL（无需写入后再逐 key expire），
-     * 避免了逐 key 设置过期时间产生的「部分 key 有 TTL、部分没有」的脏状态；
-     * 批量整体执行非原子（中途失败可能出现部分写入），业务需可容忍
+     * <p> 走 RBatch 一次网络往返提交，每条命令自带 TTL，不写完再逐 key expire，
+     * 避免中途失败留下「部分 key 有 TTL、部分没有」的脏状态
      *
-     * @param map     键值对集合，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * <p> 整批执行非原子，中途失败可能只写入一部分，业务需能容忍；key 数量上千时分批调用
+     *
+     * @param map     键值对集合，为空返回 false
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public boolean setBatch(Map<String, Object> map, Duration timeout) {
@@ -291,13 +300,15 @@ public class RedisHelper {
     }
 
 
-    /* ==================== List 操作（RList）===================== */
+    // ======================== List 操作（RList）=======================
 
     /**
-     * 将 List 数据放入缓存（先清空再写入，使用默认过期时间，见类注释 TTL 策略）
+     * 将 List 数据放入缓存（先清空再写入），过期时间取默认 TTL（见类注释）
      *
-     * @param key      键，不能为空
-     * @param dataList 数据列表
+     * <p> 全量覆盖语义，其余约束见 {@link #setList(String, List, Duration)}
+     *
+     * @param key      键，为空直接返回 false
+     * @param dataList 数据列表，为空或 null 时按清空处理
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <T> boolean setList(String key, List<T> dataList) {
@@ -307,11 +318,12 @@ public class RedisHelper {
     /**
      * 将 List 数据放入缓存（先清空再写入）
      *
-     * <p>clear + addAll 非原子，并发重建同一 key 时可能短暂读到混合数据（重建型缓存可接受）
+     * <p> clear + addAll 非原子，并发重建同一 key 时可能短暂读到混合数据（重建型缓存可接受）
+     * dataList 为空时仍会清空 key 并设过期时间，结果是缓存了一个空列表，而不是删掉 key
      *
-     * @param key      键，不能为空
-     * @param dataList 数据列表
-     * @param timeout  过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key      键，为空直接返回 false
+     * @param dataList 数据列表，为空或 null 时按清空处理
+     * @param timeout  过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <T> boolean setList(String key, List<T> dataList, Duration timeout) {
@@ -335,13 +347,13 @@ public class RedisHelper {
     }
 
     /**
-     * 获取 List 缓存（返回内存副本）
+     * 获取 List 缓存
      *
-     * @param key 键
-     * @return List；key为空、异常或不存在返回空集合
+     * <p> 返回 {@code ArrayList} 内存副本而非 RList 远程代理，改动不回写 Redis；
+     * 元素整体拉回内存，大 List 需留意占用
      *
-     * <p>返回的是 {@code ArrayList} 副本而非 RList 远程代理，
-     * 直接修改返回结果不会影响 Redis 中的数据
+     * @param key 键，为空返回空集合
+     * @return 缓存的列表；key 为空、不存在或 Redis 异常返回空集合
      */
     public <T> List<T> getList(String key) {
         if (!StringUtils.hasText(key)) {
@@ -357,10 +369,10 @@ public class RedisHelper {
     }
 
     /**
-     * 向 List 尾部追加一个元素（相当于 RPUSH，使用默认过期时间，见类注释 TTL 策略）
+     * 向 List 尾部追加一个元素（相当于 RPUSH），过期时间取默认 TTL（见类注释）
      *
-     * @param key   键，不能为空
-     * @param value 元素值，不能为空
+     * @param key   键，为空直接返回 false
+     * @param value 元素值，需可被 Jackson 序列化；为空直接返回 false
      * @return true 追加成功；false 参数非法或 Redis 异常
      */
     public <T> boolean listAdd(String key, T value) {
@@ -370,12 +382,12 @@ public class RedisHelper {
     /**
      * 向 List 尾部追加一个元素（相当于 RPUSH）
      *
-     * <p>追加后若 {@code timeout} 非空会刷新整个 List 的过期时间（活跃续期）；
-     * 与 {@link #setList(String, List)} 的全量覆盖互补，用于追加型/队列型场景
+     * <p> 与 {@link #setList(String, List, Duration)} 的全量覆盖互补，用于追加型 / 队列型场景
+     * 追加后若 {@code timeout} 非空会刷新整个 List 的过期时间（活跃续期）
      *
-     * @param key     键，不能为空
-     * @param value   元素值，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key     键，为空直接返回 false
+     * @param value   元素值，需可被 Jackson 序列化；为空直接返回 false
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 追加成功；false 参数非法或 Redis 异常
      */
     public <T> boolean listAdd(String key, T value, Duration timeout) {
@@ -396,13 +408,13 @@ public class RedisHelper {
     }
 
 
-    /* ==================== Set 操作（RSet）======================= */
+    // ======================== Set 操作（RSet）=========================
 
     /**
-     * 将 Set 数据放入缓存（先清空再写入，使用默认过期时间，见类注释 TTL 策略）
+     * 将 Set 数据放入缓存（先清空再写入），过期时间取默认 TTL（见类注释）
      *
-     * @param key     键，不能为空
-     * @param dataSet 数据集合
+     * @param key     键，为空直接返回 false
+     * @param dataSet 数据集合，为空或 null 时按清空处理
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <T> boolean setSet(String key, Set<T> dataSet) {
@@ -412,9 +424,11 @@ public class RedisHelper {
     /**
      * 将 Set 数据放入缓存（先清空再写入）
      *
-     * @param key     键，不能为空
-     * @param dataSet 数据集合
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * <p> clear + addAll 非原子，并发重建同一 key 时可能短暂读到混合数据（重建型缓存可接受）
+     *
+     * @param key     键，为空直接返回 false
+     * @param dataSet 数据集合，为空或 null 时按清空处理
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <T> boolean setSet(String key, Set<T> dataSet, Duration timeout) {
@@ -438,13 +452,13 @@ public class RedisHelper {
     }
 
     /**
-     * 获取 Set 缓存（返回内存副本）
+     * 获取 Set 缓存
      *
-     * @param key 键
-     * @return Set；key为空、异常或不存在返回空集合
+     * <p> 返回 {@code HashSet} 内存副本而非 RSet 远程代理，改动不回写 Redis；
+     * 元素整体拉回内存，大 Set 需留意占用
      *
-     * <p>返回的是 {@code HashSet} 副本而非 RSet 远程代理，
-     * 直接修改返回结果不会影响 Redis 中的数据
+     * @param key 键，为空返回空集合
+     * @return 缓存的集合；key 为空、不存在或 Redis 异常返回空集合
      */
     public <T> Set<T> getSet(String key) {
         if (!StringUtils.hasText(key)) {
@@ -460,10 +474,12 @@ public class RedisHelper {
     }
 
     /**
-     * 向 Set 添加一个元素（去重集合增量写入，使用默认过期时间，见类注释 TTL 策略）
+     * 向 Set 添加一个元素，过期时间取默认 TTL（见类注释）
      *
-     * @param key   键，不能为空
-     * @param value 元素值，不能为空
+     * <p> 元素天然去重（已存在则无操作），其余约束见 {@link #addSetValue(String, Object, Duration)}
+     *
+     * @param key   键，为空直接返回 false
+     * @param value 元素值，需可被 Jackson 序列化；为空直接返回 false
      * @return true 添加成功；false 参数非法或 Redis 异常
      */
     public <T> boolean addSetValue(String key, T value) {
@@ -473,11 +489,12 @@ public class RedisHelper {
     /**
      * 向 Set 添加一个元素（去重集合增量写入）
      *
-     * <p>元素天然去重（已存在则无操作）；追加后若 {@code timeout} 非空会刷新整个 Set 的过期时间
+     * <p> 元素天然去重（已存在则无操作）；追加后若 {@code timeout} 非空会刷新整个 Set 的过期时间，
+     * 永久存储的 Set 走无 TTL 重载会被降级为默认 TTL（见类注释）
      *
-     * @param key     键，不能为空
-     * @param value   元素值，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key     键，为空直接返回 false
+     * @param value   元素值，需可被 Jackson 序列化；为空直接返回 false
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 添加成功；false 参数非法或 Redis 异常
      */
     public <T> boolean addSetValue(String key, T value, Duration timeout) {
@@ -498,11 +515,13 @@ public class RedisHelper {
     }
 
     /**
-     * 从 Set 移除一个元素（使用默认过期时间，见类注释 TTL 策略）
+     * 从 Set 移除一个元素，过期时间取默认 TTL（见类注释）
      *
-     * @param key   键，不能为空
-     * @param value 元素值，不能为空
-     * @return true 移除成功；false 参数非法或 Redis 异常
+     * <p> 元素原本不存在也返回 true，其余约束见 {@link #removeSetValue(String, Object, Duration)}
+     *
+     * @param key   键，为空直接返回 false
+     * @param value 元素值，为空直接返回 false
+     * @return true 执行成功；false 参数非法或 Redis 异常
      */
     public <T> boolean removeSetValue(String key, T value) {
         return removeSetValue(key, value, defaultTtl);
@@ -511,10 +530,14 @@ public class RedisHelper {
     /**
      * 从 Set 移除一个元素
      *
-     * @param key     键，不能为空
-     * @param value   元素值，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
-     * @return true 移除成功；false 参数非法或 Redis 异常
+     * <p> 移除后若 {@code timeout} 非空会刷新整个 Set 的过期时间：
+     * 对永久存储的 Set 用无 TTL 重载，会把它降级为默认 TTL（见类注释）
+     * 元素原本不存在也返回 true，需要区分时先 {@link #isSetMember(String, Object)}
+     *
+     * @param key     键，为空直接返回 false
+     * @param value   元素值，为空直接返回 false
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
+     * @return true 执行成功；false 参数非法或 Redis 异常
      */
     public <T> boolean removeSetValue(String key, T value, Duration timeout) {
         if (!StringUtils.hasText(key) || value == null || isInvalidTtl(timeout)) {
@@ -536,9 +559,9 @@ public class RedisHelper {
     /**
      * 判断 Set 中是否包含指定元素（成员判断，O(1)）
      *
-     * @param key   键
-     * @param value 元素值
-     * @return true 存在；false 不存在、参数非法或异常
+     * @param key   键，为空返回 false
+     * @param value 元素值，为空返回 false
+     * @return true 存在；false 不存在、参数非法或 Redis 异常
      */
     public <T> boolean isSetMember(String key, T value) {
         if (!StringUtils.hasText(key) || value == null) {
@@ -553,13 +576,15 @@ public class RedisHelper {
     }
 
 
-    /* ==================== Map 操作（RMap）======================= */
+    // ======================== Map 操作（RMap）=========================
 
     /**
-     * 将 Map 数据放入缓存（先清空再写入，使用默认过期时间，见类注释 TTL 策略）
+     * 将 Map 数据放入缓存（先清空再写入），过期时间取默认 TTL（见类注释）
      *
-     * @param key 键，不能为空
-     * @param map 数据映射
+     * <p> 全量覆盖语义，其余约束见 {@link #setMap(String, Map, Duration)}
+     *
+     * @param key 键，为空直接返回 false
+     * @param map 数据映射，为空或 null 时按清空处理
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <K, V> boolean setMap(String key, Map<K, V> map) {
@@ -569,12 +594,13 @@ public class RedisHelper {
     /**
      * 将 Map 数据放入缓存（先清空再写入）
      *
-     * <p>适用于重建型缓存（整体覆盖、无历史残留）；若需增量更新单个字段，
+     * <p> 适用于重建型缓存（整体覆盖、无历史残留）；若需增量更新单个字段，
      * 使用 {@link #setMapValue(String, Object, Object, Duration)}
+     * clear + putAll 非原子，并发重建同一 key 时可能短暂读到混合数据
      *
-     * @param key     键，不能为空
-     * @param map     数据映射
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key     键，为空直接返回 false
+     * @param map     数据映射，为空或 null 时按清空处理
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <K, V> boolean setMap(String key, Map<K, V> map, Duration timeout) {
@@ -598,11 +624,11 @@ public class RedisHelper {
     }
 
     /**
-     * 设置 Map 中指定 hashKey 的值（使用默认过期时间，见类注释 TTL 策略）
+     * 设置 Map 中指定 hashKey 的值，过期时间取默认 TTL（见类注释）
      *
-     * @param key     键，不能为空
-     * @param hashKey Map 内部的键，不能为空
-     * @param value   值
+     * @param key     键，为空直接返回 false
+     * @param hashKey Map 内部的键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <K, V> boolean setMapValue(String key, K hashKey, V value) {
@@ -612,15 +638,15 @@ public class RedisHelper {
     /**
      * 设置 Map 中指定 hashKey 的值
      *
-     * <p>高危注意：Redis Hash 的过期时间作用于整个 key而非单个 hashKey。
-     * 本方法在 {@code timeout} 非空时会刷新整个 Map 的过期时间——若该 Map
-     * 此前是永久存储（{@code setMap(key, map, null)}），此处会被静默降级为默认 TTL，
-     * 导致重建型缓存提前过期。重建型缓存请使用 {@link #setMap(String, Map, Duration)}
+     * <p> Redis Hash 的过期时间只能作用于整个 key，不能作用于单个 hashKey：
+     * {@code timeout} 非空时会刷新整个 Map 的过期时间，若该 Map 此前是永久存储
+     * （{@code setMap(key, map, null)}）会被静默降级为默认 TTL，导致重建型缓存提前过期，
+     * 这类场景请显式传 {@code null}
      *
-     * @param key     键，不能为空
-     * @param hashKey Map 内部的键，不能为空
-     * @param value   值
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
+     * @param key     键，为空直接返回 false
+     * @param hashKey Map 内部的键，为空直接返回 false
+     * @param value   值，需可被 Jackson 序列化
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
      * @return true 写入成功；false 参数非法或 Redis 异常
      */
     public <K, V> boolean setMapValue(String key, K hashKey, V value, Duration timeout) {
@@ -641,13 +667,13 @@ public class RedisHelper {
     }
 
     /**
-     * 获取整个 Map 缓存（返回内存副本）
+     * 获取整个 Map 缓存
      *
-     * @param key 键
-     * @return 全部键值映射；key为空、异常或不存在返回空集合
+     * <p> 返回 {@code HashMap} 内存副本而非 RMap 远程代理，改动不回写 Redis；
+     * 字段整体拉回内存，只要部分字段时用 {@link #batchGetMapValues(String, Collection)} 更省
      *
-     * <p>返回的是 {@code HashMap} 副本而非 RMap 远程代理，
-     * 直接修改返回结果不会影响 Redis 中的数据
+     * @param key 键，为空返回空 Map
+     * @return 全部键值映射；key 为空、不存在或 Redis 异常返回空 Map
      */
     public <K, V> Map<K, V> getMap(String key) {
         if (!StringUtils.hasText(key)) {
@@ -664,9 +690,9 @@ public class RedisHelper {
     /**
      * 获取 Map 中指定 hashKey 的值
      *
-     * @param key     键
-     * @param hashKey Map 内部的键
-     * @return 值；key为空、不存在或异常返回 null
+     * @param key     键，为空返回 null
+     * @param hashKey Map 内部的键，为空返回 null
+     * @return 值；key 为空、hashKey 不存在或 Redis 异常返回 null
      */
     public <K, V> V getMapValue(String key, K hashKey) {
         if (!StringUtils.hasText(key) || hashKey == null) {
@@ -683,8 +709,8 @@ public class RedisHelper {
     /**
      * 获取 Map 的所有 hashKey
      *
-     * @param key 键
-     * @return hashKey 集合（内存副本）；key为空、异常或不存在返回空集合
+     * @param key 键，为空返回空集合
+     * @return hashKey 集合（内存副本）；key 为空、不存在或 Redis 异常返回空集合
      */
     public <K> Set<K> getMapKeys(String key) {
         if (!StringUtils.hasText(key)) {
@@ -701,12 +727,14 @@ public class RedisHelper {
     /**
      * 批量获取 Map 中指定 hashKey 子集的值（一次网络往返）
      *
-     * <p>与 {@link #getMap(String)}（取全部字段）区分：本方法仅取入参指定的字段子集，
-     * 常用于从同一 Hash 中按需读取多个字段
+     * <p> 与 {@link #getMap(String)} 取全部字段的用途区分：本方法只读入参指定的字段，
+     * 大 Hash 按需取字段时可以少传很多数据
+     * 返回的是 {@code Collection} 而非 {@code Map}，hashKey 与值的对应关系会丢失；
+     * 未命中的 hashKey 不出现在结果里，顺序也不保证
      *
-     * @param key      键
-     * @param hashKeys Map 内部的键集合
-     * @return 命中字段的值集合（内存副本）；key为空、异常或不存在返回空集合
+     * @param key      键，为空返回空集合
+     * @param hashKeys Map 内部的键集合，为空返回空集合
+     * @return 命中字段的值集合（内存副本）；key 为空、不存在或 Redis 异常返回空集合
      */
     public <K, V> Collection<V> batchGetMapValues(String key, Collection<K> hashKeys) {
         if (!StringUtils.hasText(key) || hashKeys == null || hashKeys.isEmpty()) {
@@ -725,9 +753,9 @@ public class RedisHelper {
     /**
      * 从 Map 移除指定 hashKey
      *
-     * @param key     键，不能为空
-     * @param hashKey Map 内部的键，不能为空
-     * @return true 移除成功（hashKey 原本存在）；false 不存在、参数非法或异常
+     * @param key     键，为空返回 false
+     * @param hashKey Map 内部的键，为空返回 false
+     * @return true 确实移除了该 hashKey；false 原本不存在、参数非法或 Redis 异常
      */
     public <K> boolean removeMapValue(String key, K hashKey) {
         if (!StringUtils.hasText(key) || hashKey == null) {
@@ -745,9 +773,9 @@ public class RedisHelper {
     /**
      * 判断 Map 中是否存在指定 hashKey
      *
-     * @param key     键
-     * @param hashKey Map 内部的键
-     * @return true 存在；false 不存在、参数非法或异常
+     * @param key     键，为空返回 false
+     * @param hashKey Map 内部的键，为空返回 false
+     * @return true 存在；false 不存在、参数非法或 Redis 异常
      */
     public <K> boolean hasMapKey(String key, K hashKey) {
         if (!StringUtils.hasText(key) || hashKey == null) {
@@ -762,15 +790,15 @@ public class RedisHelper {
     }
 
 
-    /* ==================== 原子计数器（RAtomicLong）============== */
+    // ======================== 原子计数器（RAtomicLong）================
 
     /**
-     * 自增 1 并返回自增后的值（使用默认过期时间，见类注释 TTL 策略）
+     * 自增 1 并返回自增后的值，过期时间取默认 TTL（见类注释）
      *
-     * <p>自增后刷新过期时间，活跃计数器持续续期；长时间无自增则到期自动清理
+     * <p> 自增后刷新过期时间，活跃计数器持续续期；长时间无自增则到期自动清理
      *
-     * @param key 键，不能为空
-     * @return 自增后的值；异常返回 0
+     * @param key 键，为空直接返回 0
+     * @return 自增后的值；参数非法或 Redis 异常返回 0
      */
     public Long incrAndGet(String key) {
         return incrAndGet(key, defaultTtl);
@@ -779,12 +807,14 @@ public class RedisHelper {
     /**
      * 自增 1 并返回自增后的值
      *
-     * <p>自增后若 {@code timeout} 非空则刷新过期时间（活跃续期）；
-     * 计数类数据务必显式指定过期时间，避免永久堆积
+     * <p> 自增后若 {@code timeout} 非空则刷新过期时间（活跃续期），计数类数据建议都传，
+     * 不传就是永久堆积
      *
-     * @param key     键，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
-     * @return 自增后的值；异常返回 0
+     * <p> 失败与真实值 0 无法区分：参数非法、Redis 异常同样返回 0
+     *
+     * @param key     键，为空直接返回 0
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
+     * @return 自增后的值；参数非法或 Redis 异常返回 0
      */
     public Long incrAndGet(String key, Duration timeout) {
         if (!StringUtils.hasText(key) || isInvalidTtl(timeout)) {
@@ -804,10 +834,10 @@ public class RedisHelper {
     }
 
     /**
-     * 自减 1 并返回自减后的值（使用默认过期时间，见类注释 TTL 策略）
+     * 自减 1 并返回自减后的值，过期时间取默认 TTL（见类注释）
      *
-     * @param key 键，不能为空
-     * @return 自减后的值；异常返回 0
+     * @param key 键，为空直接返回 0
+     * @return 自减后的值；参数非法或 Redis 异常返回 0
      */
     public Long decrAndGet(String key) {
         return decrAndGet(key, defaultTtl);
@@ -816,9 +846,9 @@ public class RedisHelper {
     /**
      * 自减 1 并返回自减后的值
      *
-     * @param key     键，不能为空
-     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
-     * @return 自减后的值；异常返回 0
+     * @param key     键，为空直接返回 0
+     * @param timeout 过期时间，必须大于 0；传 {@code null} 表示永久存储
+     * @return 自减后的值；参数非法或 Redis 异常返回 0
      */
     public Long decrAndGet(String key, Duration timeout) {
         if (!StringUtils.hasText(key) || isInvalidTtl(timeout)) {
@@ -838,11 +868,11 @@ public class RedisHelper {
     }
 
     /**
-     * 增加指定增量并返回增加后的值（负数则为自减，使用默认过期时间，见类注释 TTL 策略）
+     * 增加指定增量并返回增加后的值（负数为自减），过期时间取默认 TTL（见类注释）
      *
-     * @param key       键，不能为空
-     * @param increment 增量
-     * @return 增加后的值；异常返回 0
+     * @param key       键，为空直接返回 0
+     * @param increment 增量，可正可负
+     * @return 增加后的值；参数非法或 Redis 异常返回 0
      */
     public Long incrBy(String key, long increment) {
         return incrBy(key, increment, defaultTtl);
@@ -851,10 +881,10 @@ public class RedisHelper {
     /**
      * 增加指定增量并返回增加后的值（负数则为自减）
      *
-     * @param key       键，不能为空
-     * @param increment 增量
-     * @param timeout   过期时间，必须大于 0；传 {@code null} 表示永久存储（不设置过期时间）
-     * @return 增加后的值；异常返回 0
+     * @param key       键，为空直接返回 0
+     * @param increment 增量，可正可负
+     * @param timeout   过期时间，必须大于 0；传 {@code null} 表示永久存储
+     * @return 增加后的值；参数非法或 Redis 异常返回 0
      */
     public Long incrBy(String key, long increment, Duration timeout) {
         if (!StringUtils.hasText(key) || isInvalidTtl(timeout)) {
@@ -876,8 +906,8 @@ public class RedisHelper {
     /**
      * 获取当前原子计数器的值
      *
-     * @param key 键
-     * @return 当前值；key为空或异常返回 0
+     * @param key 键，为空返回 0
+     * @return 当前值；key 为空、不存在或 Redis 异常返回 0
      */
     public Long getAtomicValue(String key) {
         if (!StringUtils.hasText(key)) {
@@ -892,13 +922,13 @@ public class RedisHelper {
     }
 
 
-    /* ==================== Key 操作 =============================== */
+    // ======================== Key 操作 ================================
 
     /**
      * 删除单个 key
      *
-     * @param key 键，不能为空
-     * @return true 删除成功；false key不存在、参数非法或异常
+     * @param key 键，为空返回 false
+     * @return true 确实删掉了 key；false key 不存在、参数非法或 Redis 异常
      */
     public boolean delete(String key) {
         if (!StringUtils.hasText(key)) {
@@ -915,8 +945,8 @@ public class RedisHelper {
     /**
      * 批量删除 key
      *
-     * @param keys 键集合，不能为空
-     * @return true 执行成功（无论删除数量）；false 参数非法或异常
+     * @param keys 键集合，为空返回 false
+     * @return true 命令执行成功（不保证删掉了几个）；false 参数非法或 Redis 异常
      */
     public boolean delete(Collection<String> keys) {
         if (keys == null || keys.isEmpty()) {
@@ -934,8 +964,8 @@ public class RedisHelper {
     /**
      * 判断 key 是否存在
      *
-     * @param key 键
-     * @return true 存在；false 不存在、key为空或异常
+     * @param key 键，为空返回 false
+     * @return true 存在；false 不存在、key 为空或 Redis 异常
      */
     public boolean hasKey(String key) {
         if (!StringUtils.hasText(key)) {
@@ -952,9 +982,11 @@ public class RedisHelper {
     /**
      * 设置过期时间
      *
-     * @param key     键，不能为空
+     * <p> key 不存在时返回 false，不会凭空把 key 建出来
+     *
+     * @param key     键，为空返回 false
      * @param timeout 过期时间，必须大于 0
-     * @return true 设置成功；false 参数非法或异常
+     * @return true 设置成功；false key 不存在、参数非法或 Redis 异常
      */
     public boolean expire(String key, Duration timeout) {
         if (!StringUtils.hasText(key) || timeout == null || timeout.isNegative() || timeout.isZero()) {
@@ -971,10 +1003,10 @@ public class RedisHelper {
     /**
      * 设置过期时间
      *
-     * @param key     键，不能为空
-     * @param timeout 过期时间，必须大于 0
-     * @param unit    时间单位，不能为空
-     * @return true 设置成功；false 参数非法或异常
+     * @param key     键，为空返回 false
+     * @param timeout 过期时长，必须大于 0
+     * @param unit    timeout 的单位，为空抛 NullPointerException
+     * @return 同 {@link #expire(String, Duration)}
      */
     public boolean expire(String key, long timeout, TimeUnit unit) {
         return expire(key, Duration.of(timeout, unit.toChronoUnit()));
@@ -983,9 +1015,11 @@ public class RedisHelper {
     /**
      * 设置过期时间点
      *
-     * @param key  键，不能为空
-     * @param date 失效时间点，不能为空
-     * @return true 设置成功；false 参数非法或异常
+     * <p> key 不存在时返回 false，不会凭空把 key 建出来
+     *
+     * @param key  键，为空返回 false
+     * @param date 失效时间点，为空返回 false
+     * @return true 设置成功；false key 不存在、参数非法或 Redis 异常
      */
     public boolean expireAt(String key, Date date) {
         if (!StringUtils.hasText(key) || date == null) {
@@ -1000,10 +1034,12 @@ public class RedisHelper {
     }
 
     /**
-     * 返回 key 的剩余过期时间（默认单位：秒）
+     * 返回 key 的剩余过期时间，单位秒
      *
-     * @param key 键
-     * @return 剩余时间(秒)；-1 表示永不过期，-2 表示 key 不存在，异常返回 0
+     * <p> 单位换算见 {@link #getExpire(String, TimeUnit)}
+     *
+     * @param key 键，为空返回 0
+     * @return 剩余秒数；-1 永不过期、-2 key 不存在（Redis 协议约定），参数非法或异常返回 0
      */
     public Long getExpire(String key) {
         return getExpire(key, TimeUnit.SECONDS);
@@ -1012,12 +1048,11 @@ public class RedisHelper {
     /**
      * 返回 key 的剩余过期时间
      *
-     * @param key  键
-     * @param unit 时间单位
-     * @return 剩余时间；-1 表示永不过期，-2 表示 key 不存在，异常或参数非法返回 0
+     * <p> 底层精度是毫秒，换算到其他单位时截断取整：剩余 59.9 秒按秒返回是 59
      *
-     * <p>底层精度为毫秒，换算到其他单位时向下取整（截断），如剩余 59.9 秒
-     * 以秒返回时为 59
+     * @param key  键，为空返回 0
+     * @param unit 时间单位，为空返回 0
+     * @return 剩余时间；-1 永不过期、-2 key 不存在（Redis 协议约定），参数非法或异常返回 0
      */
     public Long getExpire(String key, TimeUnit unit) {
         if (!StringUtils.hasText(key) || unit == null) {
@@ -1037,22 +1072,25 @@ public class RedisHelper {
     }
 
 
-    /* ==================== 分布式锁（RLock）======================= */
+    // ======================== 分布式锁（RLock）=======================
 
     /**
-     * 在分布式锁内执行业务动作（获取锁失败返回 null 而非抛异常）
+     * 在分布式锁内执行业务动作，持锁时长启用看门狗自动续期
      *
-     * <p>统一封装「tryLock + finally 解锁」样板，锁 key 自动加 {@code yeed:lock:} 前缀，
-     * 无需业务自己处理加锁失败、中断、释放等细节；业务动作抛出的异常向上传播
-     * （不吞异常），锁在 finally 中保证释放
+     * <p> 统一封装「tryLock + finally 解锁」样板，锁 key 自动加 {@code yeed:lock:} 前缀：
+     * 拿不到锁返回 null 而不抛异常（并发没抢到是常见路径），
+     * 业务动作自身抛出的异常照常向上传播，锁在 finally 中释放
+     *
+     * <p> 要固定持锁时长（放弃看门狗）用
+     * {@link #executeWithLock(String, Duration, Duration, Supplier)}
      *
      * @param lockKey  锁的业务标识（如 {@code order:123:pay}），不能为空
-     * @param waitTime 获取锁的等待时间，不能为空、不能为负；{@code Duration.ZERO} 表示立即尝试
+     * @param waitTime 等待锁的最长时间，不能为空、不能为负；{@code Duration.ZERO} 只尝试一次
      * @param action   锁内执行的动作，不能为空
-     * @param <T>      返回值类型
-     * @return action 的执行结果；等待超时未获取到锁返回 null
-     * @throws IllegalArgumentException lockKey / waitTime / action 非法时 fail-fast
-     *         （锁场景禁止静默忽略，避免无锁执行）
+     * @param <T>      动作返回值类型
+     * @return action 的执行结果；等待超时未拿到锁返回 null
+     * @throws IllegalArgumentException lockKey / waitTime 非法时 fail-fast，锁场景不容忍静默无锁执行
+     * @throws NullPointerException     action 为 null 时抛出
      */
     public <T> T executeWithLock(String lockKey, Duration waitTime, Supplier<T> action) {
         return executeWithLock(lockKey, waitTime, null, action);
@@ -1061,20 +1099,20 @@ public class RedisHelper {
     /**
      * 在分布式锁内执行业务动作（获取锁失败返回 null 而非抛异常）
      *
-     * <p>统一封装「tryLock + finally 解锁」样板，锁 key 自动加 {@code yeed:lock:} 前缀，
-     * 无需业务自己处理加锁失败、中断、释放等细节；业务动作抛出的异常向上传播
-     * （不吞异常），锁在 finally 中保证释放
+     * <p> 统一封装「tryLock + finally 解锁」样板，锁 key 自动加 {@code yeed:lock:} 前缀：
+     * 业务动作自身抛出的异常照常向上传播，锁在 finally 中释放
      *
      * @param lockKey   锁的业务标识（如 {@code order:123:pay}），不能为空
-     * @param waitTime  获取锁的等待时间，不能为空、不能为负；{@code Duration.ZERO} 表示立即尝试
-     * @param leaseTime 锁的持有时间；传 {@code null} 表示启用 Redisson 看门狗自动续期
-     *                  （推荐：进程崩溃自动释放，无死锁风险），
-     *                  传非空则到期自动释放（业务未在期限内完成可能提前解锁）
+     * @param waitTime  等待锁的最长时间，不能为空、不能为负；{@code Duration.ZERO} 只尝试一次
+     * @param leaseTime 锁的持有时间；传 {@code null} 启用 Redisson 看门狗自动续期
+     *                  （进程崩溃也能自动释放，无死锁风险），传非空则到期强制释放，
+     *                  业务没在期限内跑完会被提前解锁
      * @param action    锁内执行的动作，不能为空
-     * @param <T>       返回值类型
-     * @return action 的执行结果；等待超时未获取到锁返回 null
-     * @throws IllegalArgumentException lockKey / waitTime / leaseTime / action 非法时 fail-fast
-     *         （锁场景禁止静默忽略，避免无锁执行）
+     * @param <T>       动作返回值类型
+     * @return action 的执行结果；等待超时未拿到锁返回 null
+     * @throws IllegalArgumentException lockKey / waitTime / leaseTime 非法时 fail-fast，
+     *                                 锁场景不容忍静默无锁执行
+     * @throws NullPointerException     action 为 null 时抛出
      */
     public <T> T executeWithLock(String lockKey, Duration waitTime, Duration leaseTime, Supplier<T> action) {
         assertLockArgs(lockKey, waitTime, leaseTime);
@@ -1100,14 +1138,14 @@ public class RedisHelper {
     }
 
     /**
-     * 尝试获取分布式锁（立即返回，不等待）
+     * 尝试获取分布式锁，持锁时长启用看门狗自动续期
      *
-     * <p>获取成功后需在业务结束后调用 {@link #unlock(String)} 释放；
-     * 更推荐使用 {@link #executeWithLock(String, Duration, Supplier)} 自动管理释放
+     * <p> 拿到锁后必须在业务结束时调用 {@link #unlock(String)}，漏掉要等进程崩溃才释放；
+     * 更推荐 {@link #executeWithLock(String, Duration, Supplier)} 自动管理释放
      *
      * @param lockKey  锁的业务标识，不能为空
-     * @param waitTime 获取锁的等待时间，不能为空、不能为负；{@code Duration.ZERO} 表示立即尝试
-     * @return true 获取成功；false 等待超时未获取到或异常
+     * @param waitTime 等待锁的最长时间，不能为空、不能为负；{@code Duration.ZERO} 只尝试一次
+     * @return true 拿到锁；false 等待超时未拿到、线程被中断或 Redis 异常
      * @throws IllegalArgumentException lockKey / waitTime 非法时 fail-fast
      */
     public boolean tryLock(String lockKey, Duration waitTime) {
@@ -1117,14 +1155,14 @@ public class RedisHelper {
     /**
      * 尝试获取分布式锁
      *
-     * <p>获取成功后需在业务结束后调用 {@link #unlock(String)} 释放；
-     * 更推荐使用 {@link #executeWithLock(String, Duration, Duration, Supplier)} 自动管理释放
+     * <p> 拿到锁后必须在业务结束时调用 {@link #unlock(String)}，漏掉要等进程崩溃才释放；
+     * 更推荐 {@link #executeWithLock(String, Duration, Duration, Supplier)} 自动管理释放
      *
      * @param lockKey   锁的业务标识，不能为空
-     * @param waitTime  获取锁的等待时间，不能为空、不能为负；{@code Duration.ZERO} 表示立即尝试
-     * @param leaseTime 锁的持有时间；传 {@code null} 表示启用 Redisson 看门狗自动续期，
-     *                  传非空则到期自动释放
-     * @return true 获取成功；false 等待超时未获取到或异常
+     * @param waitTime  等待锁的最长时间，不能为空、不能为负；{@code Duration.ZERO} 只尝试一次
+     * @param leaseTime 锁的持有时间；传 {@code null} 启用 Redisson 看门狗自动续期，
+     *                  传非空则到期强制释放（业务没跑完也会被解锁）
+     * @return true 拿到锁；false 等待超时未拿到、线程被中断或 Redis 异常
      * @throws IllegalArgumentException lockKey / waitTime / leaseTime 非法时 fail-fast
      */
     public boolean tryLock(String lockKey, Duration waitTime, Duration leaseTime) {
@@ -1145,8 +1183,10 @@ public class RedisHelper {
     /**
      * 释放当前线程持有的分布式锁
      *
+     * <p> 只释放当前线程持有的锁：别的线程持有或压根没锁时返回 false，不会误删他人锁
+     *
      * @param lockKey 锁的业务标识，不能为空
-     * @return true 释放成功；false 当前线程未持有锁、参数非法或异常
+     * @return true 释放成功；false 当前线程未持有该锁、参数非法或 Redis 异常
      */
     public boolean unlock(String lockKey) {
         if (!StringUtils.hasText(lockKey)) {
@@ -1166,14 +1206,16 @@ public class RedisHelper {
     }
 
 
-    /* ==================== 发布订阅（RTopic，发布端）=============== */
+    // ======================== 发布订阅（RTopic，发布端）===============
 
     /**
-     * 向指定主题发布消息（仅发布端的薄封装；订阅由业务直接使用 RTopic 管理监听器生命周期）
+     * 向指定主题发布消息（只封装发布端，订阅端由业务直接用 RTopic 管理监听器生命周期）
+     *
+     * <p> Redis 发布订阅是即发即忘：没有订阅者时消息直接丢弃，要求可靠投递的场景别用它
      *
      * @param topic   主题名，不能为空
-     * @param message 消息体，不能为空
-     * @return true 发布成功；false 参数非法或异常
+     * @param message 消息体，需可被 Jackson 序列化，不能为空
+     * @return true 发布成功；false 参数非法或 Redis 异常
      */
     public boolean publish(String topic, Object message) {
         if (!StringUtils.hasText(topic) || message == null) {
@@ -1189,7 +1231,7 @@ public class RedisHelper {
     }
 
 
-    /* ==================== 私有辅助 ================================ */
+    // ======================== 私有辅助方法 ============================
 
     /**
      * 校验分布式锁参数，非法即抛异常（fail-fast，避免静默无锁执行）

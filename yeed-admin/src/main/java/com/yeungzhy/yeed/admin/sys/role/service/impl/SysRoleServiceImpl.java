@@ -64,7 +64,6 @@ public class SysRoleServiceImpl implements SysRoleService {
         // 角色编码是业务唯一标识
         checkRoleCodeUnique(dto.getRoleCode(), null);
 
-        // DTO -> Entity：同名字段由 MapStruct 自动映射
         SysRole entity = sysRoleConvert.toEntity(dto);
         sysRoleMapper.insert(entity);
         return entity.getId();
@@ -84,7 +83,6 @@ public class SysRoleServiceImpl implements SysRoleService {
                 "内置角色禁止修改角色编码");
         checkRoleCodeUnique(dto.getRoleCode(), dto.getId());
 
-        // DTO -> Entity：id 与业务字段均自动映射
         SysRole entity = sysRoleConvert.toEntity(dto);
         sysRoleMapper.updateById(entity);
     }
@@ -95,7 +93,6 @@ public class SysRoleServiceImpl implements SysRoleService {
         BizAssert.notNull(dto.getStatus(), "目标状态不能为空");
         SysRole sysRole = sysRoleMapper.selectById(dto.getId());
         BizAssert.notNull(sysRole, "记录不存在");
-        // 内置角色禁改
         BizAssert.isFalse(sysRole.isBuiltin(), "内置角色禁止修改状态");
         SysRole updateEntity = SysRole.builder()
                 .id(dto.getId())
@@ -108,7 +105,6 @@ public class SysRoleServiceImpl implements SysRoleService {
     public SysRoleVO detail(Long id) {
         SysRole entity = sysRoleMapper.selectById(id);
         BizAssert.notNull(entity, "记录不存在");
-        // Entity -> VO：同名字段由 MapStruct 自动映射
         return sysRoleConvert.toVO(entity);
     }
 
@@ -120,7 +116,7 @@ public class SysRoleServiceImpl implements SysRoleService {
                 .like(StringUtils.isNotBlank(dto.getRoleCode()), SysRole::getRoleCode, dto.getRoleCode())
                 .eq(Objects.nonNull(dto.getStatus()), SysRole::getStatus, dto.getStatus());
 
-        // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
+        // 应用排序：先单字段 → 再多字段（顺序敏感）；默认降序；白名单外字段静默忽略
         sysRoleSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
         return sysRoleMapper.selectPageResult(dto, lambdaQuery, sysRoleConvert::toPageVO);
@@ -132,7 +128,6 @@ public class SysRoleServiceImpl implements SysRoleService {
     public void grantMenus(SysRoleMenuGrantDTO dto) {
         BizAssert.notNull(dto.getRoleId(), "角色ID不能为空");
         BizAssert.notEmpty(dto.getMenuIds(), "菜单ID集合不能为空");
-        // 角色必须存在
         BizAssert.notNull(sysRoleMapper.selectById(dto.getRoleId()), "角色不存在");
         // 菜单必须全部存在（去重后数量比对；菜单为逻辑删除表，selectCount 自动滤已删数据）
         List<Long> menuIds = dto.getMenuIds().stream().distinct().toList();
@@ -141,8 +136,10 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         // 全量覆盖式授权：先清空旧关联，再批量写入新关联（关联表无审计字段，物理删插即可）
         sysRoleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, dto.getRoleId()));
-        // 服务端强制补链（数据不变量）：沿 parentId 上溯补全祖先节点，菜单树完整性不依赖前端联动提交；
-        // 前端已联动提交完整集时补链幂等无害，前端绕过/漏传时兜底。脏数据断链即停止，不插入悬空关联
+        /*
+         * 服务端强制补链（数据不变量）：沿 parentId 上溯补全祖先，菜单树完整性不依赖前端联动提交
+         * 前端已提交完整集时补链幂等无害，漏传或被绕过时兜底；遇到断链脏数据即停，不插入悬空关联
+         */
         Map<Long, Long> parentIdMap = sysMenuMapper.selectList(
                         Wrappers.<SysMenu>lambdaQuery().select(SysMenu::getId, SysMenu::getParentId))
                 .stream()

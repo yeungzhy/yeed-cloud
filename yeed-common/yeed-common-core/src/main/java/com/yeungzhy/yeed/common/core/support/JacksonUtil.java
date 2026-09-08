@@ -44,28 +44,29 @@ import static com.yeungzhy.yeed.common.core.constant.Constant.DATE_TIME_PATTERN;
 /**
  * 基于 {@link ObjectMapper} 的 JSON 操作静态工具类，全项目 JSON 读写的唯一出口
  *
- * <p>异常策略：底层异常统一包装为 {@link RuntimeException}（保留 cause），信息只携带目标类型 / key / path
- * 等元信息，不含 JSON 报文内容（避免手机号、邮箱等敏感数据落盘），业务代码无需到处 try-catch。
+ * <p> 异常策略：底层异常统一包装为 {@link RuntimeException}（保留 cause），信息只携带目标类型 / key / path
+ * 等元信息，不含 JSON 报文内容（避免手机号、邮箱等敏感数据落盘），业务代码无需到处 try-catch
  * <ul>
  *   <li>抛出路径不打印日志：序列化 / 解析 / 转换失败一律 throw，由全局异常处理器统一记录，
- *       避免同一异常在工具类和处理器中各打一次造成日志翻倍；
+ *       避免同一异常在工具类和处理器中各打一次造成日志翻倍
  *   <li>吞掉路径才打印日志：字段读取 {@code getXxx} 对「字段缺失 / 类型不匹配」返回 null 并记 warn，
- *       此处无异常可抛，不记则彻底失声。
+ *       此处无异常可抛，不记则彻底失声
  * </ul>
  *
- * <p>取值方法绝不静默返回默认值：{@code asInt()} 对非法文本返回 0、{@code asText()} 对对象节点返回空串、
- * 超范围整数还会静默截断——默认值会把「读错了」伪装成「读到了」。
+ * <p> 取值方法绝不静默返回默认值：{@code asInt()} 对非法文本返回 0、{@code asText()} 对对象节点返回空串、
+ * 超范围整数还会静默截断，默认值会把「读错了」伪装成「读到了」
  *
- * <p>null 入参：读方法（parseXxx / getXxx / convertValue / treeToValue）返回安全默认值，不抛异常；
- * {@link #toJsonStr(Object)} 传入 null 返回字符串 {@code "null"}（业界共识，同 Hutool / Fastjson2）。
+ * <p> null 入参：读方法（parseXxx / getXxx / convertValue / treeToValue）返回安全默认值，不抛异常
+ * {@link #toJsonStr(Object)} 传入 null 返回字符串 {@code "null"}（业界共识，同 Hutool / Fastjson2）
  *
- * <p>null 字段：默认输出 null（Jackson 原生的 {@code ALWAYS}，保证 round-trip 无损，与 Hutool / Fastjson2
- * 的默认相反）。展示 / 传输场景要精简报文时用 {@link #toJsonStrIgnoreNull(Object)}，
- * 不要改全局 inclusion——本类实例同时服务 HTTP 出参、Feign 编解码与 Redis 序列化
+ * <p> null 字段：默认输出 null（Jackson 原生的 {@code ALWAYS}，保证 round-trip 无损，与 Hutool / Fastjson2
+ * 的默认相反），展示 / 传输场景要精简报文时用 {@link #toJsonStrIgnoreNull(Object)}，
+ * 不要改全局 inclusion，本类实例同时服务 HTTP 出参、Feign 编解码与 Redis 序列化
  *
- * <p>复用：同一 JSON 需多次取值时，先 {@link #parseTree(String)} 一次，再复用节点版 {@code getXxx(JsonNode, String)} 重载。
+ * <p> 复用：同一 JSON 需多次取值时，先 {@link #parseTree(String)} 一次，再复用节点版 {@code getXxx(JsonNode, String)} 重载
  *
  * @author yeungzhy
+ * @since 2026-08-01
  * @see JacksonMapperRegistrar
  */
 @Slf4j
@@ -75,12 +76,13 @@ public final class JacksonUtil {
     // 裁剪占位符：按「被省略的是什么」区分，便于排查时一眼判断触发了哪条阈值
     /**
      * 纯文本省略符：字符串字段截长、非 JSON 降级路径共用
-     * <p>刻意不带类型标记：截短本身已自解释（值明显变短且以 {@code ...} 收尾）；且长报文里被截短的字符串
+     *
+     * <p> 刻意不带类型标记：截短本身已自解释（值明显变短且以 {@code ...} 收尾）；且长报文里被截短的字符串
      * 可能有上百处，逐处追加标记纯属噪音，还会污染降级路径的输出
      */
     private static final String PRUNE_ELLIPSIS = "...";
 
-    /** 深度超限：整棵子树被省略。无数量可统计——子树内容未解析，正是省内存的前提 */
+    /** 深度超限：整棵子树被省略，无数量可统计，子树内容未解析正是省内存的前提 */
     private static final String PRUNE_OMITTED_DEPTH = "...(depth)";
 
     /** 数组元素超限：{@code %d} 为被省略的元素个数，运行时拼装（数量对判断「原报文多大」最有价值） */
@@ -88,23 +90,25 @@ public final class JacksonUtil {
 
     /**
      * 生效的 {@link ObjectMapper}
-     * <p>volatile 保证跨线程可见：容器启动时由 {@link JacksonMapperRegistrar} 绑定为 Spring Bean 实例，
-     * 未启动容器时为 {@link #newDefaultMapper()} 兜底实例，两者配置一致
+     * 未启动器时为 {@link #newDefaultMapper()} 兜底实例，两者配置一致
      */
     private static volatile ObjectMapper mapper = newDefaultMapper();
 
     /**
      * 忽略 null 字段的 mapper，仅供 {@link #toJsonStrIgnoreNull(Object)} 使用
-     * <p>由生效 mapper {@code copy()} 派生：忽略 null 只是局部诉求，不能污染 {@link #mapper}
+     *
+     * <p> 由生效 mapper {@code copy()} 派生：忽略 null 只是局部诉求，不能污染 {@link #mapper}
      * （HTTP 出参、Feign 编解码、Redis 序列化共用同一个实例）
-     * <p>与 {@link #mapper} 成对维护，随 {@link #bind(ObjectMapper)} 一并重建；copy 是快照，
+     *
+     * <p> 与 {@link #mapper} 成对维护，随 {@link #bind(ObjectMapper)} 一并重建；copy 是快照，
      * bind 之后对生效 mapper 的改动不会同步过来
      */
     private static volatile ObjectMapper nonNullMapper = newNonNullMapper(mapper);
 
     /**
      * 绑定生效的 {@link ObjectMapper}
-     * <p>仅供容器启动时调用：业务代码替换全局实例会导致各层序列化行为不一致
+     *
+     * <p> 仅供容器启动时调用：业务代码替换全局实例会导致各层序列化行为不一致
      */
     static void bind(ObjectMapper objectMapper) {
         mapper = objectMapper;
@@ -113,7 +117,8 @@ public final class JacksonUtil {
 
     /**
      * 复制出一个忽略 null 字段的 mapper
-     * <p>copy 出的实例有独立的序列化器缓存，故只在初始化 / {@link #bind(ObjectMapper)} 时调用，不在序列化热路径上
+     *
+     * <p> copy 出的实例有独立的序列化器缓存，故只在初始化 / {@link #bind(ObjectMapper)} 时调用，不在序列化热路径上
      */
     private static ObjectMapper newNonNullMapper(ObjectMapper source) {
         return source.copy().setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
@@ -121,7 +126,8 @@ public final class JacksonUtil {
 
     /**
      * 构建标准配置的 {@link ObjectMapper}，保证有/无 Spring 上下文时序列化行为一致
-     * <p>全项目 {@link ObjectMapper} 配置的唯一来源：时间格式化、Long 转 String、忽略未知字段等全局约定
+     *
+     * <p> 全项目 {@link ObjectMapper} 配置的唯一来源：时间格式化、Long 转 String、忽略未知字段等全局约定
      */
     public static ObjectMapper newDefaultMapper() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern(Constant.DATE_TIME_PATTERN);
@@ -163,7 +169,8 @@ public final class JacksonUtil {
     // ============ 序列化：对象 -> JSON ========================
     /**
      * 对象转 JSON 字符串
-     * <p>传入 null 返回字符串 {@code "null"}，而非 Java null
+     *
+     * <p> 传入 null 返回字符串 {@code "null"}，而非 Java null
      */
     public static String toJsonStr(Object obj) {
         try {
@@ -176,13 +183,13 @@ public final class JacksonUtil {
     /**
      * 对象转 JSON 字符串，并忽略值为 null 的字段
      *
-     * <p>仅适用于展示 / 传输场景（日志打印、调试、报文瘦身）。审计落库与契约出参请用 {@link #toJsonStr(Object)}：
+     * <p> 仅适用于展示 / 传输场景（日志打印、调试、报文瘦身）。审计落库与契约出参请用 {@link #toJsonStr(Object)}：
      * null 被裁掉后「字段值为 null」与「字段不存在」不再可区分，而这种区分正是审计报文的价值所在
      *
-     * <p>优先级：类 / 字段上的 {@link JsonInclude} 注解高于本方法所用 mapper 的全局设置，
+     * <p> 优先级：类 / 字段上的 {@link JsonInclude} 注解高于本方法所用 mapper 的全局设置，
      * 被显式标注为 {@code Include.ALWAYS} 的类不会因本方法被裁剪
      *
-     * <p>{@code Map} / {@link JsonNode} 中值为 null 的条目同样会被裁掉
+     * <p> {@code Map} / {@link JsonNode} 中值为 null 的条目同样会被裁掉
      */
     public static String toJsonStrIgnoreNull(Object obj) {
         try {
@@ -194,7 +201,8 @@ public final class JacksonUtil {
 
     /**
      * 对象转带缩进换行的 JSON 字符串，适合日志 / 调试展示
-     * <p>首行无前导空行，结果仍是合法 JSON 字面量
+     *
+     * <p> 首行无前导空行，结果仍是合法 JSON 字面量
      */
     public static String toPrettyJsonStr(Object obj) {
         try {
@@ -231,7 +239,8 @@ public final class JacksonUtil {
 
     /**
      * JSON 字符串转泛型对象，用于 {@code List<User>} / {@code Map<String, User>} 等带实参的场景
-     * <p>用法：{@code parseObject(json, new TypeReference<List<User>>() {})}
+     *
+     * <p> 用法：{@code parseObject(json, new TypeReference<List<User>>() {})}
      */
     public static <T> T parseObject(String json, TypeReference<T> typeReference) {
         if (json == null) {
@@ -307,7 +316,8 @@ public final class JacksonUtil {
 
     /**
      * JSON 字符串转 {@link JsonNode} 树模型，适合结构动态、字段不确定的场景
-     * <p>会物化整棵树，MB 级报文请改用 {@link #pruneJson(String)} 或 {@link #parseRootScalars(byte[], Set)}
+     *
+     * <p> 会物化整棵树，MB 级报文请改用 {@link #pruneJson(String)} 或 {@link #parseRootScalars(byte[], Set)}
      */
     public static JsonNode parseTree(String json) {
         if (json == null) {
@@ -324,8 +334,7 @@ public final class JacksonUtil {
     // ============ 类型转换：对象 -> 对象 ========================
     /**
      * 对象类型转换（Map -> Bean、Bean -> Map、POJO -> POJO）
-     * <p>走 Jackson 而非反射拷贝：字段名与类型由序列化契约决定，与 JSON 进出行为一致
-     */
+     * 
     public static <T> T convertValue(Object fromValue, Class<T> toValueType) {
         if (fromValue == null) {
             return null;
@@ -425,9 +434,9 @@ public final class JacksonUtil {
 
     // ============ JSON 字段读取（get 家族）=====================
     /*
-     * 每个取值方法提供 JsonNode 版（核心实现）+ String 版（委托）两个重载。
+     * 每个取值方法提供 JsonNode 版（核心实现）+ String 版（委托）两个重载
      * String 版等价于 parseTree(json) 后再取节点版，每次调用都会重新解析，
-     * 同一 JSON 需多次取值时先 parseTree 一次并复用节点版。
+     * 同一 JSON 需多次取值时先 parseTree 一次并复用节点版
      */
     /** 读取字段节点，节点为空或字段不存在返回 null */
     public static JsonNode get(JsonNode node, String key) {
@@ -444,7 +453,8 @@ public final class JacksonUtil {
 
     /**
      * 读取字符串字段
-     * <p>字段缺失 / 非标量（对象、数组）返回 null：{@code asText()} 对对象节点返回空串，会把结构错误吞成正常值
+     *
+     * <p> 字段缺失 / 非标量（对象、数组）返回 null：{@code asText()} 对对象节点返回空串，会把结构错误吞成正常值
      */
     public static String getString(JsonNode node, String key) {
         JsonNode value = get(node, key);
@@ -471,7 +481,8 @@ public final class JacksonUtil {
 
     /**
      * 读取整数字段
-     * <p>字段缺失 / 非数字 / 超出 int 范围（如 3000000000）返回 null：
+     *
+     * <p> 字段缺失 / 非数字 / 超出 int 范围（如 3000000000）返回 null：
      * {@code asInt()} 会静默截断成另一个合法值，读错与读到无法区分
      */
     public static Integer getInteger(JsonNode node, String key) {
@@ -506,7 +517,8 @@ public final class JacksonUtil {
 
     /**
      * 读取长整数字段
-     * <p>字段缺失 / 非数字 / 超出 long 范围返回 null，理由同 {@link #getInteger(JsonNode, String)}
+     *
+     * <p> 字段缺失 / 非数字 / 超出 long 范围返回 null，理由同 {@link #getInteger(JsonNode, String)}
      */
     public static Long getLong(JsonNode node, String key) {
         JsonNode value = get(node, key);
@@ -540,7 +552,8 @@ public final class JacksonUtil {
 
     /**
      * 读取布尔字段
-     * <p>字段缺失 / 非布尔 / 非 true、false 文本返回 null：{@code asBoolean()} 对非法文本返回 false，
+     *
+     * <p> 字段缺失 / 非布尔 / 非 true、false 文本返回 null：{@code asBoolean()} 对非法文本返回 false，
      * 会把脏数据当成「显式关闭」，语义恰好相反
      */
     public static Boolean getBoolean(JsonNode node, String key) {
@@ -579,7 +592,8 @@ public final class JacksonUtil {
 
     /**
      * 读取双精度字段
-     * <p>字段缺失 / 非数字 / 文本非数字返回 null，理由同 {@link #getInteger(JsonNode, String)}
+     *
+     * <p> 字段缺失 / 非数字 / 文本非数字返回 null，理由同 {@link #getInteger(JsonNode, String)}
      */
     public static Double getDouble(JsonNode node, String key) {
         JsonNode value = get(node, key);
@@ -607,8 +621,7 @@ public final class JacksonUtil {
 
     /**
      * 读取高精度数字字段
-     * <p>字段缺失 / 非数字 / 文本非数字返回 null。走 {@link JsonNode#decimalValue()} 而非 {@code asText()} 再解析，
-     * 避免 double 中转丢精度
+     * 避免 ouble 中转丢精度
      */
     public static BigDecimal getBigDecimal(JsonNode node, String key) {
         JsonNode value = get(node, key);
@@ -642,7 +655,8 @@ public final class JacksonUtil {
 
     /**
      * 读取嵌套对象并转为指定类型
-     * <p>与标量取值相反，类型转换失败直接抛异常：嵌套结构错了属于数据契约问题，静默返回 null 会难以定位
+     *
+     * <p> 与标量取值相反，类型转换失败直接抛异常：嵌套结构错了属于数据契约问题，静默返回 null 会难以定位
      */
     public static <T> T getObject(JsonNode node, String key, Class<T> clazz) {
         JsonNode value = get(node, key);
@@ -681,7 +695,8 @@ public final class JacksonUtil {
 
     /**
      * 读取嵌套数组并转为 List
-     * <p>嵌套泛型（如 {@code List<List<User>>}）请用 {@link #getObject(JsonNode, String, TypeReference)}
+     *
+     * <p> 嵌套泛型（如 {@code List<List<User>>}）请用 {@link #getObject(JsonNode, String, TypeReference)}
      */
     public static <T> List<T> getArray(JsonNode node, String key, Class<T> clazz) {
         JsonNode value = get(node, key);
@@ -705,7 +720,8 @@ public final class JacksonUtil {
     // ============ 路径读取（支持 a.b.c 点号表达式）=============
     /**
      * 按路径读取标量文本，路径形如 {@code user.address.city}
-     * <p>仅支持点号对象链，不支持数组下标（{@code a[0].b} 请用 {@link #parseTree(String)}
+     *
+     * <p> 仅支持点号对象链，不支持数组下标（{@code a[0].b} 请用 {@link #parseTree(String)}
      * 配合 {@link #get(JsonNode, String)} 逐层取）；路径不存在或命中的是非标量则返回 null
      */
     public static String getByPath(String json, String path) {
@@ -744,7 +760,8 @@ public final class JacksonUtil {
 
     /**
      * 按点号路径逐层下钻取节点
-     * <p>每次调用都重新 {@link #parseTree(String)}，同一报文多次取值请勿走路径版
+     *
+     * <p> 每次调用都重新 {@link #parseTree(String)}，同一报文多次取值请勿走路径版
      */
     private static JsonNode getByPathNode(String json, String path) {
         if (!StringUtils.hasText(path)) {
@@ -764,7 +781,8 @@ public final class JacksonUtil {
     // ============ JSON 校验 ====================================
     /**
      * 判断是否为合法 JSON 文档，对象 / 数组 / 标量均可（{@code "123"}、{@code [1,2]}、{@code "abc"} 都算）
-     * <p>空白与 null 一律判否。整份报文会被解析一遍，仅做校验时请勿在热路径调用
+     *
+     * <p> 空白与 null 一律判否。整份报文会被解析一遍，仅做校验时请勿在热路径调用
      */
     public static boolean isJson(String json) {
         return parseToNode(json) != null;
@@ -786,23 +804,25 @@ public final class JacksonUtil {
     // ============ 大报文裁剪 ====================================
     /**
      * 流式裁剪 JSON 报文，输出仍是合法 JSON，用于操作日志 / 审计等只留摘要的场景
-     * <p>按 {@link JsonPruneOptions#DEFAULT} 裁剪。
-     * <p>与「先建树再改树」的本质区别：全程 token 级处理，{@link JsonParser#skipChildren()} 跳过的子树
+     *
+     * <p> 按 {@link JsonPruneOptions#DEFAULT} 裁剪
+     *
+     * <p> 与「先建树再改树」的本质区别：全程 token 级处理，{@link JsonParser#skipChildren()} 跳过的子树
      * 不解析、不物化成 {@link JsonNode} / Map，峰值内存只与输出长度成正比、与输入长度无关，
-     * 这是唯一能处理 MB 级报文的方案（建树方案的内存通常是报文的数倍）。
+     * 这是唯一能处理 MB 级报文的方案（建树方案的内存通常是报文的数倍）
      *
-     * <p>降级：入参不是合法 JSON（或已被上游按字节截断成半截报文）时无法按结构裁剪，记 warn 后降级为
-     * {@link JsonPruneOptions#maxTotalLength()} 长度的纯文本截断，不抛异常。
+     * <p> 降级：入参不是合法 JSON（或已被上游按字节截断成半截报文）时无法按结构裁剪，记 warn 后降级为
+     * {@link JsonPruneOptions#maxTotalLength()} 长度的纯文本截断，不抛异常
      *
-     * <p>输出长度是硬上限，可直接反推 DB 列长：两条路径统一受 {@link JsonPruneOptions#maxTotalLength()}
+     * <p> 输出长度是硬上限，可直接反推 DB 列长：两条路径统一受 {@link JsonPruneOptions#maxTotalLength()}
      * 约束，公式见 {@link JsonPruneOptions}。预算耗尽后停止输出，借 Jackson 默认开启的
-     * {@code JsonGenerator.Feature.AUTO_CLOSE_JSON_CONTENT} 自动补齐未闭合的括号。
+     * {@code JsonGenerator.Feature.AUTO_CLOSE_JSON_CONTENT} 自动补齐未闭合的括号
      *
-     * <p>输出不可反序列化回原类型：被省略的内容按成因记为不同占位符（{@code "...(depth)"} /
+     * <p> 输出不可反序列化回原类型：被省略的内容按成因记为不同占位符（{@code "...(depth)"} /
      * {@code "...(+N more)"}），与数字、布尔等元素类型混杂；字符串字段也已被
-     * {@link #abbreviate(String, int)} 截短，语义上不再等于原值。这是刻意取舍，别去修——
+     * {@link #abbreviate(String, int)} 截短，语义上不再等于原值。这是刻意取舍，别去修，
      * 换成同类型哨兵（数字写 0、对象写 {}）虽能让反序列化成功，却产出无法与真实数据区分的假数据，
-     * 排查时比解析失败更具误导性。JSON 本就没有「省略标记」语义，任何占位符都必然与真实值歧义。
+     * 排查时比解析失败更具误导性。JSON 本就没有「省略标记」语义，任何占位符都必然与真实值歧义
      */
     public static String pruneJson(String json) {
         return pruneJson(json, JsonPruneOptions.DEFAULT);
@@ -837,7 +857,8 @@ public final class JacksonUtil {
 
     /**
      * 按阈值拷贝当前 token 到生成器：对象递归、数组限量、字符串截长，其余原样透传
-     * <p>每个写入单元（字段名、字符串值）写入前先问 {@link PruneBudget}，耗尽则整棵子树
+     *
+     * <p> 每个写入单元（字段名、字符串值）写入前先问 {@link PruneBudget}，耗尽则整棵子树
      * {@link JsonParser#skipChildren()} 丢弃并逐层返回，一个字符都不再写
      */
     private static void copyPruned(JsonParser parser, JsonGenerator generator, int depth,
@@ -894,9 +915,11 @@ public final class JacksonUtil {
 
     /**
      * 裁剪输出预算：已写字符数达到上限后立刻停止输出，是输出长度可保证的唯一手段
-     * <p>直接读 {@link StringBuffer#length()} 而非自行累加，避免漏算生成器写入的转义字符与结构符号。
-     * <p>计数口径偏保守：此处按 UTF-16 代码单元计，MySQL utf8mb4 的 {@code varchar(n)} 按字符计，
-     * 增补平面字符（emoji）在 Java 侧占 2 个单元却只算 1 个字符，故 Java 侧达标必然 MySQL 侧达标。
+     *
+     * <p> 直接读 {@link StringBuffer#length()} 而非自行累加，避免漏算生成器写入的转义字符与结构符号
+     *
+     * <p> 计数口径偏保守：此处按 UTF-16 代码单元计，MySQL utf8mb4 的 {@code varchar(n)} 按字符计，
+     * 增补平面字符（emoji）在 Java 侧占 2 个单元却只算 1 个字符，故 Java 侧达标必然 MySQL 侧达标
      */
     private record PruneBudget(StringBuffer sink, int maxLength) {
         boolean exhausted() {
@@ -908,24 +931,24 @@ public final class JacksonUtil {
      * 大报文裁剪阈值，四个值各自解决一类超大，均为正整数（非法值在构造时 fail-fast 抛
      * {@link IllegalArgumentException}，避免带着错误配置静默产出无意义的日志）
      * <ul>
-     *   <li>{@code maxFieldLength} —— 单个字符串过长（Base64 文件内容）。同时约束字段名：
-     *       JSON key 长度同样无上限，不约束则单次写入无上界，输出总长就永远保证不了；
-     *   <li>{@code maxArrayElements} —— 数组元素过多（万行列表导出）；
-     *   <li>{@code maxDepth} —— 嵌套过深（深层树形菜单）。根对象为第 1 层，
-     *       超过该层数的子树整棵省略为 {@code "...(depth)"}；
-     *   <li>{@code maxTotalLength} —— 输出硬上限（字符数），合法 / 非法 JSON 两条路径统一受它约束。
+     *   <li>{@code maxFieldLength}，单个字符串过长（Base64 文件内容）。同时约束字段名：
+     *       JSON key 长度同样无上限，不约束则单次写入无上界，输出总长就永远保证不了
+     *   <li>{@code maxArrayElements}，数组元素过多（万行列表导出）
+     *   <li>{@code maxDepth}，嵌套过深（深层树形菜单）。根对象为第 1 层，
+     *       超过该层数的子树整棵省略为 {@code "...(depth)"}
+     *   <li>{@code maxTotalLength}，输出硬上限（字符数），合法 / 非法 JSON 两条路径统一受它约束
      * </ul>
      *
-     * <p>DB 列长公式（唯一需要记的式子）：前三个阈值只削减单个维度的膨胀，字段数 × 元素数 × 嵌套深度
+     * <p> DB 列长公式（唯一需要记的式子）：前三个阈值只削减单个维度的膨胀，字段数 × 元素数 × 嵌套深度
      * 相乘仍可无限膨胀，只有 {@code maxTotalLength} 是真正的总闸门。溢出量 = 最后一次写入的粒度：
      * <pre>
      * 输出字符数 ≤ maxTotalLength + max(2 * maxFieldLength + 2, 21) + 4
      * ⇒ maxTotalLength ≤ 列长 N - max(2 * maxFieldLength + 2, 21) - 4
      * </pre>
-     * 例：MySQL {@code varchar(2000)} 配 {@code maxFieldLength=300} → {@code maxTotalLength ≤ 1396}。
+     * 例：MySQL {@code varchar(2000)} 配 {@code maxFieldLength=300} → {@code maxTotalLength ≤ 1396}
      *
-     * <p>取值自洽：{@code maxTotalLength} 太小会让前三个阈值形同虚设（1024 配 300 时一个字段就占 602 字符，
-     * 保留 10 个数组元素根本放不下）。经验值：{@code maxTotalLength ≥ maxArrayElements * maxFieldLength}。
+     * <p> 取值自洽：{@code maxTotalLength} 太小会让前三个阈值形同虚设（1024 配 300 时一个字段就占 602 字符，
+     * 保留 10 个数组元素根本放不下）。经验值：{@code maxTotalLength ≥ maxArrayElements * maxFieldLength}
      */
     public record JsonPruneOptions(int maxFieldLength, int maxArrayElements, int maxDepth, int maxTotalLength) {
 
@@ -946,15 +969,15 @@ public final class JacksonUtil {
     /**
      * 只挑出根层的若干标量字段，用于报文很大、但只需要其中两三个字段的场景
      *
-     * <p>与 {@link #parseTree(String)} 的本质区别：本方法流式扫描、不建树，目标字段之外的子树一律
+     * <p> 与 {@link #parseTree(String)} 的本质区别：本方法流式扫描、不建树，目标字段之外的子树一律
      * {@link JsonParser#skipChildren()} 跳过（不解析、不物化），峰值内存只与目标字段的文本长度有关、
-     * 与报文长度无关；{@code parseTree} 会物化整棵树，内存通常是报文的数倍。
+     * 与报文长度无关；{@code parseTree} 会物化整棵树，内存通常是报文的数倍
      *
-     * <p>返回节点的类型与原文一致：数字仍是数字节点、布尔仍是布尔节点，可直接 put 到别的节点上，
-     * 不做一律转字符串的降维。
+     * <p> 返回节点的类型与原文一致：数字仍是数字节点、布尔仍是布尔节点，可直接 put 到别的节点上，
+     * 不做一律转字符串的降维
      *
-     * <p>降级：报文本身非法时返回已读到的部分而非抛异常——调用方多为尽力而为的旁路逻辑（如操作日志），
-     * 不该因旁路失败影响主流程，故此处记 warn。
+     * <p> 降级：报文本身非法时返回已读到的部分而非抛异常，调用方多为尽力而为的旁路逻辑（如操作日志），
+     * 不该因旁路失败影响主流程，故此处记 warn
      *
      * @param json       待读取的 JSON 字节；非 JSON 对象（数组、纯文本）返回空节点
      * @param fieldNames 关注的字段名，null / 空返回空节点
@@ -974,8 +997,8 @@ public final class JacksonUtil {
                 String name = parser.currentName();
                 JsonToken value = parser.nextToken();
                 /*
-                 * 只取标量：对象 / 数组一律跳过，null 也跳过——它不代表「读到了值」。
-                 * 如此调用方才能靠 has(field) 区分「字段缺失」与「显式 null」。
+                 * 只取标量：对象 / 数组一律跳过，null 也跳过，它不代表「读到了值」
+                 * 如此调用方才能靠 has(field) 区分「字段缺失」与「显式 null」
                  */
                 if (fieldNames.contains(name) && value != null && value.isScalarValue() && value != JsonToken.VALUE_NULL) {
                     result.set(name, parser.readValueAsTree());
@@ -999,7 +1022,8 @@ public final class JacksonUtil {
     // --- 异常信息 ---
     /**
      * 构造序列化失败信息
-     * <p>异常信息统一由私有方法生成，保证全类文案、字段顺序、分隔符一致，且只携带类型等元信息
+     *
+     * <p> 异常信息统一由私有方法生成，保证全类文案、字段顺序、分隔符一致，且只携带类型等元信息
      */
     private static String serializationFailed(Object source) {
         String sourceType = source == null ? "null" : source.getClass().getName();
@@ -1018,7 +1042,8 @@ public final class JacksonUtil {
 
     /**
      * 构造字段读取失败信息（{@code getObject} / {@code getArray} / {@code getByPath}）
-     * <p>{@code location} 为定位信息，如 {@code key=xxx}、{@code path=a.b.c}
+     *
+     * <p> {@code location} 为定位信息，如 {@code key=xxx}、{@code path=a.b.c}
      */
     private static String readFailed(String location, String targetType) {
         return "JSON convert failed, " + location + ", targetType=" + targetType;

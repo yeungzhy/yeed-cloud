@@ -10,7 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  * 后台核心服务
  *
  * @author yeungzhy
- * @date 2026-08-02 16:08
+ * @since 2026-08-02
  */
 @SpringBootApplication
 @EnableFeignClients

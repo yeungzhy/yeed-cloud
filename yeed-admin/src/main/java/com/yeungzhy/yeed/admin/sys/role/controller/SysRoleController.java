@@ -39,10 +39,12 @@ public class SysRoleController {
 
 
     /**
-     * 新增
+     * 新增角色
      *
-     * @param dto 入参
-     * @return 新增记录的主键 ID
+     * <p>roleCode 不能命中内置角色编码白名单，与既有角色重复同样拒绝
+     *
+     * @param dto 新增入参，roleName / roleCode 均不能为空
+     * @return 新增记录的主键 ID；校验失败抛 BizException，不返回失败结果
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
@@ -53,10 +55,12 @@ public class SysRoleController {
 
 
     /**
-     * 更新
+     * 更新角色
      *
-     * @param dto 入参
-     * @return 操作结果
+     * <p>内置角色禁改 roleCode：内置身份由编码白名单判定，改了编码等于绕过内置保护
+     *
+     * @param dto 更新入参，id 不能为空
+     * @return 固定成功；记录不存在或校验失败抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
@@ -67,10 +71,10 @@ public class SysRoleController {
     }
 
     /**
-     * 更新状态
+     * 启停角色，内置角色拒绝变更
      *
-     * @param dto 入参
-     * @return 操作结果
+     * @param dto 主键与目标状态，两者均不能为空
+     * @return 固定成功；内置角色或记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 18:29
      */
@@ -82,10 +86,10 @@ public class SysRoleController {
 
 
     /**
-     * 详情
+     * 角色详情
      *
-     * @param id 主键 ID
-     * @return 详情数据
+     * @param id 主键，不能为空
+     * @return 详情；记录不存在抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
@@ -96,10 +100,10 @@ public class SysRoleController {
 
 
     /**
-     * 分页查询
+     * 分页查询角色
      *
-     * @param dto 分页查询入参
-     * @return 分页结果（仅业务字段，不含审计字段）
+     * @param dto 分页与筛选条件，三个筛选字段都可为空（为空即不参与过滤）
+     * @return 分页结果，出参不含审计字段；无命中返回空页而非 null
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
@@ -111,10 +115,12 @@ public class SysRoleController {
 
     /**
      * 保存角色菜单授权（全量覆盖）
-     * <p>menuIds 为该角色最终的完整权限集合（含按钮权限点）：先清空旧关联，再批量写入新关联。
      *
-     * @param dto 授权入参（角色ID + 菜单ID集合）
-     * @return 操作结果
+     * <p>menuIds 是角色最终的完整权限集合（含按钮权限点），先清空旧关联再批量写入，
+     * 祖先节点由服务端沿 parentId 补全，前端漏传也不会断链
+     *
+     * @param dto 授权入参，roleId 与 menuIds 均不能为空
+     * @return 固定成功；角色不存在或菜单 ID 有无效值抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 18:29
      */
@@ -128,8 +134,8 @@ public class SysRoleController {
     /**
      * 查询角色已授权的菜单 ID 集合（授权页回显）
      *
-     * @param id 角色 ID
-     * @return 已授权菜单 ID 集合
+     * @param id 角色主键，不能为空
+     * @return 已授权菜单 ID；无授权时为空列表
      * @author yeungzhy
      * @since 2026-08-13 18:29
      */
@@ -140,10 +146,12 @@ public class SysRoleController {
 
 
     /**
-     * 删除（逻辑删除）
+     * 删除角色（逻辑删除）
      *
-     * @param id 主键 ID
-     * @return 操作结果
+     * <p>内置角色与已绑定用户的角色拒绝删除，通过校验后级联清理角色菜单关联
+     *
+     * @param id 主键，不能为空
+     * @return 固定成功；不满足删除条件抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */
@@ -155,10 +163,12 @@ public class SysRoleController {
 
 
     /**
-     * 批量删除（逻辑删除）
+     * 批量删除角色（逻辑删除）
      *
-     * @param request 主键 ID 集合请求体
-     * @return 操作结果
+     * <p>整批校验后再删：任一内置角色或已绑定用户即整体拒绝，不做部分删除
+     *
+     * @param request 主键集合，不能为空
+     * @return 固定成功；不满足删除条件抛 BizException
      * @author yeungzhy
      * @since 2026-08-13 06:55:14
      */

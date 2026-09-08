@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 /**
  * 计划目标校验器：把不可执行的配置挡在注册之前
  *
- * <p>校验项包括 CRON 合法性与目标方法的可调用性。注册期 fail-fast 优于执行期报错，
+ * <p> 校验项包括 CRON 合法性与目标方法的可调用性。注册期 fail-fast 优于执行期报错，
  * 否则一个写错的 Bean 名只会在触发时才暴露，且每次触发都失败
  *
  * @author yeungzhy
@@ -30,14 +30,14 @@ public class ScheduleTargetValidator {
     /**
      * 把入参的 Bean 名纠正成容器里真实存在的名字
      *
-     * <p>用户习惯双击类名复制粘贴，得到的是首字母大写的 {@code OrderTaskDemo}，
+     * <p> 用户习惯双击类名复制粘贴，得到的是首字母大写的 {@code OrderTaskDemo}，
      * 而 Spring 未显式指定时生成的默认 Bean 名是首字母小写的 {@code orderTaskDemo}，原样存库会导致
      * 保存成功但触发时取不到 Bean。这里按 Spring 的规则做一次等价匹配
      *
-     * <p>用 {@link Introspector#decapitalize(String)} 而非手写首字母小写：前两个字符都是大写时它原样返回
+     * <p> 用 {@link Introspector#decapitalize(String)} 而非手写首字母小写：前两个字符都是大写时它原样返回
      * （如 {@code URLTask}），与 Spring 的 Bean 名生成规则一致
      *
-     * <p>原样匹配优先，故显式指定了大写开头的 Bean 名不会被误改；
+     * <p> 原样匹配优先，故显式指定了大写开头的 Bean 名不会被误改；
      * 转换后仍不存在才报错，最坏情况只是退化成不做纠正
      *
      * @param beanName 待纠正的 Bean 名

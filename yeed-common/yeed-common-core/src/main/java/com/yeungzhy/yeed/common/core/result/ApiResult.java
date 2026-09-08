@@ -36,14 +36,14 @@ public class ApiResult<T> {
 
     /**
      * 业务状态码
-     * <p>0 成功；401/403/404 为 HTTP 语义映射（见 {@link CommonCode}）；1000+ 业务失败。
-     * <p>只能通过 CommonCode 枚举定义，禁止外部随意传入
+     * <p> 0 成功；401/403/404 为 HTTP 语义映射（见 {@link CommonCode}）；1000+ 业务失败
+     * <p> 只能通过 CommonCode 枚举定义，禁止外部随意传入
      */
     private int code;
 
     /**
      * 响应描述信息
-     * <p>成功时通常为 "成功"，失败时为具体错误原因或提示文案
+     * <p> 成功时通常为「成功」，失败时为具体错误原因或提示文案
      */
     private String msg;
 
@@ -114,16 +114,12 @@ public class ApiResult<T> {
     /**
      * 通用业务状态码枚举
      *
-     * <p>按「HTTP 状态码表达通用/稳定语义、body 业务码表达统一结构 + 领域语义」的分工，
-     * 分为三组（互不替代）：
+     * <p> 按「HTTP 状态码表达通用/稳定语义、body 业务码表达统一结构 + 领域语义」的分工，分为三组（互不替代）：
      * <ul>
-     *   <li>成功 – {@code OK(0)}：业务成功固定为 0，不与 HTTP 200 抢占语义；
-     *       前端判成功统一看 {@code code == 0}（配合 HTTP 200）。</li>
-     *   <li>HTTP 语义组 – {@code UNAUTHORIZED / FORBIDDEN / NOT_FOUND}：值对齐
-     *       HTTP 状态码（401/403/404），仅用于网关鉴权错误与静态资源 404 等「无领域语义」
-     *       场景，使 body 状态码与 HTTP 状态码一致，前端一次读懂。</li>
-     *   <li>领域语义组 – {@code 1000~9999}：业务错误（参数/数据库/网络/远程调用等），
-     *       由下游服务以 HTTP 200 透传，前端按 code 分流处理。</li>
+     *   <li>成功 {@code OK(0)}：业务成功固定为 0，不与 HTTP 200 抢占语义；前端判成功统一看 {@code code == 0}（配合 HTTP 200）
+     *   <li>HTTP 语义组 {@code UNAUTHORIZED / FORBIDDEN / NOT_FOUND}：值对齐 HTTP 状态码（401/403/404），
+     *       仅用于网关鉴权错误与静态资源 404 等「无领域语义」场景，使 body 状态码与 HTTP 状态码一致
+     *   <li>领域语义组 {@code 1000~9999}：业务错误（参数/数据库/网络/远程调用等），由下游服务以 HTTP 200 透传，前端按 code 分流处理
      * </ul>
      */
     @Getter

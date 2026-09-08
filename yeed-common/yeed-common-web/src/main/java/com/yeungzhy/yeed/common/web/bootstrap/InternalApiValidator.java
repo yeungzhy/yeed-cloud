@@ -12,31 +12,28 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * 启动期契约守卫：校验内部 RPC-Style 端点"路径前缀与注解成对出现"。
+ * 启动期契约守卫：校验内部 RPC-Style 端点"路径前缀与注解成对出现"
  *
- * <p>内部契约（RPC-Style，见 {@link InternalApi}）成立依赖两个事实同时为真：
- * <ol>
- *   <li>端点挂在 {@code /internal/**} 前缀下（网关不对外路由，仅服务间 Feign 可达）；</li>
- *   <li>类标注 {@code @InternalApi}——它是 {@code InternalApiExceptionHandler} 按类选择接管的依据。
- *       漏标注时，内部端点抛出的异常退化为 HTTP 200：RPC-Style 裸数据契约下消费方既收不到错误码
- *       也拿不到话术，一律降级为"系统繁忙"，与"下游真的挂了"表现得一模一样。</li>
- * </ol>
- * 故校验规则按类级 {@code @RequestMapping} 判定（遍历全部 {@code @Controller}/{@code @RestController} Bean）：
+ * <p> 内部契约（RPC-Style，见 {@link InternalApi}）成立依赖两个事实同时为真
  * <ul>
- *   <li>类级路径含 {@code /internal/**} 却未标注 {@code @InternalApi} → 启动失败；</li>
- *   <li>已标注 {@code @InternalApi} 但类级路径不在 {@code /internal/**} → 启动失败
- *       （注解按类生效，对外路径挂 RPC-Style 会破坏 RESTful 错误契约）；</li>
- *   <li>同一类同时挂内部与外部路径 → 启动失败（注解按类生效，混用必然破坏其中一端的错误契约）。</li>
+ *   <li>端点挂在 {@code /internal/**} 前缀下，网关不对外路由、仅服务间 Feign 可达
+ *   <li>类标注 {@code @InternalApi}，它是
+ *       {@link com.yeungzhy.yeed.common.web.exception.InternalApiExceptionHandler}
+ *       接管内部端点异常的依据；漏标注时内部异常会退化成 HTTP 200 假成功，消费方
+ *       收不到错误码也拿不到话术，一律降级为"系统繁忙"
  * </ul>
+ * 故校验范围是类级 {@code @RequestMapping}（遍历全部 {@code @Controller} / {@code @RestController}
+ * Bean），三类不一致全部启动失败：路径含 {@code /internal/**} 却未标注解、
+ * 已标注解但路径不含该前缀、以及同一类同时存在内部与外部路径（注解按类生效，
+ * 混用必然破坏其中一种错误契约）
  *
- * <p>执行时机与装配：实现 {@link SmartInitializingSingleton}，在所有非懒加载单例实例化完成后执行一次，
- * 抛异常即应用启动失败（fail-fast，先于 Web 容器就绪）。
- * 由 {@code InternalApiValidatorAutoConfiguration} 经 {@code @Bean} 注册、
- * 并由 {@code AutoConfiguration.imports} 加载，否则守卫静默失效。
+ * <p> 执行时机与装配：实现 {@link SmartInitializingSingleton}，所有非懒加载单例实例化完成后
+ * 执行一次，抛异常即启动失败（fail-fast，先于 Web 容器就绪）；
+ * 由 {@link com.yeungzhy.yeed.common.web.config.InternalApiValidatorAutoConfiguration}
+ * 经 {@code @Bean} 注册并由 {@code AutoConfiguration.imports} 加载，否则守卫静默失效
  *
- * <p>校验边界：仅识别 {@code /internal} 前缀且只检查类级映射。内部端点的 {@code /internal} 前缀
- * 约定写在类级 {@code @RequestMapping}（各 InternalController 先例），方法级映射随类前缀继承、
- * 无法逃逸出本校验；若未来允许其它内部前缀，需扩展 {@link #isInternalPath(String)}。
+ * <p> 校验边界：仅识别 {@code /internal} 前缀且只看类级映射；方法级映射随类前缀继承，
+ * 无法逃出本校验，将来若放开其它内部前缀需同步扩展判定逻辑
  *
  * @author yeungzhy
  * @since 2026-09-04
@@ -44,7 +41,9 @@ import java.util.Map;
  */
 public class InternalApiValidator implements SmartInitializingSingleton {
 
-    /** 内部端点统一前缀 */
+    /**
+     * 内部端点统一前缀：网关路由与消费方 Feign 调用约定共用，改动需全链路同步
+     */
     private static final String INTERNAL_PREFIX = "/internal";
 
     private final ApplicationContext applicationContext;
@@ -77,7 +76,8 @@ public class InternalApiValidator implements SmartInitializingSingleton {
             paths = mapping.path();
         }
         if (paths.length == 0) {
-            return; // 类级 @RequestMapping 未声明路径（如仅限定 method/header），无校验对象
+            // 类级 @RequestMapping 未声明路径（如仅限定 method/header），无校验对象
+            return;
         }
 
         boolean hasInternal = false;

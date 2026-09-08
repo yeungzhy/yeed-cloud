@@ -54,7 +54,7 @@ public class SysMenuVO {
     private LocalDateTime updateTime;
     /** 删除人 */
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /** 逻辑删除，0-未删，时间戳-已删 */
     private Long deleteTime;
     /** 乐观锁 */
     private Integer version;

@@ -9,7 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * 网关服务程序入口
  *
  * @author yeungzhy
- * @date 2026-08-02 16:19
+ * @since 2026-08-11
  */
 @SpringBootApplication
 @EnableDiscoveryClient

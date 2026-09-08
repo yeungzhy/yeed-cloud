@@ -34,7 +34,7 @@ public enum MenuVisibleEnum implements IEnum<Integer> {
     /**
      * 数据库存储值（0-隐藏，1-显示）
      * <p>MP {@link EnumValue} + {@link IEnum#getValue()} 双保险，
-     * 兼容 MP 3.5.x 的两种枚举识别机制。
+     * 兼容 MP 3.5.x 的两种枚举识别机制
      */
     @EnumValue
     @JsonValue
@@ -53,8 +53,8 @@ public enum MenuVisibleEnum implements IEnum<Integer> {
 
     /**
      * 解析数据库值（DTO/前端入参的 Integer → 枚举）
-     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
-     * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露。
+     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"），
+     * 范围外取值视为脏数据，抛 {@link IllegalArgumentException} 直接暴露
      *
      * @param code 数据库存储值（0/1）
      * @return 对应枚举；入参为 null 时返回 null

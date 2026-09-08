@@ -9,9 +9,12 @@ import java.util.List;
 /**
  * 通用分页返回体（与 ORM 框架解耦）
  *
- * <p>仅通过 {@link #empty()} 或 {@link #of(long, long, long, List)} 构造；
+ * <p> 仅通过 {@link #empty()} 或 {@link #of(long, long, long, List)} 构造；
  * 如需从 MyBatis-Plus 的 IPage 转换，请使用 common-data 的 {@code MybatisPageConverters.toPageResult}，
- * 切勿在此处引入 ORM 类型或提供"records 元素变换"方法（变换由 MapStruct 生成的 XxxConvert 在组装前完成）。
+ * 切勿在此处引入 ORM 类型或提供「records 元素变换」方法（变换由 MapStruct 生成的 XxxConvert 在组装前完成）
+ *
+ * @author yeungzhy
+ * @since 2026-08-01
  */
 @Data
 @Accessors(chain = true)

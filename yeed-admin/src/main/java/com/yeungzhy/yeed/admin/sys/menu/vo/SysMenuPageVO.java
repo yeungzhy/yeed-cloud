@@ -9,8 +9,7 @@ import lombok.experimental.Accessors;
 /**
  * 系统菜单 分页列表出参 VO
  *
- * <p>仅承载分页列表展示所需业务字段；审计字段（创建/更新人、时间等）属
- * 详情编辑回显场景（见 {@link SysMenuVO}），不在列表接口暴露。
+ * <p>仅承载分页列表展示所需业务字段；审计字段属详情编辑回显场景（见 {@link SysMenuVO}），不在列表接口暴露
  *
  * @author yeungzhy
  * @since 2026-08-13 06:55:30

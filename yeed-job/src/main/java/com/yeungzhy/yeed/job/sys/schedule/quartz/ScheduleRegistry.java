@@ -21,7 +21,7 @@ import java.util.Date;
 /**
  * 计划注册表：把 {@link Schedule} 同步到 Quartz，是控制面唯一出口
  *
- * <p>所有写操作都按 JobKey / TriggerKey 幂等执行，两个 job 实例同时启动装载不会重复注册，
+ * <p> 所有写操作都按 JobKey / TriggerKey 幂等执行，两个 job 实例同时启动装载不会重复注册，
  * Quartz 的 JDBC 存储自身有行锁，无需额外的分布式协调。
  * 本注册表只做新增与覆盖，不清理库中多余的定义，避免误删同伴实例正在使用的作业
  *
@@ -66,7 +66,7 @@ public class ScheduleRegistry {
 
     /**
      * 新增或覆盖计划的作业与触发器，并按状态暂停或恢复
-     * <p>Quartz 侧失败只记日志不向外抛：数据库是真源，下次启动装载会自愈
+     * <p> Quartz 侧失败只记日志不向外抛：数据库是真源，下次启动装载会自愈
      *
      * @param schedule 计划定义
      */
@@ -85,8 +85,10 @@ public class ScheduleRegistry {
                 scheduler.scheduleJob(trigger);
             }
             applyStatus(jobKey, schedule.getStatus());
-            // RuntimeException 一并兜住：CRON 非法、Bean 缺失等由注册前的校验拦下，
-            // 这里只兜住存量脏数据，避免单条坏计划拖垮整个启动装载
+            /*
+             * RuntimeException 一并兜住：CRON 非法、Bean 缺失等由注册前的校验拦下，
+             * 这里只兜住存量脏数据，避免单条坏计划拖垮整个启动装载
+             */
         } catch (SchedulerException | RuntimeException e) {
             log.error("计划注册到 Quartz 失败, scheduleId={}, name={}", schedule.getId(), schedule.getName(), e);
         }
@@ -95,7 +97,7 @@ public class ScheduleRegistry {
     /**
      * 注销计划的触发器与作业
      *
-     * <p>返回成败供调用方决定后续动作：调用方据此判断能否删库，
+     * <p> 返回成败供调用方决定后续动作：调用方据此判断能否删库，
      * 否则会出现"库里没了、Quartz 里还在"的隐形孤儿
      *
      * @param schedule 计划定义
@@ -116,7 +118,7 @@ public class ScheduleRegistry {
     /**
      * 读取计划的运行时触发时间，Quartz 是这部分数据的唯一权威
      *
-     * <p>停用的计划 {@code nextFireTime} 恒为 null，这正是要展示给前端的语义
+     * <p> 停用的计划 {@code nextFireTime} 恒为 null，这正是要展示给前端的语义
      *
      * @param schedule 计划定义
      * @return 上次与下次触发时间，取不到时两个字段均为 null
@@ -138,7 +140,7 @@ public class ScheduleRegistry {
     /**
      * 判断是否处于全局维护模式
      *
-     * <p>Redis 不可用时按非维护模式处理（fail-open），避免缓存抖动导致全站计划停摆
+     * <p> Redis 不可用时按非维护模式处理（fail-open），避免缓存抖动导致全站计划停摆
      *
      * @return true 处于维护模式
      */
@@ -162,7 +164,7 @@ public class ScheduleRegistry {
     /**
      * 同步每日时段窗口对应的 Quartz 日历
      *
-     * <p>窗口由 {@link DailyCalendar} 承载并取反（默认语义是"排除该区间"，取反后才是"只在区间内"）。
+     * <p> 窗口由 {@link DailyCalendar} 承载并取反（默认语义是"排除该区间"，取反后才是"只在区间内"）。
      * 未配置时段时必须清掉日历并把触发器上的日历名置空，残留引用会让计划永远不触发
      *
      * @return 日历名；无时段限制时返回 null

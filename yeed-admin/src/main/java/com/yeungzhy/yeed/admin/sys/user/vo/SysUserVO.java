@@ -11,7 +11,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 系统用户 VO（返回出参）
+ * 系统用户 VO（详情 / 分页列表出参）
+ *
+ * <p>不含 password；phone / email 由 {@code @Sensitive} 在序列化时按掩码规则脱敏
  *
  * @author yeungzhy
  * @since 2026-08-13 06:48:01
@@ -28,7 +30,7 @@ public class SysUserVO {
     // ================== 业务字段 ==================
     /** 系统登录名（登录入口，未删用户中唯一） */
     private String username;
-    /** 真实姓名(用于前台展示) */
+    /** 真实姓名（用于前台展示） */
     private String realName;
     /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;
@@ -54,7 +56,7 @@ public class SysUserVO {
     private LocalDateTime updateTime;
     /** 删除人 */
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /** 逻辑删除，0-未删，时间戳-已删 */
     private Long deleteTime;
     /** 乐观锁 */
     private Integer version;

@@ -18,24 +18,22 @@ import java.nio.charset.StandardCharsets;
 /**
  * 应用启动信息打印器
  *
- * <p>监听 {@link ApplicationReadyEvent}，保证容器就绪且所有 ApplicationRunner
- * 全部成功执行后才输出，避免「先打印启动成功、随后启动失败」的误导输出。
+ * <p> 监听 {@link ApplicationReadyEvent}，等容器就绪且所有 ApplicationRunner 成功执行后才输出，
+ * 避免「先打印启动成功、随后启动失败」的误导
  *
- * <p>使用方式
+ * <p> 使用方式
  * <ol>
- *   <li>由 {@link com.yeungzhy.yeed.common.core.config.StartupInfoPrinterAutoConfiguration} 通过
- *       {@code @Bean} 注册，该配置类由 {@code AutoConfiguration.imports} 自动加载，
- *       下游模块引入 yeed-common-core 即生效，无需额外配置。</li>
- *   <li>如需自定义 Banner，在对应服务模块的 {@code src/main/resources/} 下放置
- *       {@code banner.txt} 即可，ClassPath 加载优先级保证当前服务的文件会覆盖公共默认 Banner；
- *       若未提供则兜底跳过 Banner 打印。</li>
+ *   <li>由 {@link com.yeungzhy.yeed.common.core.config.StartupInfoPrinterAutoConfiguration} 注册，
+ *       引入 yeed-common-core 即生效，无需额外配置
+ *   <li>自定义 Banner：在服务模块 {@code src/main/resources/} 下放置 {@code banner.txt}，
+ *       ClassPath 优先级保证当前服务覆盖公共默认 Banner；未提供则跳过
  * </ol>
  *
- * <p>运行环境兼容
+ * <p> 运行环境兼容
  * <ul>
- *   <li>Servlet Web（admin / auth 等）：通过 {@link WebServerApplicationContext} 取实际绑定端口</li>
- *   <li>Reactive Web（gateway 等）：通过反射获取 {@code ReactiveWebServerApplicationContext} 的端口</li>
- *   <li>非 Web 服务（job 等）：兜底读取 {@code server.port} 配置或显示 {@code N/A}</li>
+ *   <li>Servlet Web（admin / auth 等）：通过 {@link WebServerApplicationContext} 取实际绑定端口
+ *   <li>Reactive Web（gateway 等）：反射获取 {@code ReactiveWebServerApplicationContext} 的端口
+ *   <li>非 Web 服务（job 等）：读 {@code server.port} 配置或显示 {@code N/A}
  * </ul>
  *
  * @author yeungzhy
@@ -92,11 +90,11 @@ public class StartupInfoPrinter {
     }
 
     /**
-     * 解析实际监听端口，兼容三种运行环境：
+     * 解析实际监听端口，兼容三种运行环境
      * <ol>
-     *     <li>Servlet Web 环境 → 从 WebServerApplicationContext 取实际绑定端口（兼容 server.port=0 随机端口）</li>
-     *     <li>Reactive Web 环境 → 反射调用 ReactiveWebServerApplicationContext 取端口</li>
-     *     <li>非 Web 环境 → 读 server.port 配置，缺失则返回 N/A</li>
+     *   <li>Servlet Web → 从 WebServerApplicationContext 取实际绑定端口（兼容 server.port=0 随机端口）
+     *   <li>Reactive Web → 反射调用 ReactiveWebServerApplicationContext 取端口
+     *   <li>非 Web 环境 → 读 server.port 配置，缺失返回 N/A
      * </ol>
      */
     private String resolvePort(ApplicationReadyEvent event) {
@@ -107,7 +105,7 @@ public class StartupInfoPrinter {
             return String.valueOf(webServerContext.getWebServer().getPort());
         }
 
-        // 2) Reactive Web（Spring WebFlux / Gateway）—— 反射判断，避免对 WebFlux 硬依赖
+        // 2) Reactive Web（Spring WebFlux / Gateway）：反射判断，避免对 WebFlux 硬依赖
         try {
             Class<?> reactiveCtxClass = Class.forName(REACTIVE_WEB_SERVER_CONTEXT);
             if (reactiveCtxClass.isInstance(ctx)) {

@@ -26,7 +26,7 @@ public class SysUserDTO {
     private String username;
     /** 密码（Argon2id 单向散列） */
     private String password;
-    /** 真实姓名(用于前台展示) */
+    /** 真实姓名（用于前台展示） */
     private String realName;
     /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;
@@ -54,7 +54,7 @@ public class SysUserDTO {
     private LocalDateTime updateTime;
     /** 删除人 */
     private Long deleteBy;
-    /** 逻辑删除,0-未删,时间戳-已删 */
+    /** 逻辑删除，0-未删，时间戳-已删 */
     private Long deleteTime;
     /** 乐观锁 */
     private Integer version;

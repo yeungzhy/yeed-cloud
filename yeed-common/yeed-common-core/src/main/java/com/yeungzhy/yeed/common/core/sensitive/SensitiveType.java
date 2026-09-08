@@ -5,15 +5,15 @@ import java.util.regex.Pattern;
 /**
  * 敏感数据类型及掩码策略
  *
- * <p>掩码规则由各常量自实现：新增敏感类型只需追加一个常量并实现 {@link #mask(String)}，
- * VO 字段标注 {@link Sensitive} 即刻生效，无需改动其他类。
+ * <p> 掩码规则由各常量自实现：新增敏感类型只需追加一个常量并实现 {@link #mask(String)}，
+ * VO 字段标注 {@link Sensitive} 即刻生效，无需改动其他类
  *
- * <p>同一份类型定义服务两条链路，区别是“敏感串从哪来”：
+ * <p> 同一份类型定义服务两条链路，区别是「敏感串从哪来」：
  * <ul>
  *   <li>VO 出参：字段标 {@link Sensitive}，由 {@link SensitiveJsonSerializer} 调 {@link #mask(String)}。
- *       值本身就是敏感串，掩码保留部分字符便于界面辨识；
+ *       值本身就是敏感串，掩码保留部分字符便于界面辨识
  *   <li>自由文本：由 {@link SensitiveTextUtil} 用 {@link #discoveryPattern()} 从文本中间捞出片段再打码。
- *       文本里可能有多个、也可能夹在长句中，只能按值发现。
+ *       文本里可能有多个、也可能夹在长句中，只能按值发现
  * </ul>
  *
  * @author yeungzhy
@@ -104,7 +104,7 @@ public enum SensitiveType {
 
         /**
          * 18 位（6 地区码 + 8 出生日期 + 3 顺序码 + 1 校验位，可为 X）与 15 位（无校验位）
-         * <p>日期段按合法区间收紧（月份 01-12、日 01-31），既提升精度也降低误伤；
+         * <p> 日期段按合法区间收紧（月份 01-12、日 01-31），既提升精度也降低误伤；
          * 两侧数字边界同 {@link #PHONE}，避免长数字串中段被误判
          */
         @Override

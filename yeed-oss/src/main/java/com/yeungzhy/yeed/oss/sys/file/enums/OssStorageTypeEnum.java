@@ -40,10 +40,11 @@ public enum OssStorageTypeEnum implements IEnum<Integer> {
 
     /**
      * 反查数据库值（开放域语义：查不到返回 null，不抛异常）
-     * <p>开放域枚举值会随时间扩展，旧记录可能携带当前未定义的值，
-     * 反查失败返回 null 由调用方决定兜底策略，避免历史数据反查即崩。
      *
-     * @param code 数据库存储值（0/1/...）
+     * <p>开放域枚举值会随时间扩展，旧记录可能携带当前未定义的值；反查失败返回 null、由调用方决定兜底，
+     * 避免历史数据反查即崩
+     *
+     * @param code 数据库存储值，可为 null
      * @return 对应枚举；code 为 null 或未定义时返回 null
      */
     public static OssStorageTypeEnum fromCodeOrNull(Integer code) {

@@ -12,9 +12,9 @@ import java.util.List;
  *
  * <p>前端登录成功后：
  * <ul>
- *   <li>取 {@link #token} 存入本地，后续每个请求在请求头中携带，由网关统一鉴权；</li>
- *   <li>取 {@link #loginUser} 存入全局状态，供展示当前登录人与按钮级权限指令（{@code v-permission}）使用；</li>
- *   <li>取 {@link #menus} 渲染侧边栏菜单树与前端路由。</li>
+ *   <li>取 {@link #token} 存入本地，后续每个请求在请求头中携带，由网关统一鉴权
+ *   <li>取 {@link #loginUser} 存入全局状态，供展示当前登录人与按钮级权限指令（{@code v-permission}）使用
+ *   <li>取 {@link #menus} 渲染侧边栏菜单树与前端路由
  * </ul>
  *
  * @author yeungzhy
@@ -24,7 +24,7 @@ import java.util.List;
 @Accessors(chain = true)
 public class LoginVO {
 
-    /** 令牌前缀 */
+    /** 令牌前缀，已含尾随空格（如 {@code Bearer }）；前端拼接时不要再补一个空格 */
     private String tokenPrefix;
 
     /** 登录令牌，前端需在后续请求头中携带（头名为 Authorization） */

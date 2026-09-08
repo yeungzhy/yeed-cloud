@@ -17,13 +17,13 @@ import java.util.Map;
 /**
  * 自适应列宽策略：按列内「最长内容的显示宽度」定宽
  *
- * <p>官方 {@link AbstractColumnWidthStyleStrategy} 估宽不准，本实现改按「显示宽度」估算：
+ * <p> 官方 {@link AbstractColumnWidthStyleStrategy} 估宽不准，本实现改按「显示宽度」估算：
  * <ul>
- *   <li>按显示宽度折算：半角算 1、全角（中日韩文字、全角标点等）算 2；</li>
- *   <li>数字去科学计数法与无效尾零（{@code stripTrailingZeros().toPlainString()}），按实际显示算宽；</li>
- *   <li>日期按单元格显示格式折算实际位数（默认 {@code yyyy-MM-dd HH:mm:ss}，支持 {@code @DateTimeFormat} 定制）；</li>
- *   <li>换行文本取最长一行，与折行后的实际显示一致；</li>
- *   <li>加留白 {@value #PADDING_UNITS}、保证最小列宽、设软上限（超长内容交自动换行，硬上限仍守 xlsx 规范的 255）。</li>
+ *   <li>按显示宽度折算：半角算 1、全角（中日韩文字、全角标点等）算 2</li>
+ *   <li>数字去科学计数法与无效尾零（{@code stripTrailingZeros().toPlainString()}），按实际显示算宽</li>
+ *   <li>日期按单元格显示格式折算实际位数（默认 {@code yyyy-MM-dd HH:mm:ss}，支持 {@code @DateTimeFormat} 定制）</li>
+ *   <li>换行文本取最长一行，与折行后的实际显示一致</li>
+ *   <li>加留白 {@value #PADDING_UNITS}、保证最小列宽、设软上限（超长内容交自动换行，硬上限仍守 xlsx 规范的 255）</li>
  * </ul>
  *
  * @author yeungzhy
@@ -67,7 +67,7 @@ public class AdaptiveColumnWidthHandler extends AbstractColumnWidthStyleStrategy
     /**
      * 单元格写完后回调：估算本格内容的显示宽度，超越列内最长记录时回写列宽
      *
-     * <p>调用时机与官方一致（{@code afterCellDispose}），表头单元格与数据单元格都会进来。
+     * <p> 调用时机与官方一致（{@code afterCellDispose}），表头单元格与数据单元格都会进来
      */
     @Override
     protected void setColumnWidth(WriteSheetHolder writeSheetHolder, List<WriteCellData<?>> cellDataList,
@@ -96,9 +96,9 @@ public class AdaptiveColumnWidthHandler extends AbstractColumnWidthStyleStrategy
     /**
      * 取单元格内容的「显示宽度」（字符单位）
      *
-     * <p>表头直接读单元格文本（多级表头每列的 Head 只含自己的层级名，逐格回调天然逐层覆盖）。
+     * <p> 表头直接读单元格文本（多级表头每列的 Head 只含自己的层级名，逐格回调天然逐层覆盖）。
      * 数据格按 {@link WriteCellData} 类型分派：字符串/布尔/数字/日期参与估宽，图片、公式等无法从值
-     * 估宽的类型跳过（沿用官方行为，交由该列其他单元格或最小列宽兜底）。
+     * 估宽的类型跳过（沿用官方行为，交由该列其他单元格或最小列宽兜底）
      *
      * @return 显示宽度；无法估宽时返回 -1
      */
@@ -136,8 +136,8 @@ public class AdaptiveColumnWidthHandler extends AbstractColumnWidthStyleStrategy
     /**
      * 估算 DATE 类型单元格按显示格式渲染后的宽度（字符单位）
      *
-     * <p>显示格式取自单元格数据自带的格式信息（{@code @DateTimeFormat} 定制或 EasyExcel 默认值
-     * {@code yyyy-MM-dd HH:mm:ss}）。取不到时按 EasyExcel 的默认日期格式兜底。
+     * <p> 显示格式取自单元格数据自带的格式信息（{@code @DateTimeFormat} 定制或 EasyExcel 默认值
+     * {@code yyyy-MM-dd HH:mm:ss}）。取不到时按 EasyExcel 的默认日期格式兜底
      */
     private static int dateWidth(WriteCellData<?> cellData) {
         String format = null;
@@ -184,8 +184,8 @@ public class AdaptiveColumnWidthHandler extends AbstractColumnWidthStyleStrategy
     /**
      * 文本的「显示宽度」（字符单位，与 Excel 列宽单位同构）：半角算 1、全角算 2
      *
-     * <p>含换行时取最长一行——内容样式带自动换行，折行显示，按整串算会把列宽撑到没边。
-     * 按码点遍历以正确处理增补平面字符（CJK 扩展 B 区等代理对）。
+     * <p> 含换行时取最长一行，内容样式带自动换行，折行显示，按整串算会把列宽撑到没边。
+     * 按码点遍历以正确处理增补平面字符（CJK 扩展 B 区等代理对）
      */
     private static int displayWidth(String text) {
         if (text == null || text.isEmpty()) {

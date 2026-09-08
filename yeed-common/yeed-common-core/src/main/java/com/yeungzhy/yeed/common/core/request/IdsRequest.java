@@ -9,8 +9,11 @@ import java.util.List;
 /**
  * 按主键 ID 集合批量操作的基础请求体
  *
- * <p>用于"根据 ID 批量删除 / 批量恢复 / 批量物理删除"类接口，
- * 避免直接以裸 {@code List<Long>} 作为入参（无法承载校验注解，也不利于后续扩展业务字段）。
+ * <p> 用于「根据 ID 批量删除 / 批量恢复 / 批量物理删除」类接口，
+ * 避免直接以裸 {@code List<Long>} 作为入参（无法承载校验注解，也不利于后续扩展业务字段）
+ *
+ * @author yeungzhy
+ * @since 2026-08-13
  */
 @Data
 @Accessors(chain = true)

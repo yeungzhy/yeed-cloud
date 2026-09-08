@@ -5,7 +5,7 @@ import com.yeungzhy.yeed.job.sys.schedule.log.enums.ScheduleLogStatusEnum;
 /**
  * 单次触发的执行结果
  *
- * <p>由 {@link ScheduleRunner} 写入 {@link org.quartz.JobExecutionContext#setResult(Object)}，
+ * <p> 由 {@link ScheduleRunner} 写入 {@link org.quartz.JobExecutionContext#setResult(Object)}，
  * 供作业监听器落库；作业自身不向 Quartz 抛异常，避免触发框架级重试
  *
  * @param status   执行结果

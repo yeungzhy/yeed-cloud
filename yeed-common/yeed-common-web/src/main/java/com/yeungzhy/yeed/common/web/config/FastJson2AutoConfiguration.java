@@ -16,12 +16,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
- * FastJson2 全局时间序列化配置。
+ * FastJson2 全局时间序列化配置
  *
- * <p>解决 Java 8+ 时间类型默认序列化格式不统一的问题，按
+ * <p> 解决 Java 8+ 时间类型默认序列化格式不统一的问题，按
  * {@link com.yeungzhy.yeed.common.core.constant.Constant} 中的时间格式注册
- * {@code LocalDateTime}/{@code LocalDate}/{@code LocalTime}/{@code Date} 序列化器，
- * 保持与 Jackson 配置一致。
+ * {@code LocalDateTime} / {@code LocalDate} / {@code LocalTime} / {@code Date} 序列化器，
+ * 与 Jackson 侧的时间格式保持一致
  *
  * @author yeungzhy
  * @since 2026-08-07
@@ -33,7 +33,6 @@ public class FastJson2AutoConfiguration implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         ObjectWriterProvider provider = JSONFactory.getDefaultObjectWriterProvider();
 
-        // 注册 LocalDateTime 序列化器
         provider.register(LocalDateTime.class, new ObjectWriter<LocalDateTime>() {
             final DateTimeFormatter dtf = DateTimeFormatter.ofPattern(Constant.DATE_TIME_PATTERN);
             @Override
@@ -47,7 +46,6 @@ public class FastJson2AutoConfiguration implements ApplicationRunner {
             }
         });
 
-        // 注册 LocalDate 序列化器
         provider.register(LocalDate.class, new ObjectWriter<LocalDate>() {
             final DateTimeFormatter df = DateTimeFormatter.ofPattern(Constant.DATE_PATTERN);
             @Override
@@ -61,7 +59,6 @@ public class FastJson2AutoConfiguration implements ApplicationRunner {
             }
         });
 
-        // 注册 LocalTime 序列化器
         provider.register(LocalTime.class, new ObjectWriter<LocalTime>() {
             final DateTimeFormatter tf = DateTimeFormatter.ofPattern(Constant.TIME_PATTERN);
             @Override
@@ -75,7 +72,6 @@ public class FastJson2AutoConfiguration implements ApplicationRunner {
             }
         });
 
-        // 注册 Date 序列化器
         provider.register(Date.class, new ObjectWriter<Date>() {
             final java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(Constant.DATE_TIME_PATTERN);
             @Override

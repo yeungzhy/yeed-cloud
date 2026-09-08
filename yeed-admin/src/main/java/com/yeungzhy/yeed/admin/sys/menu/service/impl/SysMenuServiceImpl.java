@@ -68,7 +68,6 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 同一父级下菜单名称唯一
         checkMenuNameUnique(dto.getParentId(), dto.getMenuName(), null);
 
-        // DTO -> Entity：同名字段由 MapStruct 自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.insert(entity);
         menuCacheReloader.reload();
@@ -94,12 +93,10 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // parentId 必填：项目约定仅 0 表示顶级、不存在 null，从入参即杜绝 null 语义
         BizAssert.notNull(dto.getParentId(), "父菜单ID不能为空（顶级传0）");
-        // 目标父级：存在性 + 防自环（直接/间接）
         assertValidParent(dbEntity, dto.getParentId());
         // 同一父级下菜单名称唯一（排除自身）
         checkMenuNameUnique(dto.getParentId(), dto.getMenuName(), dto.getId());
 
-        // DTO -> Entity：id 与业务字段均自动映射
         SysMenu entity = sysMenuConvert.toEntity(dto);
         sysMenuMapper.updateById(entity);
         menuCacheReloader.reload();
@@ -114,7 +111,6 @@ public class SysMenuServiceImpl implements SysMenuService {
         SysMenu dbEntity = sysMenuMapper.selectById(dto.getId());
         BizAssert.notNull(dbEntity, "记录不存在");
 
-        // 目标父级：存在性 + 防自环（直接/间接）
         assertValidParent(dbEntity, dto.getParentId());
 
         // 显式 set parentId：仅更新层级字段（移到顶级传 0，update 不承载 null 语义）
@@ -129,7 +125,6 @@ public class SysMenuServiceImpl implements SysMenuService {
     public SysMenuVO detail(Long id) {
         SysMenu entity = sysMenuMapper.selectById(id);
         BizAssert.notNull(entity, "记录不存在");
-        // Entity -> VO：同名字段由 MapStruct 自动映射
         return sysMenuConvert.toVO(entity);
     }
 
@@ -138,7 +133,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     public PageResult<SysMenuPageVO> page(SysMenuPageDTO dto) {
         LambdaQueryWrapper<SysMenu> lambdaQuery = buildQueryWrapper(dto);
 
-        // 应用排序：先单字段 → 再多字段(顺序敏感)；默认降序；白名单外字段静默忽略
+        // 应用排序：先单字段 → 再多字段（顺序敏感）；默认降序；白名单外字段静默忽略
         sysMenuSorts.applyAll(lambdaQuery, dto.getOrderField(), dto.getIsAsc(), dto.getOrders());
 
         return sysMenuMapper.selectPageResult(dto, lambdaQuery, sysMenuConvert::toPageVO);
@@ -197,10 +192,9 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     /**
      * 校验按钮必须填写调用接口路径
-     * <p>按钮（BUTTON）的 path 语义为「调用接口路径」（如 /sys/user/list），
-     * 权限码由 path 派生（{@link SysMenu#pathToPerm(String)}），单一数据源，
-     * 前端无需传 perms；网关据此 Map&lt;接口路径, 权限码&gt; 做接口鉴权，
-     * path 缺失则接口无法被网关管控，故强制必填
+     *
+     * <p>按钮的 path 语义是「调用接口路径」，权限码由 {@link SysMenu#pathToPerm(String)} 派生，
+     * 单一数据源、前端不传 perms；网关按「接口路径 → 权限码」Map 鉴权，path 缺失等于该接口无人管控
      */
     private void assertButtonPath(MenuTypeEnum menuType, String path) {
         if (menuType == MenuTypeEnum.BUTTON) {
@@ -235,7 +229,8 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     /**
      * 校验同一父级下菜单名称唯一
-     * <p>项目约定 parentId 不存在 null（仅 0 为顶级），直接以入参精确匹配即可，无需归一化。
+     *
+     * <p>parentId 不存在 null（仅 0 为顶级），直接按入参精确匹配即可，无需先归一化
      */
     private void checkMenuNameUnique(Long parentId, String menuName, Long excludeId) {
         boolean exists = sysMenuMapper.existsByCondition(q -> {
@@ -251,9 +246,9 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     /**
      * 查询侧环检测（防御历史脏数据）
-     * <p>沿每个节点的祖先链上追，若再次经过已访问节点说明存在环；
-     * 仅告警不阻断——写入侧 {@code assertValidParent} 已拦截新环，
-     * 迭代式 TreeUtil 构建也不会栈溢出，这里负责把存量脏数据显性化。
+     *
+     * <p>沿每个节点的祖先链上追，再次经过已访问节点即存在环；只告警不阻断，
+     * 写入侧已拦新环、迭代式建树也不会栈溢出，这里只负责把存量脏数据显性化
      */
     private void warnIfCycle(List<SysMenu> menus) {
         // 项目约定 parentId 不存在 null，直载入映射（映射缺 id 时 get 返回 null，祖先链自然终止）

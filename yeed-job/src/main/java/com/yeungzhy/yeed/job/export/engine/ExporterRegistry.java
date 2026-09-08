@@ -12,14 +12,14 @@ import java.util.Map;
 /**
  * 导出器注册表（按导出类型路由）
  *
- * <p>构造器注入自动收集容器内全部 {@link Exporter} 实现，再按各实现自报的
- * {@link Exporter#getExportType()} 重建路由表——不用 bean 名作键，
- * 避免 bean 名与 {@link ExportTypeEnum} 的 key 各自漂移后对不上。
+ * <p> 构造器注入自动收集容器内全部 {@link Exporter} 实现，再按各实现自报的
+ * {@link Exporter#getExportType()} 重建路由表，不用 bean 名作键，
+ * 避免 bean 名与 {@link ExportTypeEnum} 的 key 各自漂移后对不上
  *
- * <p>启动期 fail-fast，两类错误都在构造时暴露，不会拖到用户点了导出按钮才发现：
+ * <p> 启动期 fail-fast，两类错误都在构造时暴露，不会拖到用户点了导出按钮才发现：
  * <ul>
- *   <li>重复：同一导出类型有多个实现；</li>
- *   <li>缺失：{@link ExportTypeEnum#values()} 中任一类型没有实现——「枚举加了类型、没写导出器」。</li>
+ *   <li>重复：同一导出类型有多个实现</li>
+ *   <li>缺失：{@link ExportTypeEnum#values()} 中任一类型没有实现：「枚举加了类型、没写导出器」</li>
  * </ul>
  *
  * @author yeungzhy
@@ -58,7 +58,7 @@ public class ExporterRegistry {
     /**
      * 按导出类型 key 取导出器（封闭域 fail-fast）
      *
-     * <p>key 与任务实体的导出类型列同源；启动期已做过全覆盖校验，运行期抛出即意味着 key 未走枚举、是脏数据。
+     * <p> key 与任务实体的导出类型列同源；启动期已做过全覆盖校验，运行期抛出即意味着 key 未走枚举、是脏数据
      *
      * @param typeKey 导出类型 key，不能为 null
      * @return 该类型对应的导出器

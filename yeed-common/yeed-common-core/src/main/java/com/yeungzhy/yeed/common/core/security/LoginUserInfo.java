@@ -9,10 +9,10 @@ import java.util.List;
 /**
  * 登录身份包（服务端会话数据）
  *
- * <p>随登录写入 Sa-Token session（Redis），供下游鉴权与当前登录人读取：
- * {@code SaPermissionImpl} 取 roleCodes/perms、{@link LoginUserHelper} 暴露当前用户。
- * <p>职责边界：本类只承载"服务端鉴权所需"数据；前端渲染用的菜单树
- * （{@link MenuTreeInfo}）不进会话，由登录响应/用户菜单接口单独返回。
+ * <p> 随登录写入 Sa-Token session（Redis），供下游鉴权与当前登录人读取：
+ * {@code SaPermissionImpl} 取 roleCodes/perms、{@link LoginUserHelper} 暴露当前用户
+ * <p> 职责边界：本类只承载「服务端鉴权所需」数据；前端渲染用的菜单树
+ * （{@link MenuTreeInfo}）不进会话，由登录响应/用户菜单接口单独返回
  *
  * @author yeungzhy
  * @since 2026-08-09

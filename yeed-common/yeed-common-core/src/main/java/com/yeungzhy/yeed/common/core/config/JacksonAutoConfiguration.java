@@ -25,8 +25,8 @@ import org.springframework.context.annotation.Bean;
 public class JacksonAutoConfiguration {
 
     /**
-     * 自定义 ObjectMapper 替换 Spring Boot 默认实例, 覆盖默认行为
-     * <p>配置由 {@link JacksonUtil#newDefaultMapper()} 统一提供，本方法不重复定义
+     * 全局唯一 ObjectMapper，替换 Spring Boot 默认实例
+     * <p> 配置由 {@link JacksonUtil#newDefaultMapper()} 统一提供，本方法不重复定义
      */
     @Bean
     public ObjectMapper objectMapper() {
@@ -34,8 +34,8 @@ public class JacksonAutoConfiguration {
     }
 
     /**
-     * 注册 {@link JacksonMapperRegistrar}，把上方 {@link ObjectMapper} 绑定到 {@link JacksonUtil}。
-     * 业务侧直接静态调用 {@code JacksonUtil.toJsonStr(obj)} 即可，无需注入任何 Bean。
+     * 把 {@link ObjectMapper} 绑定到 {@link JacksonUtil}
+     * <p> 业务侧直接静态调用 {@code JacksonUtil.toJsonStr(obj)} 即可，无需注入 Bean
      */
     @Bean
     public JacksonMapperRegistrar jacksonMapperRegistrar(ObjectMapper objectMapper) {

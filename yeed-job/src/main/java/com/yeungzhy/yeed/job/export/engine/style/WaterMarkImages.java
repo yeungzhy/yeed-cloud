@@ -27,8 +27,8 @@ public final class WaterMarkImages {
     /**
      * 水印默认字体（MiSans Regular，1 号字号）
      *
-     * <p>调用方按需 {@code deriveFont} 出目标字号；字体缺失直接抛异常——
-     * 环境缺字体属于部署缺陷，静默降级会让水印悄悄变成方框或系统默认字体。
+     * <p> 调用方按需 {@code deriveFont} 出目标字号；字体缺失直接抛异常：
+     * 环境缺字体属于部署缺陷，静默降级会让水印悄悄变成方框或系统默认字体
      *
      * @return 共享字体实例
      */
@@ -58,7 +58,7 @@ public final class WaterMarkImages {
     /**
      * 字体懒加载持有者：TTF 约 8MB，按任务重复读盘不可接受，故只加载一次
      *
-     * <p>静态内部类持有者惯用法——类加载时才初始化，且天然线程安全。
+     * <p> 静态内部类持有者惯用法：类加载时才初始化，且天然线程安全
      */
     private static final class FontHolder {
 
