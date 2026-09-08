@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 @InternalApi
 @RestController
 @RequestMapping("/internal/oss")
-public class OssFileController {
+public class OssFileInternalController {
 
     @Resource
     private OssFileService ossFileService;

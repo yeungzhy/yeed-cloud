@@ -35,7 +35,7 @@ public class OssFile extends BaseEntity {
     /** MIME类型 */
     private String contentType;
     /** 文件大小(字节) */
-    private Integer fileSize;
+    private Long fileSize;
     /** 文件内容MD5 */
     private String md5;
 

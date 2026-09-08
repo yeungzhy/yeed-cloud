@@ -89,7 +89,7 @@ public class OssFileServiceImpl implements OssFileService {
                 .fileExt(fileExt)
                 .objectKey(objectKey)
                 .storageType(OssStorageTypeEnum.LOCAL_DISK)
-                .fileSize(data.length)
+                .fileSize((long) data.length)
                 .contentType(type.getMimeType())
                 .expireTime(resolveExpireTime(ossProperties.getExpireAfter()))
                 .status(OssFileStatusEnum.AVAILABLE)
