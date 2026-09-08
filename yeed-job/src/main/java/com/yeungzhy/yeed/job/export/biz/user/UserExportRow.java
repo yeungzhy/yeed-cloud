@@ -19,15 +19,18 @@ import java.time.LocalDateTime;
 @Data
 public class UserExportRow {
 
-    /** 真实姓名(用于前台展示) */
-    @ExcelProperty(value = "真实姓名")
-    private String realName;
     /** 系统登录名 */
     @ExcelProperty(value = "系统登录名")
     private String username;
+    /** 真实姓名(用于前台展示) */
+    @ExcelProperty(value = "真实姓名")
+    private String realName;
     /** 工号 */
     @ExcelProperty(value = "工号")
     private String employeeNo;
+    /** 手机号 */
+    @ExcelProperty(value = "手机号")
+    private String phone;
     /** 邮箱 */
     @ExcelProperty(value = "邮箱")
     private String email;
@@ -41,9 +44,10 @@ public class UserExportRow {
 
     public static UserExportRow from(UserExportDTO userExportDTO) {
         UserExportRow userExportRow = new UserExportRow();
-        userExportRow.setRealName(userExportDTO.getRealName());
         userExportRow.setUsername(userExportDTO.getUsername());
+        userExportRow.setRealName(userExportDTO.getRealName());
         userExportRow.setEmployeeNo(userExportDTO.getEmployeeNo());
+        userExportRow.setPhone(userExportDTO.getPhone());
         userExportRow.setEmail(userExportDTO.getEmail());
         userExportRow.setStatus(userExportDTO.getStatus());
         userExportRow.setCreateTime(userExportDTO.getCreateTime());

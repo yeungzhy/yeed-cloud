@@ -75,18 +75,21 @@ public class DefaultDataInitializer implements ApplicationRunner {
     private void initSuperAdmin(DefaultDataProperties.SuperAdmin superAdmin) {
         String username = superAdmin.getUsername();
 
-        boolean exists = sysUserMapper.existsByColumn(SysUser::getUsername, username);
+        // 登录名与工号共用同一个登录入口，占用判定同样要跨两列
+        boolean exists = sysUserMapper.existsByCondition(w -> w.eq(SysUser::getUsername, username)
+                .or()
+                .eq(SysUser::getEmployeeNo, superAdmin.getEmployeeNo()));
         if (exists) {
             log.info("超管账号已存在，跳过: username={}", username);
             return;
         }
 
         SysUser sysUser = SysUser.builder()
-                .realName(BuiltinRoleEnum.SUPER_ADMIN.getRoleName())
                 .username(username)
-                .employeeNo(superAdmin.getEmployeeNo())
                 // Argon2 单向哈希，与业务新增用户完全一致；不依赖环境密钥
                 .password(argon2PwdEncoder.encode(superAdmin.getDefaultPassword()))
+                .realName(BuiltinRoleEnum.SUPER_ADMIN.getRoleName())
+                .employeeNo(superAdmin.getEmployeeNo())
                 .status(EnableStatusEnum.ENABLED)
                 // 系统引导数据，显式赋值以绕过自动填充的登录态校验
                 .createBy(Constant.NO_USER_ID)

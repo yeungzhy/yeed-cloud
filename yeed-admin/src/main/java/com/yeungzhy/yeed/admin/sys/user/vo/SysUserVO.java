@@ -26,19 +26,20 @@ public class SysUserVO {
     private Long id;
 
     // ================== 业务字段 ==================
+    /** 系统登录名（登录入口，未删用户中唯一） */
+    private String username;
     /** 真实姓名(用于前台展示) */
     private String realName;
-    /** 系统登录名 */
-    private String username;
-    /** 工号 */
+    /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;
-    /** 密码 */
-    private String password;
+    /** 手机号 */
+    @Sensitive(type = SensitiveType.PHONE)
+    private String phone;
     /** 邮箱 */
     @Sensitive(type = SensitiveType.EMAIL)
     private String email;
-    /** 邮箱盲索引 */
-    private String emailBidx;
+    /** 最后登录时间 */
+    private LocalDateTime lastLoginTime;
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;
 

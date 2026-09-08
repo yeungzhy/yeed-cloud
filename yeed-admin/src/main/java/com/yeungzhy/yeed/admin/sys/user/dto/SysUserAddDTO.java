@@ -13,14 +13,16 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class SysUserAddDTO {
 
+    /** 系统登录名（登录入口，未删用户中唯一） */
+    private String username;
+    /** 密码（明文入参，Service 层 Argon2 散列后落库） */
+    private String password;
     /** 真实姓名(用于前台展示) */
     private String realName;
-    /** 系统登录名 */
-    private String username;
-    /** 工号 */
+    /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;
-    /** 密码 */
-    private String password;
+    /** 手机号 */
+    private String phone;
     /** 邮箱 */
     private String email;
 

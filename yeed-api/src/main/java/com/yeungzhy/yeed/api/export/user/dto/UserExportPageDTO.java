@@ -19,8 +19,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class UserExportPageDTO extends PageRequest {
 
-    /** 用户名 */
+    /** 系统登录名 */
     private String username;
+    /** 手机号 */
+    private String phone;
     /** 邮箱 */
     private String email;
     /** 状态：0-禁用，1-启用 */

@@ -35,8 +35,10 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -58,6 +60,8 @@ public class SysUserServiceImpl implements SysUserService {
     @Resource
     private SysUserConvert sysUserConvert;
     @Resource
+    private BlindIndexProvider phoneBlindIndex;
+    @Resource
     private BlindIndexProvider emailBlindIndex;
     @Resource
     private SysUserRoleMapper sysUserRoleMapper;
@@ -70,22 +74,33 @@ public class SysUserServiceImpl implements SysUserService {
     @Override
     public Long save(SysUserAddDTO dto) {
         String username = dto.getUsername();
-        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getUsername, username), "系统登录名已存在");
-
         String employeeNo = dto.getEmployeeNo();
-        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmployeeNo, employeeNo), "工号已存在");
+        // 两个登录入口共用一处唯一性判定：只查各自列的话，「A 的登录名 = B 的工号」仍能写库，登录时 OR 查询会命中两行
+        BizAssert.isFalse(existsAccount(username), "系统登录名已存在");
+        BizAssert.isFalse(existsAccount(employeeNo), "工号已存在");
 
-        String plaintextEmail = dto.getEmail();
-        String emailBidx = emailBlindIndex.generateHex(plaintextEmail);
-        BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
+        // 未填手机/邮箱时不生成盲索引：空值算出的 bidx 会让所有未填的用户撞同一条唯一索引
+        String phone = StringUtils.trimToNull(dto.getPhone());
+        String phoneBidx = phone == null ? null : phoneBlindIndex.generateHex(phone);
+        if (phoneBidx != null) {
+            BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getPhoneBidx, phoneBidx), "手机号已存在");
+        }
+
+        String email = normalizeEmail(dto.getEmail());
+        String emailBidx = email == null ? null : emailBlindIndex.generateHex(email);
+        if (emailBidx != null) {
+            BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
+        }
 
         SysUser sysUser = SysUser.builder()
-                .realName(dto.getRealName())
                 .username(username)
-                .employeeNo(employeeNo)
                 .password(argon2PwdEncoder.encode(dto.getPassword()))
-                // email 明文入库，由 FieldCryptoInterceptor 在写库前自动 AES 加密
-                .email(plaintextEmail)
+                .realName(dto.getRealName())
+                .employeeNo(employeeNo)
+                // phone / email 明文入库，由 FieldCryptoInterceptor 在写库前自动 AES 加密
+                .phone(phone)
+                .phoneBidx(phoneBidx)
+                .email(email)
                 .emailBidx(emailBidx)
                 .build();
 
@@ -103,22 +118,65 @@ public class SysUserServiceImpl implements SysUserService {
 
         SysUser updateEntity = SysUser.builder().id(dto.getId()).build();
 
+        String realName = dto.getRealName();
+        if (StringUtils.isNotEmpty(realName)) {
+            updateEntity.setRealName(realName);
+        }
+
         String username = dto.getUsername();
-        if (StringUtils.isNotEmpty(username)) {
-            BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getUsername, username), "用户名已存在");
+        if (StringUtils.isNotEmpty(username) && !username.equals(sysUser.getUsername())) {
+            BizAssert.isFalse(existsAccount(username), "系统登录名已存在");
             updateEntity.setUsername(username);
         }
-        String email = dto.getEmail();
-        if (StringUtils.isNotEmpty(email)) {
-            // 加密的敏感字段, 需要用盲索引定位
-            String emailBidx = emailBlindIndex.generateHex(email);
-            BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
 
-            // email 明文入库，由 FieldCryptoInterceptor 在写库前自动 AES 加密
+        String employeeNo = dto.getEmployeeNo();
+        if (StringUtils.isNotEmpty(employeeNo) && !employeeNo.equals(sysUser.getEmployeeNo())) {
+            BizAssert.isFalse(existsAccount(employeeNo), "工号已存在");
+            updateEntity.setEmployeeNo(employeeNo);
+        }
+
+        String phone = StringUtils.trimToNull(dto.getPhone());
+        if (phone != null) {
+            // 加密列无法按密文比等值，判重只能走盲索引；与自身旧值相同则视为未改动
+            String phoneBidx = phoneBlindIndex.generateHex(phone);
+            if (!phoneBidx.equals(sysUser.getPhoneBidx())) {
+                BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getPhoneBidx, phoneBidx), "手机号已存在");
+            }
+            updateEntity.setPhone(phone);
+            updateEntity.setPhoneBidx(phoneBidx);
+        }
+
+        String email = normalizeEmail(dto.getEmail());
+        if (email != null) {
+            String emailBidx = emailBlindIndex.generateHex(email);
+            if (!emailBidx.equals(sysUser.getEmailBidx())) {
+                BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
+            }
             updateEntity.setEmail(email);
             updateEntity.setEmailBidx(emailBidx);
         }
+
         sysUserMapper.updateById(updateEntity);
+    }
+
+
+    /**
+     * 账号是否已被占用（登录名与工号共用同一个登录入口，必须跨两列判定）
+     */
+    private boolean existsAccount(String account) {
+        return sysUserMapper.existsByCondition(w -> w.eq(SysUser::getUsername, account)
+                .or()
+                .eq(SysUser::getEmployeeNo, account));
+    }
+
+
+    /**
+     * 邮箱归一化：大小写与首尾空白不改变邮箱身份，必须先归一再生成盲索引
+     * <p>否则 {@code A@b.com} 与 {@code a@b.com} 会算出两个不同 bidx，唯一索引形同虚设。
+     */
+    private String normalizeEmail(String email) {
+        String trimmed = StringUtils.trimToNull(email);
+        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
     }
 
 
@@ -155,7 +213,7 @@ public class SysUserServiceImpl implements SysUserService {
      * <p>三处共用一份条件是刻意的：计数与取数一旦各写一套，任一侧加条件都会让「总数」与
      * 「实际取到的行」对不上——导出会表现为进度分母漂移、尾页多取或少取。
      *
-     * @param dto            查询条件（username / email / status / 创建时间区间）
+     * @param dto            查询条件（username / phone / email / status / 创建时间区间）
      * @param withProjection 是否带取数投影（select 列 + 排序）；计数为 false——
      *                       {@code selectCount} 会拿 sqlSelect 拼 {@code COUNT(列1,列2,...)}，多列即语法错误
      * @return 查询条件；分页字段（pageNum / pageSize）不在此处使用
@@ -166,16 +224,22 @@ public class SysUserServiceImpl implements SysUserService {
                 .eq(Objects.nonNull(dto.getStatus()), SysUser::getStatus, dto.getStatus())
                 .between(dto.hasCreateTimeRange(), SysUser::getCreateTime, dto.getCreateTimeStart(), dto.getCreateTimeEnd());
         if (withProjection) {
-            lambdaQuery.select(SysUser::getId, SysUser::getUsername, SysUser::getEmail, SysUser::getStatus, SysUser::getCreateTime);
+            lambdaQuery.select(SysUser::getId, SysUser::getUsername, SysUser::getRealName, SysUser::getEmployeeNo,
+                    SysUser::getPhone, SysUser::getEmail, SysUser::getStatus,
+                    SysUser::getCreateTime, SysUser::getLastLoginTime);
         }
         /*
-         * 邮箱查询条件需要用邮箱信息生成盲索引进行查询。
+         * 手机 / 邮箱是加密列，等值查询只能用明文生成盲索引后比 bidx。
          * 注意：不能用 .eq(condition, column, generateHex(...))
-         * generateHex 会在 eq 的 condition 判断之前执行，空邮箱会触发 BlindIndexProvider 的 null 校验
+         * generateHex 会在 eq 的 condition 判断之前执行，空值会触发 BlindIndexProvider 的 null 校验——
          * 该开关只短路 SQL 拼接，不短路实参求值；对带副作用/会抛异常的实参，必须用 if 守卫。
          */
-        String email = dto.getEmail();
-        if (StringUtils.isNotEmpty(email)) {
+        String phone = StringUtils.trimToNull(dto.getPhone());
+        if (phone != null) {
+            lambdaQuery.eq(SysUser::getPhoneBidx, phoneBlindIndex.generateHex(phone));
+        }
+        String email = normalizeEmail(dto.getEmail());
+        if (email != null) {
             lambdaQuery.eq(SysUser::getEmailBidx, emailBlindIndex.generateHex(email));
         }
 
@@ -187,20 +251,41 @@ public class SysUserServiceImpl implements SysUserService {
     }
 
 
+    /**
+     * 记录最后登录时间
+     *
+     * <p>用 Wrapper 更新而非 {@code updateById}：后者会带乐观锁 version，同一用户并发登录会互相覆盖失败；
+     * 且登录不该刷新 updateBy / updateTime——审计字段要留痕的是「谁改了资料」，不是「谁登录了」。
+     */
+    private void updateLastLoginTime(Long userId) {
+        sysUserMapper.update(null, Wrappers.<SysUser>lambdaUpdate()
+                .set(SysUser::getLastLoginTime, LocalDateTime.now())
+                .eq(SysUser::getId, userId));
+    }
+
+
     @Override
     public LoginUserInfo verify(UserVerifyDTO dto) {
         BizAssert.notBlank(dto.getAccount(), "账号不能为空");
         BizAssert.notBlank(dto.getPassword(), "密码不能为空");
 
-        SysUser user = sysUserMapper.selectOne(Wrappers.<SysUser>lambdaQuery()
+        /*
+         * 不用 selectOne：登录名与工号是两个登录入口、共用同一命名空间，撞号时会命中两行，
+         * selectOne 抛 TooManyResultsException 会变成一次 500，这里显式判定并给可读提示。
+         */
+        List<SysUser> users = sysUserMapper.selectList(Wrappers.<SysUser>lambdaQuery()
                 .eq(SysUser::getStatus, EnableStatusEnum.ENABLED)
                 .and(w ->
                         w.eq(SysUser::getUsername, dto.getAccount())
                          .or()
                          .eq(SysUser::getEmployeeNo, dto.getAccount())));
 
-        BizAssert.notNull(user, "账号不存在或已被禁用");
+        BizAssert.notEmpty(users, "账号不存在或已被禁用");
+        BizAssert.isTrue(users.size() == 1, "账号存在歧义，请联系管理员处理");
+        SysUser user = users.get(0);
+
         BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
+        updateLastLoginTime(user.getId());
 
         // 装配身份包：角色编码 + 权限标识（菜单树由 listMenusByUserId 单独装配，会话不承载前端渲染数据）
         List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(user.getId());

@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 /**
  * 系统用户
  *
@@ -26,19 +28,30 @@ import lombok.experimental.SuperBuilder;
 @TableName(value = "yeed_sys_user", autoResultMap = true)
 public class SysUser extends BaseEntity {
 
+    /** 系统登录名（登录入口，未删用户中唯一） */
+    private String username;
+    /**
+     * 密码（Argon2id 单向散列）
+     * <p>不标 {@link Crypto}：散列本身不可逆，再套一层可逆加密只增加列长与解密依赖；
+     * 出参侧靠 VO 不暴露该字段兜底
+     */
+    private String password;
     /** 真实姓名(用于前台展示) */
     private String realName;
-    /** 系统登录名 */
-    private String username;
-    /** 工号 */
+    /** 工号（登录入口，未删用户中唯一） */
     private String employeeNo;
-    /** 密码 */
-    private String password;
+    /** 手机号 */
+    @Crypto
+    private String phone;
+    /** 手机号盲索引 */
+    private String phoneBidx;
     /** 邮箱 */
     @Crypto
     private String email;
     /** 邮箱盲索引 */
     private String emailBidx;
+    /** 最后登录时间 */
+    private LocalDateTime lastLoginTime;
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;
 

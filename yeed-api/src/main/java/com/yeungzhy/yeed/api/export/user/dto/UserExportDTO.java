@@ -9,7 +9,9 @@ import lombok.experimental.Accessors;
 import java.time.LocalDateTime;
 
 /**
- * 系统用户 DTO（前端入参）
+ * 系统用户 导出 DTO
+ *
+ * <p>字段顺序与建表 DDL 一致，改列必须同步两处；不导出主键以外的内部列（password / *_bidx）。
  *
  * @author yeungzhy
  * @since 2026-08-13 06:48:01
@@ -21,12 +23,15 @@ public class UserExportDTO {
     /** 雪花ID主键 */
     private Long id;
 
-    /** 真实姓名(用于前台展示) */
-    private String realName;
     /** 系统登录名 */
     private String username;
+    /** 真实姓名(用于前台展示) */
+    private String realName;
     /** 工号 */
     private String employeeNo;
+    /** 手机号 */
+    @Sensitive(type = SensitiveType.PHONE)
+    private String phone;
     /** 邮箱 */
     @Sensitive(type = SensitiveType.EMAIL)
     private String email;

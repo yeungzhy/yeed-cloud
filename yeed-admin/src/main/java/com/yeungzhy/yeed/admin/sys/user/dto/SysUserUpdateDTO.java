@@ -18,10 +18,16 @@ public class SysUserUpdateDTO {
     @NotNull(message = "主键 ID 不能为空")
     private Long id;
 
-    /** 用户名 */
+    /** 系统登录名（登录入口，未删用户中唯一） */
     private String username;
-    /** 密码 */
+    /** 当前密码（用于校验操作人身份，不是新密码） */
     private String password;
+    /** 真实姓名(用于前台展示) */
+    private String realName;
+    /** 工号（登录入口，未删用户中唯一） */
+    private String employeeNo;
+    /** 手机号 */
+    private String phone;
     /** 邮箱 */
     private String email;
 
