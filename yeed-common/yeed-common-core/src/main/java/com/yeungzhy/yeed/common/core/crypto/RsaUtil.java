@@ -47,7 +47,27 @@ public final class RsaUtil {
             MGF1ParameterSpec.SHA256,
             PSource.PSpecified.DEFAULT
     );
-    /** 签名算法 */
+
+    /**
+     * 签名算法：SHA256withRSA（PKCS#1 v1.5）
+     *
+     * <p>未升级 RSASSA-PSS：v1.5 签名无已知实际攻击（Bleichenbacher 针对 v1.5 加密，与签名无关），
+     * 强度对 B2B 身份认证与防抵赖足够；openapi 面向外部商户，其 SDK 普遍只支持 v1.5（RSA2）
+     *
+     * <p>升级收益：可证明安全性（随机预言机模型）、RFC 8017 推荐新应用使用、TLS 1.3 已强制。代价：saltLength 须多端对齐，
+     * 且 JDK 验签忽略入参 saltLength（从签名恢复），契约实际只在出方向强制；签名随机化后同一明文两次签名不同
+     *
+     * <p>商户全部自研可控、或不再对接外部 v1.5 生态时升级，配方：
+     * <pre>{@code
+     * private static final String SIGNATURE_ALGORITHM = "RSASSA-PSS";
+     * private static final PSSParameterSpec PSS_SPEC = new PSSParameterSpec(
+     *         "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1);
+     * // sign() / verify() 在 initSign / initVerify 之前各加 signature.setParameter(PSS_SPEC);
+     * }</pre>
+     * saltLength 取哈希长度 32（PSS 推荐，须写进接口契约），trailerField 固定 1（RFC 8017 唯一定义）；
+     * JDK 默认 PSS 参数是主哈希 SHA-1 + MGF1(SHA-1) + saltLength 20，与多端不一致，故必须显式指定；
+     * 启用时恢复 import java.security.spec.PSSParameterSpec
+     */
     private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
     /** 字符集 */
     private static final java.nio.charset.Charset CHARSET = StandardCharsets.UTF_8;
