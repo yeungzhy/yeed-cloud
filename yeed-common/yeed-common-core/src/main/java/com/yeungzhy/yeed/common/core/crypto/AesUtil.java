@@ -68,9 +68,13 @@ public final class AesUtil {
     /**
      * AES 加密（预共享密钥）
      *
+     * <p>密钥与明文均属可信输入，缺失或格式错误即配置故障，抛异常不降级
+     *
      * @param keyBase64 Base64 编码的 AES 密钥（256 bit）
      * @param plainText 明文
      * @return Base64 编码的密文（IV + ciphertext + tag）
+     * @throws IllegalArgumentException 入参为 null 或空，或密钥长度非 128 / 192 / 256 bit
+     * @throws RuntimeException         加密失败
      */
     public static String encrypt(String keyBase64, String plainText) {
         if (plainText == null || plainText.isEmpty()) {
@@ -89,6 +93,8 @@ public final class AesUtil {
 
             return Base64.getEncoder().encodeToString(buffer.array());
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("AES encryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
@@ -97,9 +103,13 @@ public final class AesUtil {
     /**
      * AES 解密（预共享密钥）
      *
+     * <p>密文为空或过短不降级返回空串：那等于把"解密失败"伪装成"明文就是空"，残缺数据会流到离根因最远的下游
+     *
      * @param keyBase64        Base64 编码的 AES 密钥
      * @param cipherTextBase64 Base64 编码的密文（IV + ciphertext + tag）
      * @return 明文
+     * @throws IllegalArgumentException 入参为 null 或空、密钥长度非法、密文过短或 Base64 非法
+     * @throws RuntimeException         tag 校验失败或解密失败
      */
     public static String decrypt(String keyBase64, String cipherTextBase64) {
         if (cipherTextBase64 == null || cipherTextBase64.isEmpty()) {
@@ -109,6 +119,10 @@ public final class AesUtil {
             SecretKey key = loadKey(keyBase64);
 
             byte[] fullBytes = Base64.getDecoder().decode(cipherTextBase64);
+            if (fullBytes.length < IV_LENGTH + TAG_LENGTH / Byte.SIZE) {
+                throw new IllegalArgumentException(
+                        "cipherText is too short, expected at least " + (IV_LENGTH + TAG_LENGTH / Byte.SIZE) + " bytes");
+            }
 
             // 截取 IV
             ByteBuffer buffer = ByteBuffer.wrap(fullBytes);
@@ -122,6 +136,8 @@ public final class AesUtil {
             byte[] decrypted = doDecrypt(key, iv, cipherBytes);
             return new String(decrypted, CHARSET);
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("AES decryption failed [transformation=" + TRANSFORMATION + "]", e);
         }
@@ -177,6 +193,8 @@ public final class AesUtil {
      * @param password         用户密码（明文）
      * @param cipherTextBase64 Base64 编码的密文（salt + IV + ciphertext + tag）
      * @return 明文
+     * @throws IllegalArgumentException 入参为 null 或空、密文过短或 Base64 非法
+     * @throws RuntimeException         密码派生失败、tag 校验失败或解密失败
      */
     public static String decryptByPassword(String password, String cipherTextBase64) {
         if (cipherTextBase64 == null || cipherTextBase64.isEmpty()) {
@@ -187,6 +205,10 @@ public final class AesUtil {
         }
         try {
             byte[] fullBytes = Base64.getDecoder().decode(cipherTextBase64);
+            int minLength = SALT_LENGTH + IV_LENGTH + TAG_LENGTH / Byte.SIZE;
+            if (fullBytes.length < minLength) {
+                throw new IllegalArgumentException("cipherText is too short, expected at least " + minLength + " bytes");
+            }
 
             // 1. 截取 Salt
             ByteBuffer buffer = ByteBuffer.wrap(fullBytes);
@@ -208,6 +230,8 @@ public final class AesUtil {
             byte[] decrypted = doDecrypt(key, iv, cipherBytes);
             return new String(decrypted, CHARSET);
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("AES decryption failed [kdf=" + KDF_ALGORITHM + ", iterations=" + ITERATION_COUNT + "]", e);
         }
@@ -267,8 +291,19 @@ public final class AesUtil {
         return new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
     }
 
+    /**
+     * 加载预共享密钥，校验 Base64 合法且长度为 128 / 192 / 256 bit
+     *
+     * <p>长度不符多为配置截断或粘贴不全，须在库层报出，而非等到 cipher.init 抛 InvalidKeyException
+     */
     private static SecretKey loadKey(String keyBase64) {
+        if (keyBase64 == null || keyBase64.isEmpty()) {
+            throw new IllegalArgumentException("keyBase64 must not be null or empty");
+        }
         byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+        if (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
+            throw new IllegalArgumentException("AES key must be 128 / 192 / 256 bit, but was " + keyBytes.length * 8 + " bit");
+        }
         return new SecretKeySpec(keyBytes, ALGORITHM);
     }
 

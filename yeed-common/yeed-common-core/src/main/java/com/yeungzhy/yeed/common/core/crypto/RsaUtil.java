@@ -76,10 +76,18 @@ public final class RsaUtil {
 
     /**
      * RSA 公钥加密
+     *
+     * <p>公钥与明文均属可信输入，出错即自身故障，抛异常不降级
+     *
+     * @param publicKeyBase64 Base64 编码的 X.509 格式公钥
+     * @param plainText       待加密明文
+     * @return Base64 编码的密文
+     * @throws IllegalArgumentException plainText 为 null 或空
+     * @throws RuntimeException         公钥不可用或加密失败
      */
     public static String encrypt(String publicKeyBase64, String plainText) {
         if (plainText == null || plainText.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("RSA encryption requires non-empty plainText");
         }
         try {
             PublicKey publicKey = loadPublicKey(publicKeyBase64);
@@ -97,10 +105,18 @@ public final class RsaUtil {
 
     /**
      * RSA 私钥解密
+     *
+     * <p>密文为空不降级返回空串：那等于把"解密失败"伪装成"明文就是空"，残缺请求会流到离根因最远的下游
+     *
+     * @param privateKeyBase64 Base64 编码的 PKCS#8 格式私钥
+     * @param cipherTextBase64 Base64 编码的密文
+     * @return 明文
+     * @throws IllegalArgumentException cipherTextBase64 为 null 或空
+     * @throws RuntimeException         私钥不可用或解密失败
      */
     public static String decrypt(String privateKeyBase64, String cipherTextBase64) {
         if (cipherTextBase64 == null || cipherTextBase64.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("RSA decryption requires non-empty cipherText");
         }
         try {
             PrivateKey privateKey = loadPrivateKey(privateKeyBase64);
@@ -120,13 +136,17 @@ public final class RsaUtil {
     /**
      * RSA 私钥签名（SHA256withRSA）
      *
+     * <p>私钥与待签明文均属可信输入（配置 / 服务端自拼的签名基串），出错即自身故障，抛异常不降级
+     *
      * @param privateKeyBase64 Base64 编码的 PKCS#8 格式私钥
      * @param plainText        待签名内容
      * @return Base64 编码的签名
+     * @throws IllegalArgumentException plainText 为 null 或空
+     * @throws RuntimeException         私钥不可用或签名失败
      */
     public static String sign(String privateKeyBase64, String plainText) {
         if (plainText == null || plainText.isEmpty()) {
-            return "";
+            throw new IllegalArgumentException("RSA signing requires non-empty plainText");
         }
         try {
             PrivateKey privateKey = loadPrivateKey(privateKeyBase64);
@@ -146,13 +166,26 @@ public final class RsaUtil {
     /**
      * RSA 公钥验签（SHA256withRSA）
      *
+     * <p>验签是谓词，"不通过"是合法输出：签名值属不可信输入，Base64 畸形、长度不符一律返回 false，
+     * 与"签名无效"同等处理，避免畸形输入触发异常栈与 500
+     *
+     * <p>公钥与算法属可信输入，解析失败或算法不可用即配置故障，抛异常而非静默返回 false，
+     * 否则会把"公钥配错"伪装成"所有商户签名都无效"
+     *
      * @param publicKeyBase64 Base64 编码的 X.509 格式公钥
      * @param plainText       原始内容
      * @param signBase64      Base64 编码的签名
      * @return 是否通过
+     * @throws IllegalStateException 公钥无法解析或算法不可用
      */
     public static boolean verify(String publicKeyBase64, String plainText, String signBase64) {
         if (plainText == null || plainText.isEmpty() || signBase64 == null || signBase64.isEmpty()) {
+            return false;
+        }
+        byte[] signBytes;
+        try {
+            signBytes = Base64.getDecoder().decode(signBase64);
+        } catch (IllegalArgumentException e) {
             return false;
         }
         try {
@@ -162,11 +195,11 @@ public final class RsaUtil {
             signature.initVerify(publicKey);
             signature.update(plainText.getBytes(CHARSET));
 
-            byte[] signBytes = Base64.getDecoder().decode(signBase64);
             return signature.verify(signBytes);
-
-        } catch (Exception e) {
-            throw new RuntimeException("RSA signature verification failed [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
+        } catch (SignatureException e) {
+            return false;
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("RSA signature verification failed [algorithm=" + SIGNATURE_ALGORITHM + "]", e);
         }
     }
 
@@ -192,14 +225,14 @@ public final class RsaUtil {
 
     // ==================== 密钥加载（内部复用）====================
 
-    private static PublicKey loadPublicKey(String publicKeyBase64) throws Exception {
+    private static PublicKey loadPublicKey(String publicKeyBase64) throws GeneralSecurityException {
         byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
         return keyFactory.generatePublic(spec);
     }
 
-    private static PrivateKey loadPrivateKey(String privateKeyBase64) throws Exception {
+    private static PrivateKey loadPrivateKey(String privateKeyBase64) throws GeneralSecurityException {
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);

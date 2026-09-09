@@ -25,14 +25,30 @@ public final class BlindIndexProvider {
     private static final String HMAC_ALGO = "HmacSHA256";
     /** 输出长度（截断到 12 字节 / 96 bit，碰撞概率在 2^48 条记录才显著，足够绝大多数业务场景） */
     private static final int OUTPUT_LENGTH = 12;
+    /** 主密钥最小字节长度（OWASP 推荐 HMAC-SHA256 密钥下限） */
+    private static final int MIN_KEY_LENGTH = 32;
 
     private final byte[] masterKey;
     private final byte[] contextSalt;
 
 
+    /**
+     * 构造盲索引计算器
+     *
+     * <p>密钥长度下限 {@value #MIN_KEY_LENGTH} 字节：短密钥不会报错、照常产出索引，
+     * 但索引可被枚举反推明文，属静默失效，必须在构造期拦下而非留到运行期无从察觉
+     *
+     * @param keyStr         HMAC 主密钥，UTF-8 字节长度至少 {@value #MIN_KEY_LENGTH}
+     * @param contextSaltStr 上下文盐，隔离同一密钥下不同字段的索引空间
+     * @throws IllegalArgumentException 密钥或盐为 null、空，或密钥长度不足
+     */
     public BlindIndexProvider(String keyStr, String contextSaltStr) {
         if (keyStr == null || keyStr.isEmpty()) {
             throw new IllegalArgumentException("Blind index master key must not be null or empty, check config");
+        }
+        if (keyStr.getBytes(StandardCharsets.UTF_8).length < MIN_KEY_LENGTH) {
+            throw new IllegalArgumentException("Blind index master key must be at least "
+                    + MIN_KEY_LENGTH + " bytes (UTF-8), check config");
         }
         if (contextSaltStr == null || contextSaltStr.isEmpty()) {
             throw new IllegalArgumentException("Blind index contextSaltStr must not be null or empty, check config");
@@ -46,8 +62,12 @@ public final class BlindIndexProvider {
      *
      * @param plaintext 原始数据
      * @return 小写十六进制字符串
+     * @throws IllegalArgumentException plaintext 为 null 或空
      */
     public String generateHex(String plaintext) {
+        if (plaintext == null || plaintext.isEmpty()) {
+            throw new IllegalArgumentException("plaintext must not be null or empty, decide empty handling at caller side");
+        }
         byte[] hmac = computeHmac(plaintext);
         // 截断到 OUTPUT_LENGTH 字节，避免完整 32 字节作为索引过长影响存储/查询性能
         byte[] truncated = new byte[OUTPUT_LENGTH];
@@ -57,11 +77,15 @@ public final class BlindIndexProvider {
 
     /**
      * 核心 HMAC-SHA256 计算逻辑：HMAC( masterKey, contextSalt + plaintext )
-     * <p>采用"先拼接上下文盐，再计算 HMAC"的方式，使同一密钥下不同字段的盲索引互相独立。
+     *
+     * <p>采用"先拼接上下文盐，再计算 HMAC"的方式，使同一密钥下不同字段的盲索引互相独立
+     *
+     * <p>空串与 null 同等拒绝：空串算出的索引是固定值，所有未填该字段的记录会撞同一条唯一索引，
+     * 而报错发生在写库时，那时排查者看到的是"为什么两个不同用户手机号冲突"，很难想到源头是空串
      */
     private byte[] computeHmac(String plaintext) {
-        if (plaintext == null) {
-            throw new IllegalArgumentException("plaintext must not be null, decide null handling at caller side");
+        if (plaintext == null || plaintext.isEmpty()) {
+            throw new IllegalArgumentException("plaintext must not be null or empty");
         }
         byte[] plainBytes = plaintext.getBytes(StandardCharsets.UTF_8);
         // 1. 拼接盐和原始数据: salt || data
