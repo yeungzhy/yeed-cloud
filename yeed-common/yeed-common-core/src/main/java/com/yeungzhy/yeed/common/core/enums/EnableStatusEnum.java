@@ -7,15 +7,16 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * "启用/禁用"状态枚举（全系统唯一真相源）
- * <p>所有业务实体的 {@code status} 字段统一使用本枚举承载语义：
+ * 启用状态枚举（全系统 status 字段的唯一真相源）
+ *
+ * <p>禁止在业务代码散落裸数字 0/1 判断启用与否，一律用 {@link #ENABLED} / {@link #DISABLED}
+ * 或 {@link #parse(Integer)} 转换
+ *
+ * <p>三层契约由 {@link #code} 一处标注同时成立：
  * <ul>
- *   <li>DB 层：通过 {@link #code}（0/1）与数据库 TINYINT/INT 列互转（{@link EnumValue} 标注）</li>
- *   <li>ORM 层：MyBatis-Plus 识别 {@link IEnum} / {@link EnumValue}，Lambda Wrapper 直接用枚举即可</li>
- *   <li>序列化层：Jackson 的 {@link JsonValue} 双向生效，入参与出参均为整数 0/1（接口契约不变）</li>
+ *   <li>{@link EnumValue} 与 {@link IEnum#getValue()}：MP 落库与查询，Lambda Wrapper 可直接传枚举</li>
+ *   <li>{@link JsonValue}：入参与出参恒为整数 0/1，反序列化同样生效，无需再补 {@code @JsonCreator}</li>
  * </ul>
- * <p>禁止在任何业务代码中散落裸数字 0/1 判断"启用/禁用"语义，
- * 一律使用 {@link #ENABLED} / {@link #DISABLED} 枚举或 {@link #parse(Integer)} 做转换。
  *
  * @author yeungzhy
  * @since 2026-08-09
@@ -32,10 +33,6 @@ public enum EnableStatusEnum implements IEnum<Integer> {
 
     ;
 
-    /**
-     * 数据库存储值（0-禁用，1-启用）
-     * <p> MP {@link EnumValue} + {@link IEnum#getValue()} 双保险，兼容 MP 3.5.x 的两种枚举识别机制
-     */
     @EnumValue
     @JsonValue
     private final Integer code;
@@ -43,18 +40,15 @@ public enum EnableStatusEnum implements IEnum<Integer> {
     /** 中文描述（用于日志/字典渲染） */
     private final String desc;
 
-    /**
-     * 实现 {@link IEnum#getValue()}，返回 MP 写入数据库的值
-     */
     @Override
     public Integer getValue() {
         return this.code;
     }
 
     /**
-     * 解析数据库值（DTO/前端入参的 Integer → 枚举）
-     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"）；
-     * 范围外取值视为脏数据，抛出 {@link IllegalArgumentException} fail-fast 暴露。
+     * 解析数据库值（Integer → 枚举）
+     *
+     * <p>封闭域语义：{@code null} 返回 {@code null}（支持"前端不传就不修改"），范围外取值视为脏数据 fail-fast
      *
      * @param code 数据库存储值（0/1）
      * @return 对应枚举；入参为 null 时返回 null
@@ -64,9 +58,10 @@ public enum EnableStatusEnum implements IEnum<Integer> {
         if (code == null) {
             return null;
         }
-        // 固定两个分支时用 switch 比 for 循环 + values() clone 更省；
-        // 编译器会把 case 0/1 编译为 tableswitch（O(1)跳转），零额外堆内存。
-        // String switch 不是 tableswitch
+        /*
+         * 两个分支走 switch：编译为 tableswitch（O(1) 跳转），且不 clone values() 数组
+         * String switch 先按哈希分派，不适用此结论
+         */
         return switch (code) {
             case 0 -> DISABLED;
             case 1 -> ENABLED;
@@ -74,16 +69,12 @@ public enum EnableStatusEnum implements IEnum<Integer> {
         };
     }
 
-    /**
-     * 是否"启用"状态（空值视为非启用，便于防御式判断）
-     */
+    /** 是否"启用"状态（空值视为非启用，便于防御式判断） */
     public static boolean isEnabled(EnableStatusEnum status) {
         return status == ENABLED;
     }
 
-    /**
-     * 是否"禁用"状态（空值视为非禁用，便于防御式判断）
-     */
+    /** 是否"禁用"状态（空值视为非禁用，便于防御式判断） */
     public static boolean isDisabled(EnableStatusEnum status) {
         return status == DISABLED;
     }

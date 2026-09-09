@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * 文件类型字典：扩展名 <-> MIME 类型
  *
- * <p> 本枚举的消费者有三个：
+ * <p>消费方有三处：
  * <ul>
  *   <li>oss：上传判真结论落库扩展名与 contentType
  *   <li>gateway：按响应 Content-Type 分类访问日志
@@ -130,7 +130,7 @@ public enum FileTypeEnum {
 
     ;
 
-    /** 规范扩展名：小写、含点（如 {@code ".xlsx"}），用于存储对象 key 与下载文件名 */
+    /** 规范扩展名：小写、含点（如 {@code ".xlsx"}），用于对象 key 与下载文件名；落库值取 {@link FileTypeProbeUtil} 判真结论，不接受入参 */
     private final String extension;
 
     /** 规范 MIME 类型：用于 HTTP Content-Type 与文件记录的 {@code contentType} 列 */
@@ -147,11 +147,8 @@ public enum FileTypeEnum {
     /**
      * 按 MIME 类型反查枚举（开放域查询语义）
      *
-     * <p>与 {@link EnableStatusEnum#parse} 的"封闭域解析、范围外抛异常"不同：MIME 多来自
-     * 下游响应头，取值开放，绝大多数取值（{@code application/json}、{@code text/html} 等）
-     * 本就不在本字典内，未命中是正常状态而非错误，故返回 {@code null} 由调用方决定如何处理。
-     *
-     * <p>大小写不敏感（响应头可能写作 {@code Image/PNG}）；参数部分须由调用方先行剥离。
+     * <p>MIME 多来自下游响应头、取值开放，未命中是常态而非错误，故返回 {@code null} 由调用方兜底，
+     * 与封闭域 {@link EnableStatusEnum#parse} 的 fail-fast 相反；大小写不敏感，参数部分须由调用方先行剥离
      *
      * @param mimeType 裸 MIME 类型，不含 {@code ;charset=...} 等参数
      * @return 命中的文件类型；入参为 null 或未命中时返回 null
