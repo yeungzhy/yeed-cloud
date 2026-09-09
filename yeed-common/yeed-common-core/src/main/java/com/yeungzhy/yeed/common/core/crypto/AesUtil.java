@@ -32,8 +32,8 @@ import java.util.Base64;
  * @author yeungzhy
  * @since 2026-05-22
  */
-public class AesUtil {
-    private AesUtil() {}
+public final class AesUtil {
+    private AesUtil() { throw new UnsupportedOperationException("Utility class cannot be instantiated"); }
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /** 算法 */
