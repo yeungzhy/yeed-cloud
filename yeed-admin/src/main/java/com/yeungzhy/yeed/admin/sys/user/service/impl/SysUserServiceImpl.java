@@ -40,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -88,7 +87,7 @@ public class SysUserServiceImpl implements SysUserService {
             BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getPhoneBidx, phoneBidx), "手机号已存在");
         }
 
-        String email = normalizeEmail(dto.getEmail());
+        String email = SysUser.normalizeEmail(dto.getEmail());
         String emailBidx = email == null ? null : emailBlindIndex.generateHex(email);
         if (emailBidx != null) {
             BizAssert.isFalse(sysUserMapper.existsByColumn(SysUser::getEmailBidx, emailBidx), "邮箱已存在");
@@ -148,7 +147,7 @@ public class SysUserServiceImpl implements SysUserService {
             updateEntity.setPhoneBidx(phoneBidx);
         }
 
-        String email = normalizeEmail(dto.getEmail());
+        String email = SysUser.normalizeEmail(dto.getEmail());
         if (email != null) {
             String emailBidx = emailBlindIndex.generateHex(email);
             if (!emailBidx.equals(sysUser.getEmailBidx())) {
@@ -194,16 +193,6 @@ public class SysUserServiceImpl implements SysUserService {
         return sysUserMapper.existsByCondition(w -> w.eq(SysUser::getUsername, account)
                 .or()
                 .eq(SysUser::getEmployeeNo, account));
-    }
-
-
-    /**
-     * 邮箱归一化：大小写与首尾空白不改变邮箱身份，必须先归一再生成盲索引
-     * <p>否则 {@code A@b.com} 与 {@code a@b.com} 会算出两个不同 bidx，唯一索引形同虚设
-     */
-    private String normalizeEmail(String email) {
-        String trimmed = StringUtils.trimToNull(email);
-        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
     }
 
 
@@ -266,7 +255,7 @@ public class SysUserServiceImpl implements SysUserService {
         if (phone != null) {
             lambdaQuery.eq(SysUser::getPhoneBidx, phoneBlindIndex.generateHex(phone));
         }
-        String email = normalizeEmail(dto.getEmail());
+        String email = SysUser.normalizeEmail(dto.getEmail());
         if (email != null) {
             lambdaQuery.eq(SysUser::getEmailBidx, emailBlindIndex.generateHex(email));
         }

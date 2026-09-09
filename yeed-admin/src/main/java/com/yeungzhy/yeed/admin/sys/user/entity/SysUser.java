@@ -10,8 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * 系统用户
@@ -55,5 +57,16 @@ public class SysUser extends BaseEntity {
     private LocalDateTime lastLoginTime;
     /** 状态：0-禁用，1-启用 */
     private EnableStatusEnum status;
+
+
+    /**
+     * 邮箱归一化：大小写与首尾空白不改变邮箱身份，必须先归一再生成盲索引
+     * <p>否则 {@code A@b.com} 与 {@code a@b.com} 会算出两个不同 bidx，唯一索引形同虚设
+     */
+    public static String normalizeEmail(String email) {
+        String trimmed = StringUtils.trimToNull(email);
+        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
+    }
+
 
 }
