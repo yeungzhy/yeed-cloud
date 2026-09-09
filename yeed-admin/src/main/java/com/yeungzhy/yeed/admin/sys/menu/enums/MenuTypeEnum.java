@@ -7,13 +7,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 菜单类型枚举（菜单模块领域概念）
- * <p>DB 值域固定 {1,2,3}，全部业务判断一律使用枚举或 {@link #parse(Integer)}，
- * 禁止散落裸数字魔法值（如 {@code menuType == 1}）：
+ * 菜单类型枚举
+ *
+ * <p>DB 值域封闭于 {1,2,3}：禁止散落裸数字魔法值（如 {@code menuType == 1}），
+ * 一律用枚举或 {@link #parse(Integer)} 转换
+ *
+ * <p>三层契约由 {@link #code} 一处标注同时成立：
  * <ul>
- *   <li>DB 层：通过 {@link #code} 与 TINYINT/INT 列互转（{@link EnumValue} 标注）</li>
- *   <li>ORM 层：MyBatis-Plus 识别 {@link IEnum}，Lambda Wrapper 直接用枚举</li>
- *   <li>序列化层：Jackson 的 {@link JsonValue} 双向生效，接口契约恒为整数 1/2/3</li>
+ *   <li>{@link EnumValue} 与 {@link IEnum#getValue()}：MP 落库与查询，Lambda Wrapper 可直接传枚举</li>
+ *   <li>{@link JsonValue}：入参与出参恒为整数 1/2/3，反序列化同样生效，无需再补 {@code @JsonCreator}</li>
  * </ul>
  *
  * @author yeungzhy
@@ -34,11 +36,6 @@ public enum MenuTypeEnum implements IEnum<Integer> {
 
     ;
 
-    /**
-     * 数据库存储值（1-目录，2-菜单，3-按钮）
-     * <p>MP {@link EnumValue} + {@link IEnum#getValue()} 双保险，
-     * 兼容 MP 3.5.x 的两种枚举识别机制
-     */
     @EnumValue
     @JsonValue
     private final Integer code;
@@ -46,18 +43,15 @@ public enum MenuTypeEnum implements IEnum<Integer> {
     /** 中文描述（用于日志/字典渲染） */
     private final String desc;
 
-    /**
-     * 实现 {@link IEnum#getValue()}，返回 MP 写入数据库的值
-     */
     @Override
     public Integer getValue() {
         return this.code;
     }
 
     /**
-     * 解析数据库值（DTO/前端入参的 Integer → 枚举）
-     * <p>封闭域解析语义：{@code null} 入参返回 {@code null}（便于"前端不传就不修改"），
-     * 范围外取值视为脏数据，抛 {@link IllegalArgumentException} 直接暴露
+     * 解析数据库值（Integer → 枚举）
+     *
+     * <p>封闭域语义：{@code null} 返回 {@code null}（支持"前端不传就不修改"），范围外取值视为脏数据 fail-fast
      *
      * @param code 数据库存储值（1/2/3）
      * @return 对应枚举；入参为 null 时返回 null

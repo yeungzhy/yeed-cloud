@@ -9,9 +9,8 @@ import lombok.Getter;
 /**
  * 错过触发补偿策略（服务停机、线程池占满导致该触发的时刻没触发）
  *
- * <p> 常见误解是"补跑"等于"把错过的每一次都补上"：{@link #FIRE_ONCE} 只补跑一次，
- * 与错过多久、错过几次无关。Quartz 的 CronTrigger 未提供"补跑全部"，
- * 想全量补偿只能让业务方法自己按"上次成功时间"回溯处理
+ * <p>常见误解是"补跑"等于"把错过的每一次都补上"：{@link #FIRE_ONCE} 只补跑一次，与错过多久、
+ * 错过几次无关；Quartz 的 CronTrigger 未提供"补跑全部"，想全量补偿只能让业务方法按"上次成功时间"回溯处理
  *
  * @author yeungzhy
  * @since 2026-09-08
@@ -28,7 +27,6 @@ public enum ScheduleMisfireEnum implements IEnum<Integer> {
 
     ;
 
-    /** 数据库存储值（0-丢弃，1-补跑一次） */
     @EnumValue
     @JsonValue
     private final Integer code;
@@ -36,18 +34,15 @@ public enum ScheduleMisfireEnum implements IEnum<Integer> {
     /** 中文描述（用于日志/字典渲染） */
     private final String desc;
 
-    /**
-     * 实现 {@link IEnum#getValue()}，返回 MP 写入数据库的值
-     */
     @Override
     public Integer getValue() {
         return this.code;
     }
 
     /**
-     * 解析数据库值（DTO/前端入参的 Integer → 枚举）
+     * 解析数据库值（Integer → 枚举）
      *
-     * <p> {@code null} 入参返回 {@code null}；范围外取值视为脏数据 fail-fast 暴露
+     * <p>封闭域语义：{@code null} 返回 {@code null}（支持"前端不传就不修改"），范围外取值视为脏数据 fail-fast
      *
      * @param code 数据库存储值（0/1）
      * @return 对应枚举；入参为 null 时返回 null
