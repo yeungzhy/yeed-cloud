@@ -73,8 +73,8 @@ public class SaTokenConfig {
      *   <li>精确与模式均未命中：路径没登记过，按 404 处理而不是放行
      * </ul>
      *
-     * <p>本方法跑在 Netty event loop 线程上（SaReactorFilter 的 auth 回调），全程只做内存查询与
-     * Sa-Token 会话直读，避免同步阻塞 Redis 占住 event loop
+     * <p>本方法跑在 Netty event loop 线程上（SaReactorFilter 的 auth 回调）。权限快照查表全程本地、
+     * 零 Redis；仅存的阻塞点是 登录态校验与读取会话权限仍需同步读 Sa-Token 会话（会话在 Redis，JWT 为 Simple 模式）
      *
      * @author yeungzhy
      * @since 2026-08-15
