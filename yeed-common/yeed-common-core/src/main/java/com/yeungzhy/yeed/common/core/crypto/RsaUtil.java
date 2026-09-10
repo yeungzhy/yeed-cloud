@@ -52,12 +52,12 @@ public final class RsaUtil {
      * 签名算法：SHA256withRSA（PKCS#1 v1.5）
      *
      * <p>未升级 RSASSA-PSS：v1.5 签名无已知实际攻击（Bleichenbacher 针对 v1.5 加密，与签名无关），
-     * 强度对 B2B 身份认证与防抵赖足够；openapi 面向外部商户，其 SDK 普遍只支持 v1.5（RSA2）
+     * 强度对 B2B 身份认证与防抵赖足够；openapi 面向外部应用，其 SDK 普遍只支持 v1.5（RSA2）
      *
      * <p>升级收益：可证明安全性（随机预言机模型）、RFC 8017 推荐新应用使用、TLS 1.3 已强制。代价：saltLength 须多端对齐，
      * 且 JDK 验签忽略入参 saltLength（从签名恢复），契约实际只在出方向强制；签名随机化后同一明文两次签名不同
      *
-     * <p>商户全部自研可控、或不再对接外部 v1.5 生态时升级，配方：
+     * <p>应用全部自研可控、或不再对接外部 v1.5 生态时升级，配方：
      * <pre>{@code
      * private static final String SIGNATURE_ALGORITHM = "RSASSA-PSS";
      * private static final PSSParameterSpec PSS_SPEC = new PSSParameterSpec(
@@ -170,7 +170,7 @@ public final class RsaUtil {
      * 与"签名无效"同等处理，避免畸形输入触发异常栈与 500
      *
      * <p>公钥与算法属可信输入，解析失败或算法不可用即配置故障，抛异常而非静默返回 false，
-     * 否则会把"公钥配错"伪装成"所有商户签名都无效"
+     * 否则会把"公钥配错"伪装成"所有应用签名都无效"
      *
      * @param publicKeyBase64 Base64 编码的 X.509 格式公钥
      * @param plainText       原始内容
