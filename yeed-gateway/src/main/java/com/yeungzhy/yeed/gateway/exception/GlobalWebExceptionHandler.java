@@ -49,8 +49,8 @@ public class GlobalWebExceptionHandler implements WebExceptionHandler {
 
     /** 序列化失败时的兜底响应体，避免异常处理自身再抛异常导致响应无法写回 */
     private static final byte[] FALLBACK_BODY = """
-            {"code":%d,"msg":"%s","data":null}
-            """.formatted(ApiResult.CommonCode.SYSTEM_ERROR.getCode(), ApiResult.CommonCode.SYSTEM_ERROR.getMsg()).getBytes(StandardCharsets.UTF_8);
+            {"code":%d,"msg":"%s","data":null}"""
+            .formatted(ApiResult.CommonCode.SYSTEM_ERROR.getCode(), ApiResult.CommonCode.SYSTEM_ERROR.getMsg()).getBytes(StandardCharsets.UTF_8);
 
     private final ObjectMapper objectMapper;
 

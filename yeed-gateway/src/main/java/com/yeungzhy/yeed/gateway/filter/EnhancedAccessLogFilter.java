@@ -91,22 +91,19 @@ public class EnhancedAccessLogFilter implements GlobalFilter, Ordered {
      * 请求体超限摘要：占位符取 Content-Length（long），分块传输时为 -1
      */
     private static final String REQUEST_BODY_OVER_LIMIT = """
-            {"msg":"request body exceeds limit, %d bytes"}
-            """;
+            {"msg":"request body exceeds limit, %d bytes"}""";
     private static final String REQUEST_BODY_MULTIPART_NOT_CACHED = """
-            {"msg":"multipart/form-data not cached, %d bytes"}
-            """;
+            {"msg":"multipart/form-data not cached, %d bytes"}""";
     private static final String REQUEST_BODY_NOT_FOUND = """
-            {"msg":"request body not found"}
-            """;
+            {"msg":"request body not found"}""";
 
     /** 响应体占位摘要 */
     private static final String RESPONSE_BODY_OK_FILE_DOWNLOAD = """
-            {"code":%d,"msg":"file download, response stream not cached","data":null}
-            """.formatted(ApiResult.CommonCode.OK.getCode());
+            {"code":%d,"msg":"file download, response stream not cached","data":null}"""
+            .formatted(ApiResult.CommonCode.OK.getCode());
     private static final String RESPONSE_BODY_NOT_FOUND = """
-            {"code":%d,"msg":"response body not found by gateway","data":null}
-            """.formatted(ApiResult.CommonCode.SYSTEM_ERROR.getCode());
+            {"code":%d,"msg":"response body not found by gateway","data":null}"""
+            .formatted(ApiResult.CommonCode.SYSTEM_ERROR.getCode());
 
     /** 响应体超过上限时保留的根层字段：业务状态码 + 描述 */
     private static final Set<String> RESPONSE_SUMMARY_FIELDS = Set.of(ApiResult.Fields.code, ApiResult.Fields.msg);
