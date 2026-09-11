@@ -39,4 +39,18 @@ public final class CacheConstant {
      */
     public static final String MENU_CACHE_CHANGED = "yeed:admin:menu:cache:changed";
 
+    /**
+     * OpenApi 应用公钥缓存键前缀（拼接 {@code appId}，无 id 时为空段）
+     *
+     * <p> 完整键 {@code yeed:openapi:app:pubkey:{appId}}，值缓存主备两把公钥
+     */
+    public static final String OPENAPI_APP_PUBKEY_PREFIX = "yeed:openapi:app:pubkey:";
+
+    /**
+     * OpenApi 签名 nonce 去重键前缀（拼接 {@code {appId}:{nonce}}）
+     *
+     * <p> 完整键 {@code yeed:openapi:sign:nonce:{appId}:{nonce}}，网关 SET NX EX 原子占用防重放
+     */
+    public static final String OPENAPI_SIGN_NONCE_PREFIX = "yeed:openapi:sign:nonce:";
+
 }

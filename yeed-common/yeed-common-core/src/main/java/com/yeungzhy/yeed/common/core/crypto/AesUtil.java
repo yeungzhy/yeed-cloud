@@ -26,7 +26,8 @@ import java.util.Base64;
  *   <li>IV Length: 12 byte (96 bit)
  *   <li>Tag Length: 128 bit (16 byte)
  *   <li>Charset: UTF-8
- *   <li>密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )
+ *   <li>String 密文格式: Base64( IV(12字节) + ciphertext + tag(16字节) )
+ *   <li>字节数组 + AAD 重载密文格式: IV(12字节) + ciphertext + tag(16字节) 原始字节，不套 Base64（OpenApi 报文专用）
  * </ul>
  *
  * @author yeungzhy
@@ -52,6 +53,8 @@ public final class AesUtil {
     private static final int TAG_LENGTH = 128;
     /** 字符集 */
     private static final Charset CHARSET = StandardCharsets.UTF_8;
+    /** 空 AAD（不带 AAD 的旧链路内部复用） */
+    private static final byte[] EMPTY_AAD = new byte[0];
 
 
     // ==================== 密码派生参数（PBKDF2）====================
@@ -135,6 +138,92 @@ public final class AesUtil {
 
             byte[] decrypted = doDecrypt(key, iv, cipherBytes);
             return new String(decrypted, CHARSET);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("AES decryption failed [transformation=" + TRANSFORMATION + "]", e);
+        }
+    }
+
+
+    // ==================== 原始字节 + AAD ====================
+
+    /**
+     * AES 加密（原始字节密钥 + AAD）
+     *
+     * <p> 返回原始字节 IV(12) + ciphertext + tag(16)，不套 Base64
+     *
+     * @param key   原始 AES 密钥（16 / 24 / 32 字节）
+     * @param plain 明文
+     * @param aad   附加认证数据（method/path/timestamp/nonce 等绑定字段）
+     * @return 原始字节密文（IV + ciphertext + tag）
+     * @throws IllegalArgumentException key 为 null 或长度非法、plain 为 null 或空、aad 为 null 或空
+     * @throws RuntimeException         加密失败
+     */
+    public static byte[] encrypt(byte[] key, byte[] plain, byte[] aad) {
+        if (plain == null || plain.length == 0) {
+            throw new IllegalArgumentException("plain must not be null or empty");
+        }
+        if (aad == null || aad.length == 0) {
+            throw new IllegalArgumentException("aad must not be null or empty");
+        }
+        try {
+            SecretKey secretKey = loadKey(key);
+            byte[] iv = generateIv();
+
+            byte[] cipherBytes = doEncrypt(secretKey, iv, aad, plain);
+
+            // 拼接: IV(12) + cipherBytes(含tag)
+            ByteBuffer buffer = ByteBuffer.allocate(iv.length + cipherBytes.length);
+            buffer.put(iv);
+            buffer.put(cipherBytes);
+
+            return buffer.array();
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("AES encryption failed [transformation=" + TRANSFORMATION + "]", e);
+        }
+    }
+
+    /**
+     * AES 解密（原始字节密钥 + AAD）
+     *
+     * <p> 入参为原始字节密文（IV + ciphertext + tag）；AAD 不一致时 tag 校验失败
+     *
+     * @param key    原始 AES 密钥（16 / 24 / 32 字节）
+     * @param cipher 原始字节密文（IV + ciphertext + tag）
+     * @param aad    附加认证数据（须与加密时完全一致）
+     * @return 明文
+     * @throws IllegalArgumentException key 为 null 或长度非法、cipher 为 null 或过短、aad 为 null 或空
+     * @throws RuntimeException         tag 校验失败或解密失败
+     */
+    public static byte[] decrypt(byte[] key, byte[] cipher, byte[] aad) {
+        if (cipher == null || cipher.length == 0) {
+            throw new IllegalArgumentException("cipher must not be null or empty");
+        }
+        if (aad == null || aad.length == 0) {
+            throw new IllegalArgumentException("aad must not be null or empty");
+        }
+        try {
+            SecretKey secretKey = loadKey(key);
+            if (cipher.length < IV_LENGTH + TAG_LENGTH / Byte.SIZE) {
+                throw new IllegalArgumentException(
+                        "cipher is too short, expected at least " + (IV_LENGTH + TAG_LENGTH / Byte.SIZE) + " bytes");
+            }
+
+            // 截取 IV
+            ByteBuffer buffer = ByteBuffer.wrap(cipher);
+            byte[] iv = new byte[IV_LENGTH];
+            buffer.get(iv);
+
+            // 剩余为 ciphertext + tag
+            byte[] cipherBytes = new byte[buffer.remaining()];
+            buffer.get(cipherBytes);
+
+            return doDecrypt(secretKey, iv, aad, cipherBytes);
 
         } catch (IllegalArgumentException e) {
             throw e;
@@ -259,30 +348,40 @@ public final class AesUtil {
 
     // ==================== 内部方法 ====================
 
-    /**
-     * 执行加密（核心逻辑，两种模式复用）
-     */
+    /** 执行加密（核心逻辑，两种模式复用） */
     private static byte[] doEncrypt(SecretKey key, byte[] iv, byte[] plainBytes) throws Exception {
+        return doEncrypt(key, iv, EMPTY_AAD, plainBytes);
+    }
+
+    /** 执行加密（带 AAD） */
+    private static byte[] doEncrypt(SecretKey key, byte[] iv, byte[] aad, byte[] plainBytes) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH, iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, spec);
+        if (aad.length > 0) {
+            cipher.updateAAD(aad);
+        }
         return cipher.doFinal(plainBytes);
     }
 
-    /**
-     * 执行解密（核心逻辑，两种模式复用）
-     */
+    /** 执行解密（核心逻辑，两种模式复用） */
     private static byte[] doDecrypt(SecretKey key, byte[] iv, byte[] cipherBytes) throws Exception {
+        return doDecrypt(key, iv, EMPTY_AAD, cipherBytes);
+    }
+
+    /** 执行解密（带 AAD） */
+    private static byte[] doDecrypt(SecretKey key, byte[] iv, byte[] aad, byte[] cipherBytes) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH, iv);
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
+        if (aad.length > 0) {
+            cipher.updateAAD(aad);
+        }
         return cipher.doFinal(cipherBytes);
     }
 
 
-    /**
-     * PBKDF2 密钥派生
-     */
+    /** PBKDF2 密钥派生 */
     private static SecretKey deriveKey(String password, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory factory = SecretKeyFactory.getInstance(KDF_ALGORITHM);
@@ -300,7 +399,19 @@ public final class AesUtil {
         if (keyBase64 == null || keyBase64.isEmpty()) {
             throw new IllegalArgumentException("keyBase64 must not be null or empty");
         }
-        byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+        return loadKey(Base64.getDecoder().decode(keyBase64));
+    }
+
+    /**
+     * 加载原始字节密钥，校验长度为 128 / 192 / 256 bit
+     *
+     * @param keyBytes 原始 AES 密钥
+     * @throws IllegalArgumentException keyBytes 为 null 或长度非法
+     */
+    private static SecretKey loadKey(byte[] keyBytes) {
+        if (keyBytes == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
         if (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
             throw new IllegalArgumentException("AES key must be 128 / 192 / 256 bit, but was " + keyBytes.length * 8 + " bit");
         }
