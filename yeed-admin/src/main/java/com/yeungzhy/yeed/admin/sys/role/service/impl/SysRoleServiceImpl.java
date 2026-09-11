@@ -3,6 +3,7 @@ package com.yeungzhy.yeed.admin.sys.role.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.yeungzhy.yeed.admin.security.LoginSessionRefreshEvent;
 import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
 import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
 import com.yeungzhy.yeed.admin.sys.role.dto.SysRoleDTO;
@@ -25,6 +26,7 @@ import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,8 @@ public class SysRoleServiceImpl implements SysRoleService {
     private SysMenuMapper sysMenuMapper;
     @Resource
     private SysRoleConvert sysRoleConvert;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -99,6 +103,9 @@ public class SysRoleServiceImpl implements SysRoleService {
                 .status(dto.getStatus())
                 .build();
         sysRoleMapper.updateById(updateEntity);
+        // 停用后该角色不再参与权限装配，必须重算持有者的会话：否则在线端在会话有效期内继续持有已停用角色的权限
+        List<Long> userIds = sysUserRoleMapper.listUserIdsByRole(dto.getId());
+        eventPublisher.publishEvent(new LoginSessionRefreshEvent(userIds));
     }
 
     @Override
@@ -166,6 +173,10 @@ public class SysRoleServiceImpl implements SysRoleService {
                         .build())
                 .toList();
         sysRoleMenuMapper.insert(roleMenus);
+        // 提交后重算该角色下所有用户的会话：收回的菜单权限必须对在线端立即失效，
+        // 新增的菜单权限同步到位，前端菜单也随之刷新
+        List<Long> userIds = sysUserRoleMapper.listUserIdsByRole(dto.getRoleId());
+        eventPublisher.publishEvent(new LoginSessionRefreshEvent(userIds));
     }
 
 

@@ -7,6 +7,7 @@ import com.yeungzhy.yeed.admin.sys.user.dto.SysUserRoleGrantDTO;
 import com.yeungzhy.yeed.admin.sys.user.dto.SysUserUpdateDTO;
 import com.yeungzhy.yeed.admin.sys.user.vo.SysUserVO;
 import com.yeungzhy.yeed.api.user.dto.UserVerifyDTO;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
@@ -46,6 +47,18 @@ public interface SysUserService {
      * @since 2026-08-13 06:48:01
      */
     void update(SysUserUpdateDTO dto);
+
+    /**
+     * 启停用户
+     *
+     * <p>禁用会注销该账号全部会话：身份快照在会话有效期内不会自行失效，而无需权限码的接口
+     * 靠权限过滤拦不住
+     *
+     * @param dto 主键与目标状态，均不能为空；超级管理员账号一律拒绝禁用
+     * @author yeungzhy
+     * @since 2026-09-11
+     */
+    void updateStatus(StatusRequest dto);
 
     /**
      * 修改密码
@@ -156,6 +169,21 @@ public interface SysUserService {
      * @since 2026-08-13 06:48:01
      */
     List<Long> listRoleIdsByUser(Long userId);
+
+
+    // ==================== 登录会话维护 ====================
+
+    /**
+     * 用数据库最新授权重算指定用户的登录会话
+     *
+     * <p>授权或状态变更后调用：账号正常时用最新身份包覆盖会话，权限收窄对全部在线端立即生效
+     * 且用户无需重登；账号已禁用或已删除时注销其全部会话
+     *
+     * @param userId 用户主键，不能为 null
+     * @author yeungzhy
+     * @since 2026-09-11
+     */
+    void refreshLoginSession(Long userId);
 
 
     // ==================== 标准删除（逻辑删除） ====================

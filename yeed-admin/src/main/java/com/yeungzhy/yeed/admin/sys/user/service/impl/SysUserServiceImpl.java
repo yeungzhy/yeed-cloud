@@ -2,6 +2,7 @@ package com.yeungzhy.yeed.admin.sys.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.yeungzhy.yeed.admin.security.LoginSessionRefreshEvent;
 import com.yeungzhy.yeed.admin.sys.menu.entity.SysMenu;
 import com.yeungzhy.yeed.admin.sys.menu.enums.MenuTypeEnum;
 import com.yeungzhy.yeed.admin.sys.menu.mapper.SysMenuMapper;
@@ -25,7 +26,9 @@ import com.yeungzhy.yeed.common.core.crypto.BlindIndexProvider;
 import com.yeungzhy.yeed.common.core.enums.BuiltinRoleEnum;
 import com.yeungzhy.yeed.common.core.enums.EnableStatusEnum;
 import com.yeungzhy.yeed.common.core.exception.BizAssert;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.PageResult;
+import com.yeungzhy.yeed.common.core.security.LoginSessionStore;
 import com.yeungzhy.yeed.common.core.security.LoginUserHelper;
 import com.yeungzhy.yeed.common.core.security.LoginUserInfo;
 import com.yeungzhy.yeed.common.core.security.MenuTreeInfo;
@@ -33,6 +36,7 @@ import com.yeungzhy.yeed.common.core.support.TreeUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +74,10 @@ public class SysUserServiceImpl implements SysUserService {
     private SysRoleMapper sysRoleMapper;
     @Resource
     private SysMenuMapper sysMenuMapper;
+    @Resource
+    private LoginSessionStore loginSessionStore;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -158,6 +166,22 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         sysUserMapper.updateById(updateEntity);
+    }
+
+
+    @Override
+    public void updateStatus(StatusRequest dto) {
+        BizAssert.notNull(dto.getId(), "用户ID不能为空");
+        SysUser sysUser = sysUserMapper.selectById(dto.getId());
+        BizAssert.notNull(sysUser, "用户不存在");
+        // 超管是配置被改坏时的唯一逃生通道，禁用后无人能登录修复，直接从入口挡掉
+        BizAssert.isFalse(BuiltinRoleEnum.isSuperAdmin(sysUserMapper.selectRoleCodesByUserId(dto.getId())),
+                "超级管理员账号禁止禁用");
+
+        sysUserMapper.updateById(SysUser.builder().id(dto.getId()).status(dto.getStatus()).build());
+        // 禁用必须终结会话：身份快照在有效期内不失效，无需权限码的接口拦不住；
+        // 启用方向同样重算，让该账号的旧快照与数据库重新对齐
+        eventPublisher.publishEvent(LoginSessionRefreshEvent.of(dto.getId()));
     }
 
 
@@ -303,7 +327,18 @@ public class SysUserServiceImpl implements SysUserService {
 
         BizAssert.isTrue(argon2PwdEncoder.matches(dto.getPassword(), user.getPassword()), "密码错误");
         updateLastLoginTime(user.getId());
+        return assembleLoginUser(user);
+    }
 
+    /**
+     * 装配登录身份包（登录校验与授权变更后的会话重算共用同一份口径）
+     *
+     * <p>口径分叉会让管理员改完授权得到的快照与用户重登后的不一致，收回的权限等于没收
+     *
+     * @param user 用户实体
+     * @return 登录身份包（用户信息 + 角色编码 + 权限标识）
+     */
+    private LoginUserInfo assembleLoginUser(SysUser user) {
         List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(user.getId());
         // 超管代码级短路：不依赖数据库授权配置（权限配置被改坏仍可登录修复），菜单行取全量
         boolean superAdmin = roleCodes.contains(BuiltinRoleEnum.SUPER_ADMIN.getRoleCode());
@@ -379,6 +414,8 @@ public class SysUserServiceImpl implements SysUserService {
                         .build())
                 .toList();
         sysUserRoleMapper.insert(userRoles);
+        // 提交后重算会话：被收回的角色必须立即失效，新增的角色也要让菜单与权限同步到位
+        eventPublisher.publishEvent(LoginSessionRefreshEvent.of(dto.getUserId()));
     }
 
 
@@ -392,9 +429,24 @@ public class SysUserServiceImpl implements SysUserService {
 
 
     @Override
+    public void refreshLoginSession(Long userId) {
+        BizAssert.notNull(userId, "用户ID不能为空");
+        SysUser sysUser = sysUserMapper.selectById(userId);
+        // 逻辑删除的行查不出来，与禁用一并处理：账号已不该持有任何在线会话
+        if (sysUser == null || !EnableStatusEnum.isEnabled(sysUser.getStatus())) {
+            loginSessionStore.invalidate(userId);
+            return;
+        }
+        loginSessionStore.overwriteLoginUser(userId, assembleLoginUser(sysUser));
+    }
+
+
+    @Override
     public void delete(Long id) {
         BizAssert.notNull(id, "ID 不能为空");
         sysUserMapper.deleteByIdAutoFill(id);
+        // 逻辑删除后身份快照仍然有效，必须终结会话：被删账号不该再处于登录态
+        eventPublisher.publishEvent(LoginSessionRefreshEvent.of(id));
     }
 
 
@@ -403,6 +455,8 @@ public class SysUserServiceImpl implements SysUserService {
         BizAssert.notEmpty(ids, "ID 集合不能为空");
         // 批量逻辑删除：空集合不触库，超量自动分片，删除人自动填充
         sysUserMapper.deleteByIdsAutoFill(ids);
+        // 与单删同因：快照不会因逻辑删除而失效，逐账号终结会话
+        eventPublisher.publishEvent(new LoginSessionRefreshEvent(ids));
     }
 
 

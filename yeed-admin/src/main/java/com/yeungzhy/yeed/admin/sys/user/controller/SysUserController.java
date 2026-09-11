@@ -14,6 +14,7 @@ import com.yeungzhy.yeed.api.export.task.ExportTaskFeignClient;
 import com.yeungzhy.yeed.api.export.task.dto.ExportTaskSaveDTO;
 import com.yeungzhy.yeed.common.core.constant.Constant;
 import com.yeungzhy.yeed.common.core.request.IdRequest;
+import com.yeungzhy.yeed.common.core.request.StatusRequest;
 import com.yeungzhy.yeed.common.core.result.ApiResult;
 import com.yeungzhy.yeed.common.core.result.PageResult;
 import com.yeungzhy.yeed.common.core.support.IdenticonUtil;
@@ -25,7 +26,13 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -80,6 +87,23 @@ public class SysUserController {
     @PostMapping("/update")
     public ApiResult<Boolean> update(@Valid @RequestBody SysUserUpdateDTO dto) {
         sysUserService.update(dto);
+        return ApiResult.ok();
+    }
+
+
+    /**
+     * 启停用户
+     *
+     * <p>禁用会立即注销该账号全部会话，在线端下一次请求即 401，无需等待其自行登出
+     *
+     * @param dto 主键与目标状态，两者均不能为空
+     * @return 固定成功；超级管理员账号或记录不存在抛 BizException
+     * @author yeungzhy
+     * @since 2026-09-11
+     */
+    @PostMapping("/update-status")
+    public ApiResult<Boolean> updateStatus(@Valid @RequestBody StatusRequest dto) {
+        sysUserService.updateStatus(dto);
         return ApiResult.ok();
     }
 
