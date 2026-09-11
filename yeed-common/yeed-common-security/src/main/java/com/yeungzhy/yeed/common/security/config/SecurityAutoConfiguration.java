@@ -5,7 +5,9 @@ import cn.dev33.satoken.stp.StpLogic;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yeungzhy.yeed.common.core.config.LoginUserProviderAutoConfiguration;
+import com.yeungzhy.yeed.common.core.security.LoginSessionStore;
 import com.yeungzhy.yeed.common.core.security.LoginUserProvider;
+import com.yeungzhy.yeed.common.security.SaTokenLoginSessionStore;
 import com.yeungzhy.yeed.common.security.SaTokenLoginUserProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -40,6 +42,12 @@ public class SecurityAutoConfiguration {
     @ConditionalOnMissingBean(LoginUserProvider.class)
     public LoginUserProvider saTokenLoginUserContext(ObjectMapper objectMapper) {
         return new SaTokenLoginUserProvider(objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LoginSessionStore.class)
+    public LoginSessionStore saTokenLoginSessionStore() {
+        return new SaTokenLoginSessionStore();
     }
 
     @Bean
