@@ -94,6 +94,26 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+
+        <!--
+            测试：只写纯单测（不起 Spring 容器、不连 Redis/Nacos）
+            spring-boot-starter-test 已在父 POM 排除 junit-jupiter 与 mockito-core（项目统一 JUnit 4 栈），
+            故 junit 需显式声明；WebFlux 的 MockServerHttpRequest / MockServerWebExchange 来自其中的 spring-test
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
