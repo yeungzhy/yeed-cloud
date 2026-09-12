@@ -74,10 +74,19 @@ public final class SensitiveJsonUtil {
             + ")");
 
     /**
+     * JSON 结构的外形：对象、数组、字符串字面量开头
+     * <p> 与 {@link #CREDENTIAL_KEY_HINT} 同为便宜的前置判断，只为挡掉自由文本：日志文本常以
+     * {@code [} 开头（如 {@code [Nacos Config] Listen config: dataId=sa-token.yaml}），
+     * Jackson 视其为数组起始并必然抛异常，于是每条这类日志都留下一条与故障无关的告警堆栈
+     * <p> 判错不影响正确性：漏判只是放弃按键脱敏、退回原样输出
+     */
+    private static final Pattern JSON_SHAPE = Pattern.compile("^\\s*(?:\\{|\\[\\s*[\\{\\[\"]|\")");
+
+    /**
      * 把 JSON 报文中所有凭据字段的值替换为 {@code ***}
      *
-     * <p> 解析失败时原样返回并记 warn：报文不是合法 JSON（多半已被上游截断）时结构信息不可用，
-     * 而本类只认键名，无结构即无从判定，只能放弃，这意味着可能有凭据漏网，值得关注。
+     * <p> 解析失败时原样返回并记 warn：文本已长成 JSON 外形却读不出结构（多半被上游截断）时无从判定，
+     * 只能放弃，这意味着可能有凭据漏网，值得关注。自由文本在解析前就被前置判断挡下，不进入此路径。
      * 调用方随后执行的 {@link SensitiveTextUtil#mask(String)} 不受影响：按值识别不依赖 JSON 结构
      *
      * @param json 待脱敏文本；null / 空串原样返回
@@ -87,7 +96,7 @@ public final class SensitiveJsonUtil {
         if (json == null || json.isEmpty()) {
             return json;
         }
-        if (!CREDENTIAL_KEY_HINT.matcher(json).find()) {
+        if (!CREDENTIAL_KEY_HINT.matcher(json).find() || !JSON_SHAPE.matcher(json).find()) {
             return json;
         }
 
