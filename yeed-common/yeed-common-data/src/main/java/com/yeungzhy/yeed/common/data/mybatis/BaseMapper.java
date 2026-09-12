@@ -341,7 +341,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
 
 
     /**
-     * 按页取数并逐条映射成目标类型，不做 count（一行完成“入参 → Slice → 查询 → List”）
+     * 按页取数并逐条映射成目标类型，不做 count（一行完成“入参 → Page → 查询 → List”）
      *
      * <p> 与 {@link #selectPageResult(PageRequest, Wrapper, Function)} 的差异是少了 {@code SELECT COUNT(*)}：
      * 只发一条带 LIMIT 的查询。适用「总数已在循环外查得、顺序翻页取数」的场景（导出 / 跑批 / 全量同步），
@@ -358,7 +358,7 @@ public interface BaseMapper<T> extends com.baomidou.mybatisplus.core.mapper.Base
      * @since 2026-09-07
      */
     default <V> List<V> selectPageRecords(PageRequest pageRequest, Wrapper<T> queryWrapper, Function<T, V> mapper) {
-        Page<T> page = MybatisPageConverters.toMybatisPlusSlice(pageRequest);
+        Page<T> page = MybatisPageConverters.toMybatisPlusPageNoCount(pageRequest);
         return MybatisPageConverters.toRecords(selectPage(page, queryWrapper), mapper);
     }
 

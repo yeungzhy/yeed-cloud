@@ -54,7 +54,7 @@ public final class MybatisPageConverters {
      * @return MyBatis-Plus 分页对象，current / size 取自 pageRequest，且不触发 count
      * @see BaseMapper#selectPageRecords(PageRequest, com.baomidou.mybatisplus.core.conditions.Wrapper, Function)
      */
-    public static <T> Page<T> toMybatisPlusSlice(PageRequest pageRequest) {
+    public static <T> Page<T> toMybatisPlusPageNoCount(PageRequest pageRequest) {
         Page<T> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
         page.setSearchCount(false);
         return page;
@@ -102,7 +102,7 @@ public final class MybatisPageConverters {
     /**
      * 取 MyBatis-Plus 分页结果里的记录并逐条转换成 VO，丢弃分页元数据
      *
-     * <p> 配合 {@link #toMybatisPlusSlice(PageRequest)} 使用：那一页没有 count，total 恒为 0，
+     * <p> 配合 {@link #toMybatisPlusPageNoCount(PageRequest)} 使用：那一页没有 count，total 恒为 0，
      * 此时再把结果包成 {@link PageResult} 会带出一个恒为 0 的假 total，下游无从分辨
      * 「真的没数据」与「压根没查」，故这种场景直接返回 List，分页元数据一概不带
      *
