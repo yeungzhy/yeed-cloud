@@ -39,7 +39,7 @@ public class MybatisPlusAutoConfiguration {
 
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         // 分页插件必须加在链尾：排在它后面的拦截器拿不到改写后的分页 SQL
-        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MARIADB));
         return interceptor;
     }
 
