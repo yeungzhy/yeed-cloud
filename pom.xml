@@ -24,7 +24,6 @@
         <!-- ==================== 通用层 ==================== -->
         <!-- 基础公共包：工具类、全局异常、统一响应体、常量 -->
         <module>yeed-common</module>
-        <module>yeed-generator</module>
         <!-- 内部契约包：存放 @FeignClient 接口，仅供内部微服务调用 -->
         <module>yeed-api</module>
 
@@ -44,6 +43,9 @@
 
         <!-- ====== 对外接口层（供第三方/其他部门调用）====== -->
         <module>yeed-openapi</module>
+
+        <module>yeed-generator</module>
+        <module>yeed-ai</module>
     </modules>
 
     <properties>

@@ -1,0 +1,26 @@
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos123
+      server-addr: 192.168.22.155:8848
+      discovery:
+        namespace: 52ed6bf608814d21a9cb122798dd67c2
+        group: dev
+      config:
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        group: ${spring.profiles.active}
+  config:
+    import:
+      # 1. 导入共享配置，需要明确指定完整的 dataId
+      - nacos:datasource.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:sa-token.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:redis.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:common.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      - nacos:feign.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+      # 2. 导入主配置（主配置通常包含服务特有的覆盖项，排在最后可以覆盖掉共享配置中的默认值）
+      - nacos:${spring.application.name}.yaml?group=${spring.cloud.nacos.config.group}&refreshEnabled=true
+
+logging:
+  level:
+    druid.sql.Statement: DEBUG
