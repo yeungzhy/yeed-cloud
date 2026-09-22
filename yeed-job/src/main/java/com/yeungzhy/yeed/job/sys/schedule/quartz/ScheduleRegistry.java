@@ -270,7 +270,7 @@ public class ScheduleRegistry {
     }
 
     private int code(ScheduleConcurrentEnum concurrent) {
-        return concurrent == null ? ScheduleConcurrentEnum.ALLOW.getCode() : concurrent.getCode();
+        return concurrent == null ? ScheduleConcurrentEnum.SKIP.getCode() : concurrent.getCode();
     }
 
     private JobKey jobKey(Schedule schedule) {
