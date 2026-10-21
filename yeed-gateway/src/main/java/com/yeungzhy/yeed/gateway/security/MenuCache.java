@@ -74,6 +74,7 @@ public class MenuCache {
             RTopic topic = redissonClient.getTopic(CacheConstant.MENU_CACHE_CHANGED);
             topic.addListener(String.class, (channel, message) -> {
                 localCache.invalidateAll();
+                lastFailAt = 0L;
                 log.info("收到菜单缓存变更事件，本地缓存已失效");
             });
             log.info("已订阅菜单缓存变更事件：topic={}", CacheConstant.MENU_CACHE_CHANGED);
